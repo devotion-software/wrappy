@@ -588,6 +588,10 @@
 	}
 	.setting span {
 		color: var(--ink2);
+		white-space: nowrap;
+	}
+	.setting strong {
+		text-align: right;
 	}
 	.setting.last {
 		border-bottom: 0;
