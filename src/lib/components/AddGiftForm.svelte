@@ -4,12 +4,14 @@
 
 	/** Line input for noting a present that wasn't on a list. */
 	interface Props {
+		/** Account id, or contact id when `isContact`. */
 		giverId: string;
+		isContact?: boolean;
 		giverFirstName: string;
 		error?: string | null;
 		action?: string;
 	}
-	let { giverId, giverFirstName, error = null, action = '?/addGift' }: Props = $props();
+	let { giverId, isContact = false, giverFirstName, error = null, action = '?/addGift' }: Props = $props();
 	let busy = $state(false);
 </script>
 
@@ -25,7 +27,7 @@
 		};
 	}}
 >
-	<input type="hidden" name="giverId" value={giverId} />
+	<input type="hidden" name={isContact ? 'contactId' : 'giverId'} value={giverId} />
 	<Icon name="plus" size={18} />
 	<label for="gift-{giverId}" class="sr-only">Something else {giverFirstName} gave you</label>
 	<input

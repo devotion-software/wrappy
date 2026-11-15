@@ -10,6 +10,7 @@
 	let { data, form } = $props();
 	const first = $derived(data.person.name.split(' ')[0]);
 	const total = $derived(data.fromLists.length + data.noted.length);
+	let editing = $state(false);
 </script>
 
 <svelte:head><title>From {data.person.name} — Wishlist</title></svelte:head>
@@ -21,7 +22,7 @@
 		<Avatar name={data.person.name} size={64} onDesk />
 		<div>
 			<h1 class="hand">From {data.person.name}</h1>
-			<p class="meta">{plural(total, 'present')}</p>
+			<p class="meta">{plural(total, 'present')}{data.person.isContact ? ' · not on Wishlist' : ''}</p>
 		</div>
 	</div>
 
@@ -46,7 +47,7 @@
 		{/if}
 
 		{#if data.noted.length}
-			<h2 class="label">Other presents</h2>
+			{#if data.fromLists.length}<h2 class="label">Other presents</h2>{/if}
 			{#each data.noted as g (g.id)}
 				<div class="row">
 					<Checkbox checked tilt={tiltFor(g.id)} />
@@ -64,9 +65,43 @@
 		{/if}
 
 		<div class="add">
-			<AddGiftForm giverId={data.person.id} giverFirstName={first} error={form?.giftError?.message ?? null} />
+			<AddGiftForm
+				giverId={data.person.id}
+				isContact={data.person.isContact}
+				giverFirstName={first}
+				error={form?.giftError?.message ?? null}
+			/>
 		</div>
 	</Sheet>
+
+	{#if data.person.isContact}
+		<div class="manage">
+			{#if editing}
+				<form method="POST" action="?/renameContact" class="rename" use:enhance={() => async ({ update, result }) => {
+					await update();
+					if (result.type === 'success') editing = false;
+				}}>
+					<input type="hidden" name="contactId" value={data.person.id} />
+					<label for="rename" class="sr-only">Name</label>
+					<input id="rename" name="name" class="line-input" maxlength="80" value={data.person.name} required />
+					<button class="btn btn-dark">Save</button>
+					<button type="button" class="btn btn-text" onclick={() => (editing = false)}>Cancel</button>
+				</form>
+				{#if form?.renameError}<p class="field-error" role="alert">{form.renameError}</p>{/if}
+			{:else}
+				<button class="btn btn-text" onclick={() => (editing = true)}><Icon name="edit" size={16} />Rename</button>
+			{/if}
+			<form
+				method="POST"
+				action="?/deleteContact"
+				onsubmit={(e) => {
+					if (!confirm(`Remove ${data.person.name} and ${plural(total, 'present')} you noted from them?`)) e.preventDefault();
+				}}
+			>
+				<button class="btn btn-text"><Icon name="trash" size={16} />Remove {first}</button>
+			</form>
+		</div>
+	{/if}
 </main>
 
 <style>
@@ -139,6 +174,27 @@
 	}
 	.add {
 		padding-top: 14px;
+	}
+	.manage {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: 8px 16px;
+		margin-left: -8px;
+	}
+	.manage .btn-text {
+		gap: 6px;
+	}
+	.rename {
+		display: flex;
+		align-items: flex-end;
+		gap: 10px;
+		flex: 1 1 320px;
+		padding-left: 8px;
+	}
+	.rename input {
+		flex: 1;
+		min-width: 0;
 	}
 	@media (max-width: 600px) {
 		h1 {

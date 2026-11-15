@@ -82,6 +82,58 @@
 	{#if data.revealed.length}
 		<p class="meta">{plural(data.revealed.length, 'person', 'people')} ticked off.</p>
 	{/if}
+
+	<section class="others">
+		<div>
+			<h2 class="hand h2">Not on Wishlist</h2>
+			<p class="sub">Keep track of presents from people without an account, like grandparents or neighbours. Only you can see these.</p>
+		</div>
+		<Sheet margin={50} padding="18px 28px 22px 72px" class="sheet">
+			{#each data.contacts as c (c.id)}
+				{@const gifts = data.contactGifts.filter((g) => g.giverId === c.id).map((g) => g.title)}
+				{@const first = c.name.split(' ')[0]}
+				<div class="person">
+					<div class="person-head">
+						<span class="tick-space"><Checkbox checked={gifts.length > 0} tilt={tiltFor(c.id)} /></span>
+						<Avatar name={c.name} size={36} />
+						<div class="who">
+							<p class="write name">{c.name}</p>
+							{#if gifts.length}
+								<p class="note">got you {gifts.join(', ')}</p>
+							{:else}
+								<p class="meta">Nothing noted from {first} yet.</p>
+							{/if}
+						</div>
+						<a href="/gifts/{c.id}" class="btn btn-outline see-all">{gifts.length ? `See all ${gifts.length}` : 'Open'}</a>
+					</div>
+					<div class="add">
+						<AddGiftForm
+							giverId={c.id}
+							isContact
+							giverFirstName={first}
+							error={form?.giftError?.giverId === c.id ? form.giftError.message : null}
+						/>
+					</div>
+				</div>
+			{/each}
+
+			<form method="POST" action="?/addContact" class="new-person" use:enhance>
+				<p class="label">Add someone</p>
+				<div class="new-row">
+					<div class="field">
+						<label for="contact-name" class="sr-only">Their name</label>
+						<input id="contact-name" name="name" class="line-input" maxlength="80" placeholder="Their name" required autocomplete="off" />
+					</div>
+					<div class="field grow">
+						<label for="contact-gift" class="sr-only">What they gave you (optional)</label>
+						<input id="contact-gift" name="title" class="line-input" maxlength="200" placeholder="What they gave you (optional)" autocomplete="off" />
+					</div>
+					<button class="btn btn-dark">Add</button>
+				</div>
+				{#if form?.contactError}<p class="field-error" role="alert">{form.contactError}</p>{/if}
+			</form>
+		</Sheet>
+	</section>
 </main>
 
 <style>
@@ -151,6 +203,47 @@
 	}
 	.all {
 		padding-top: 18px;
+	}
+	.others {
+		display: flex;
+		flex-direction: column;
+		gap: 16px;
+		margin-top: 12px;
+	}
+	.h2 {
+		margin: 0;
+		font-size: 40px;
+	}
+	/* Contacts have no "received" toggle; keep their rows aligned with the ones above. */
+	.tick-space {
+		width: 44px;
+		height: 44px;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		flex: none;
+	}
+	.new-person {
+		padding-top: 18px;
+		display: flex;
+		flex-direction: column;
+		gap: 6px;
+	}
+	.new-row {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: flex-end;
+		gap: 12px 16px;
+	}
+	.new-row .field {
+		flex: 1 1 160px;
+		min-width: 0;
+	}
+	.new-row .grow {
+		flex: 2 1 220px;
+	}
+	.new-row input {
+		font-size: 20px;
 	}
 	@media (max-width: 600px) {
 		.page :global(.sheet) {

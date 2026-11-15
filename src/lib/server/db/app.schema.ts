@@ -206,7 +206,25 @@ export const receivedFrom = mysqlTable(
 );
 
 /**
+ * People who gave the owner presents but don't have an account (e.g. "Grandma Jo").
+ * Owner-defined and private to the owner.
+ */
+export const giftContact = mysqlTable(
+	'gift_contact',
+	{
+		id: id().primaryKey(),
+		ownerId: userRef('owner_id')
+			.notNull()
+			.references(() => user.id, { onDelete: 'cascade' }),
+		name: varchar('name', { length: 80 }).notNull(),
+		createdAt: created()
+	},
+	(t) => [uniqueIndex('gift_contact_owner_name_uq').on(t.ownerId, t.name)]
+);
+
+/**
  * Presents the owner noted themselves — things a giver gave them that weren't on any list.
+ * The giver is either an account (giverId) or one of the owner's contacts (contactId).
  * Private to the owner; givers never see these.
  */
 export const receivedGift = mysqlTable(
@@ -216,13 +234,15 @@ export const receivedGift = mysqlTable(
 		ownerId: userRef('owner_id')
 			.notNull()
 			.references(() => user.id, { onDelete: 'cascade' }),
-		giverId: userRef('giver_id')
-			.notNull()
-			.references(() => user.id, { onDelete: 'cascade' }),
+		giverId: userRef('giver_id').references(() => user.id, { onDelete: 'cascade' }),
+		contactId: id('contact_id').references(() => giftContact.id, { onDelete: 'cascade' }),
 		title: varchar('title', { length: 200 }).notNull(),
 		createdAt: created()
 	},
-	(t) => [index('received_gift_owner_giver_idx').on(t.ownerId, t.giverId)]
+	(t) => [
+		index('received_gift_owner_giver_idx').on(t.ownerId, t.giverId),
+		index('received_gift_contact_idx').on(t.contactId)
+	]
 );
 
 // ── Secret Santa ─────────────────────────────────────────────────────────────
