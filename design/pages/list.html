@@ -1,0 +1,206 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Wishful — 30th birthday list</title>
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@500;700&amp;family=Patrick+Hand&amp;family=Inter:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<style>
+/* Notebook theme tokens — see DESIGN.md */
+:root { --desk: #ECECEA; --paper: #FAFAF8; --ink: #1C1C1C; --ink2: #4A4A4A; --muted: #5E5E5A; --faint: #6E6E6A; --rule: #E4E4E0; --line: #D2D2CE; --gold: #C9A24A; --gold-text: #8A6A1F; --on-gold: #1C1C1C; --gold-soft: #F4EEDD; --tape: rgba(160,160,155,0.28); --shadow: 0 1px 2px rgba(0,0,0,0.08), 0 10px 24px rgba(0,0,0,0.07); color-scheme: light; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --desk: #0E0E0E; --paper: #1A1A1A; --ink: #ECEAE4; --ink2: #C9C7C1; --muted: #A8A8A4; --faint: #9C9A94; --rule: #2A2A2A; --line: #333333; --gold: #D9B65E; --gold-text: #D9B65E; --on-gold: #141414; --gold-soft: #2A261C; --tape: rgba(200,200,195,0.16); --shadow: 0 0 0 1px #2A2A2A; color-scheme: dark; } }
+:root[data-theme="dark"] { --desk: #0E0E0E; --paper: #1A1A1A; --ink: #ECEAE4; --ink2: #C9C7C1; --muted: #A8A8A4; --faint: #9C9A94; --rule: #2A2A2A; --line: #333333; --gold: #D9B65E; --gold-text: #D9B65E; --on-gold: #141414; --gold-soft: #2A261C; --tape: rgba(200,200,195,0.16); --shadow: 0 0 0 1px #2A2A2A; color-scheme: dark; }
+:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+body{margin:0}a{color:inherit}input::placeholder{color:#8A8A86}
+</style>
+<script>/* preview helper: ?theme=dark or ?theme=light */
+(function(){var m=location.search.match(/theme=(dark|light)/);if(m)document.documentElement.setAttribute('data-theme',m[1]);})();</script>
+</head>
+<body>
+<div id="app"></div>
+<template id="tpl">
+<div style="min-height: 100vh; box-sizing: border-box; background: var(--desk); color: var(--ink); font-family: 'Inter', system-ui, sans-serif">
+  <header style="background: var(--paper); border-bottom: 1px solid var(--line)">
+    <div style="max-width: 1240px; margin: 0 auto; padding: 14px 24px; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px 24px">
+      <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 12px 36px">
+        <a href="home.html" style="display: flex; align-items: center; gap: 8px; text-decoration: none; color: var(--ink)">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--gold)" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 13c2 1.5 3.5 3.5 4.5 5.5C11 12 15 7 21 3"></path></svg>
+          <span style="font-family: 'Caveat', cursive; font-size: 32px; font-weight: 700; line-height: 1">wishful</span>
+        </a>
+        <nav style="display: flex; gap: 4px; font-size: 15px">
+          <a href="home.html" style="padding: 10px 14px; border-radius: 999px; background: var(--desk); text-decoration: none; font-weight: 600; color: var(--ink)">My lists</a>
+          <a href="invite.html" style="padding: 10px 14px; border-radius: 999px; text-decoration: none; color: var(--ink2)">Secret Santa</a>
+          <a href="home.html" style="padding: 10px 14px; border-radius: 999px; text-decoration: none; color: var(--ink2)">Friends</a>
+        </nav>
+      </div>
+      <button aria-label="Account menu" style="width: 44px; height: 44px; border-radius: 999px; border: 1.5px solid var(--ink); background: transparent; color: var(--ink); font: 600 14px 'Inter', sans-serif">M</button>
+    </div>
+  </header>
+
+  <main style="max-width: 1240px; margin: 0 auto; padding: 32px 24px 80px; display: flex; flex-direction: column; gap: 28px">
+    <a href="home.html" style="align-self: flex-start; display: inline-flex; align-items: center; gap: 6px; font-size: 14px; color: var(--ink2); text-decoration: none; min-height: 44px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M11 18l-6-6 6-6"></path></svg>All lists</a>
+
+    <div style="display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 20px">
+      <div>
+        <h1 style="margin: 0; font-family: 'Caveat', cursive; font-size: 68px; line-height: 0.95; font-weight: 700">30th birthday</h1>
+        <p style="margin: 10px 0 0; font-size: 15px; color: var(--ink2)">Maya's list · [DATE] · 6 wishes</p>
+      </div>
+      <div style="display: flex; align-items: center; gap: 6px; padding: 4px; border-radius: 999px; background: var(--paper); border: 1px solid var(--line)" role="group" aria-label="Preview the list as">
+        <button onClick="{{ showOwner }}" aria-pressed="{{ ownerPressed }}" style="height: 40px; padding: 0 16px; border-radius: 999px; border: 0; background: {{ ownerBg }}; color: {{ ownerFg }}; font: 600 14px 'Inter', sans-serif; cursor: pointer">My view</button>
+        <button onClick="{{ showFriend }}" aria-pressed="{{ friendPressed }}" style="height: 40px; padding: 0 16px; border-radius: 999px; border: 0; background: {{ friendBg }}; color: {{ friendFg }}; font: 600 14px 'Inter', sans-serif; cursor: pointer">What friends see</button>
+      </div>
+    </div>
+
+    <div style="display: flex; flex-wrap: wrap; gap: 32px; align-items: flex-start">
+      <section style="flex: 999 1 600px; min-width: 0; position: relative; background-color: var(--paper); border-radius: 4px; box-shadow: var(--shadow); padding: 18px 28px 20px 72px">
+        <div style="position: absolute; left: 50px; top: 0; bottom: 0; width: 2px; background: var(--gold)"></div>
+        <div style="position: absolute; top: -11px; left: 50%; width: 110px; height: 24px; margin-left: -55px; background: var(--tape); transform: rotate(-3deg)"></div>
+
+        <sc-if value="{{ isOwner }}" hint-placeholder-val="{{ true }}">
+          <p style="margin: 8px 0 6px; display: flex; align-items: center; gap: 8px; font-size: 14px; color: var(--ink2)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 3l18 18M10.6 10.6a2 2 0 0 0 2.8 2.8M9.9 5.1A10 10 0 0 1 12 5c5 0 9 4.5 10 7a13 13 0 0 1-2.2 3.3M6.6 6.6C4.4 8 2.8 10.2 2 12c1 2.5 5 7 10 7a9.7 9.7 0 0 0 5.4-1.6"></path></svg>Reserved and bought gifts are hidden from you, so the surprise is safe.</p>
+        </sc-if>
+        <sc-if value="{{ isFriend }}" hint-placeholder-val="{{ false }}">
+          <p style="margin: 8px 0 6px; display: flex; align-items: center; gap: 8px; font-size: 14px; color: var(--ink2)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="11" width="16" height="10" rx="2"></rect><path d="M8 11V7a4 4 0 0 1 8 0v4"></path></svg>Maya can't see what you reserve or buy.</p>
+        </sc-if>
+
+        <sc-for list="{{ items }}" as="item" hint-placeholder-count="6">
+          <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px; padding: 16px 0; border-bottom: 1px solid var(--rule)">
+            <div style="width: 24px; height: 24px; flex: none; border: 1.5px solid var(--ink); border-radius: 3px; transform: rotate({{ item.tilt }}deg); display: flex; align-items: center; justify-content: center; color: var(--gold); box-sizing: border-box">
+              <sc-if value="{{ item.ticked }}" hint-placeholder-val="{{ false }}"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 13c2 1.5 3.5 3.5 4.5 5.5C11 12 15 7 21 3"></path></svg></sc-if>
+            </div>
+            <div style="flex: 1 1 260px; min-width: 0">
+              <div style="display: flex; align-items: center; gap: 8px">
+                <p style="margin: 0; font-family: 'Patrick Hand', cursive; font-size: 24px; line-height: 1.2; color: {{ item.nameColor }}; text-decoration: {{ item.deco }}; text-decoration-color: var(--gold); text-decoration-thickness: 2px">{{ item.name }}</p>
+                <sc-if value="{{ item.star }}" hint-placeholder-val="{{ false }}"><svg width="18" height="18" viewBox="0 0 24 24" fill="var(--gold)" stroke="var(--gold)" stroke-width="1.5" stroke-linejoin="round" role="img" aria-label="Most wanted"><path d="m12 3 2.8 5.7 6.2.9-4.5 4.4 1 6.2L12 17.3 6.5 20.2l1-6.2L3 9.6l6.2-.9z"></path></svg></sc-if>
+              </div>
+              <p style="margin: 4px 0 0; font-size: 13px; color: var(--muted)">{{ item.note }} · {{ item.store }} · $[PRICE]</p>
+            </div>
+            <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap">
+              <sc-if value="{{ item.showEdit }}" hint-placeholder-val="{{ true }}">
+                <a href="#" aria-label="Open in shop" style="width: 40px; height: 40px; border-radius: 999px; display: flex; align-items: center; justify-content: center; color: var(--ink2)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7"></path><path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7"></path></svg></a>
+                <button aria-label="Edit wish" style="width: 40px; height: 40px; border-radius: 999px; border: 0; background: transparent; color: var(--ink2); display: flex; align-items: center; justify-content: center; cursor: pointer"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20h9"></path><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"></path></svg></button>
+              </sc-if>
+              <sc-if value="{{ item.showOpen }}" hint-placeholder-val="{{ false }}">
+                <button onClick="{{ item.reserve }}" style="height: 40px; padding: 0 16px; border-radius: 999px; border: 1.5px solid var(--ink); background: transparent; color: var(--ink); font: 600 14px 'Inter', sans-serif; cursor: pointer">I'll get it</button>
+              </sc-if>
+              <sc-if value="{{ item.showMine }}" hint-placeholder-val="{{ false }}">
+                <span style="font-family: 'Caveat', cursive; font-size: 22px; font-weight: 700; color: var(--gold-text)">you're getting this</span>
+                <button onClick="{{ item.buy }}" style="height: 40px; padding: 0 16px; border-radius: 999px; border: 0; background: var(--gold); color: var(--on-gold); font: 600 14px 'Inter', sans-serif; cursor: pointer">Mark as bought</button>
+                <button onClick="{{ item.undo }}" style="height: 40px; padding: 0 8px; border: 0; background: transparent; color: var(--ink2); font: 500 14px 'Inter', sans-serif; text-decoration: underline; text-underline-offset: 3px; cursor: pointer">Undo</button>
+              </sc-if>
+              <sc-if value="{{ item.showBought }}" hint-placeholder-val="{{ false }}">
+                <span style="font-family: 'Caveat', cursive; font-size: 22px; font-weight: 700; color: var(--gold-text)">bought by you</span>
+                <button onClick="{{ item.undo }}" style="height: 40px; padding: 0 8px; border: 0; background: transparent; color: var(--ink2); font: 500 14px 'Inter', sans-serif; text-decoration: underline; text-underline-offset: 3px; cursor: pointer">Undo</button>
+              </sc-if>
+              <sc-if value="{{ item.showTaken }}" hint-placeholder-val="{{ false }}">
+                <span style="font-family: 'Caveat', cursive; font-size: 22px; font-weight: 700; color: var(--gold-text)">reserved</span>
+              </sc-if>
+            </div>
+          </div>
+        </sc-for>
+
+        <sc-if value="{{ isOwner }}" hint-placeholder-val="{{ true }}">
+          <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 12px 16px; padding: 18px 0 6px">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--ink2)" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg>
+            <label for="newwish" style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)">Add a wish</label>
+            <input id="newwish" placeholder="Paste a shop link or write a wish…" style="flex: 1 1 260px; min-width: 0; height: 44px; border: 0; border-bottom: 1.5px dashed var(--line); background: transparent; font-family: 'Patrick Hand', cursive; font-size: 22px; color: var(--ink); outline-color: var(--gold)">
+            <button style="height: 44px; padding: 0 20px; border-radius: 999px; border: 0; background: var(--ink); color: var(--paper); font: 600 14px 'Inter', sans-serif; cursor: pointer">Add</button>
+          </div>
+        </sc-if>
+      </section>
+
+      <aside style="flex: 1 1 300px; display: flex; flex-direction: column; gap: 24px">
+        <div style="background: var(--paper); border-radius: 4px; box-shadow: var(--shadow); padding: 24px; display: flex; flex-direction: column; gap: 14px">
+          <h2 style="margin: 0; font-family: 'Caveat', cursive; font-size: 32px; font-weight: 700; line-height: 1">Share this list</h2>
+          <p style="margin: 0; font-size: 14px; line-height: 1.5; color: var(--ink2)">Anyone with the link can view it and reserve gifts.</p>
+          <div style="display: flex; gap: 8px">
+            <label for="sharelink" style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)">Share link</label>
+            <input id="sharelink" readonly value="[SHARE LINK]" style="flex: 1; min-width: 0; height: 44px; padding: 0 12px; border-radius: 8px; border: 1px solid var(--line); background: var(--desk); color: var(--ink); font: 14px 'Inter', sans-serif">
+            <button style="height: 44px; padding: 0 16px; border-radius: 999px; border: 0; background: var(--gold); color: var(--on-gold); font: 600 14px 'Inter', sans-serif; cursor: pointer">Copy</button>
+          </div>
+          <div style="display: flex; align-items: center; gap: 10px; padding-top: 6px">
+            <div style="display: flex">
+              <div style="width: 34px; height: 34px; border-radius: 999px; background: var(--desk); border: 2px solid var(--paper); display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 600">S</div>
+              <div style="width: 34px; height: 34px; margin-left: -8px; border-radius: 999px; background: var(--desk); border: 2px solid var(--paper); display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 600">P</div>
+              <div style="width: 34px; height: 34px; margin-left: -8px; border-radius: 999px; background: var(--desk); border: 2px solid var(--paper); display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 600">T</div>
+              <div style="width: 34px; height: 34px; margin-left: -8px; border-radius: 999px; background: var(--desk); border: 2px solid var(--paper); display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 600">J</div>
+            </div>
+            <span style="font-size: 14px; color: var(--ink2)">+4 others have opened it</span>
+          </div>
+        </div>
+        <div style="background: var(--paper); border-radius: 4px; box-shadow: var(--shadow); padding: 8px 24px">
+          <div style="display: flex; justify-content: space-between; gap: 12px; padding: 14px 0; border-bottom: 1px solid var(--rule); font-size: 14px"><span style="color: var(--ink2)">Event date</span><span style="font-weight: 600">[DATE]</span></div>
+          <div style="display: flex; justify-content: space-between; gap: 12px; padding: 14px 0; border-bottom: 1px solid var(--rule); font-size: 14px"><span style="color: var(--ink2)">Who can see it</span><span style="font-weight: 600">Anyone with the link</span></div>
+          <div style="display: flex; justify-content: space-between; gap: 12px; padding: 14px 0; font-size: 14px"><span style="color: var(--ink2)">Most wanted</span><span style="display: flex; align-items: center; gap: 6px; font-weight: 600"><svg width="14" height="14" viewBox="0 0 24 24" fill="var(--gold)" stroke="var(--gold)" stroke-width="1.5" stroke-linejoin="round" aria-hidden="true"><path d="m12 3 2.8 5.7 6.2.9-4.5 4.4 1 6.2L12 17.3 6.5 20.2l1-6.2L3 9.6l6.2-.9z"></path></svg>2 wishes</span></div>
+        </div>
+      </aside>
+    </div>
+  </main>
+</div>
+</template>
+<script>
+/* Tiny preview runtime: fills {{holes}}, <sc-if> and <sc-for> in #tpl from render().
+   Reference only — rebuild this screen as real components in your app. */
+function _get(s,p){p=p.trim();if(p==='true')return true;if(p==='false')return false;return p.split('.').reduce(function(o,k){return o==null?undefined:o[k];},s);}
+function _whole(v){var m=v.match(/^\s*\{\{([^}]+)\}\}\s*$/);return m?m[1]:null;}
+function _str(v,s){return v.replace(/\{\{([^}]+)\}\}/g,function(_,p){var x=_get(s,p);return x==null?'':x;});}
+function _proc(n,s){
+  if(n.nodeType===3){if(n.nodeValue.indexOf('{{')>-1)n.nodeValue=_str(n.nodeValue,s);return;}
+  if(n.nodeType!==1)return;
+  var tag=n.tagName.toLowerCase(),f=document.createDocumentFragment();
+  if(tag==='sc-if'){if(_get(s,_whole(n.getAttribute('value')))){while(n.firstChild)f.appendChild(n.firstChild);Array.from(f.childNodes).forEach(function(c){_proc(c,s);});}n.replaceWith(f);return;}
+  if(tag==='sc-for'){var list=_get(s,_whole(n.getAttribute('list')))||[],as=n.getAttribute('as');
+    list.forEach(function(it,i){var sc=Object.create(s);sc[as]=it;sc.$index=i;Array.from(n.childNodes).forEach(function(c){var cl=c.cloneNode(true);f.appendChild(cl);_proc(cl,sc);});});
+    n.replaceWith(f);return;}
+  Array.from(n.attributes).forEach(function(a){if(a.value.indexOf('{{')<0)return;var w=_whole(a.value);
+    if(a.name.indexOf('on')===0&&w){var fn=_get(s,w);n.removeAttribute(a.name);if(fn)n.addEventListener(a.name.slice(2),fn);}
+    else if(a.name==='checked'){var v=_get(s,w);n.removeAttribute('checked');n.checked=!!v;if(v)n.setAttribute('checked','');}
+    else n.setAttribute(a.name,_str(a.value,s));});
+  Array.from(n.childNodes).forEach(function(c){_proc(c,s);});
+}
+function mount(){var root=document.getElementById('app'),frag=document.getElementById('tpl').content.cloneNode(true),s=render();
+  Array.from(frag.childNodes).forEach(function(c){_proc(c,s);});root.replaceChildren(frag);}
+</script>
+<script>
+
+/* List page behaviour (see DESIGN.md › List page) */
+var state = { view: 'owner', status: { 1: 'taken', 2: 'open', 3: 'open', 4: 'mine', 5: 'taken', 6: 'open' } };
+function setState(p) { Object.assign(state, p); mount(); }
+function setStatus(id, s) { var st = Object.assign({}, state.status); st[id] = s; setState({ status: st }); }
+var BASE = [
+  { id: 1, name: 'Wireless headphones', note: 'Over-ear, black or grey', store: 'Audio store', star: true, tilt: -3 },
+  { id: 2, name: 'Hardback cookbook', note: 'Any vegetarian one', store: 'Bookshop', star: false, tilt: 2 },
+  { id: 3, name: 'Film camera', note: '35mm point-and-shoot', store: 'Secondhand is fine', star: true, tilt: -1 },
+  { id: 4, name: 'Trailing pothos plant', note: 'In a ceramic pot', store: 'Garden centre', star: false, tilt: 1.5 },
+  { id: 5, name: 'Linen bedding set', note: 'Double, sage or oat', store: 'Homeware shop', star: false, tilt: -2 },
+  { id: 6, name: 'Coffee grinder', note: 'Burr, manual is fine', store: 'Kitchen shop', star: false, tilt: 2.5 }
+];
+function render() {
+  var owner = state.view === 'owner';
+  var items = BASE.map(function (it) {
+    var s = state.status[it.id], struck = !owner && (s === 'taken' || s === 'bought');
+    return Object.assign({}, it, {
+      ticked: !owner && s !== 'open',
+      nameColor: struck ? 'var(--faint)' : 'var(--ink)',
+      deco: struck ? 'line-through' : 'none',
+      showEdit: owner, showOpen: !owner && s === 'open', showMine: !owner && s === 'mine',
+      showBought: !owner && s === 'bought', showTaken: !owner && s === 'taken',
+      reserve: function () { setStatus(it.id, 'mine'); },
+      buy: function () { setStatus(it.id, 'bought'); },
+      undo: function () { setStatus(it.id, 'open'); }
+    });
+  });
+  return {
+    items: items, isOwner: owner, isFriend: !owner,
+    ownerPressed: String(owner), friendPressed: String(!owner),
+    ownerBg: owner ? 'var(--ink)' : 'transparent', ownerFg: owner ? 'var(--paper)' : 'var(--ink2)',
+    friendBg: owner ? 'transparent' : 'var(--ink)', friendFg: owner ? 'var(--ink2)' : 'var(--paper)',
+    showOwner: function () { setState({ view: 'owner' }); },
+    showFriend: function () { setState({ view: 'friend' }); }
+  };
+}
+mount();
+
+</script>
+</body>
+</html>

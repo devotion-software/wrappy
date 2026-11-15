@@ -1,0 +1,53 @@
+{
+	"name": "wishlist",
+	"private": true,
+	"version": "0.1.0",
+	"type": "module",
+	"scripts": {
+		"dev": "vite dev",
+		"build": "vite build",
+		"preview": "vite preview",
+		"prepare": "svelte-kit sync || echo ''; git config core.hooksPath .githooks 2>/dev/null || true",
+		"check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
+		"check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
+		"test": "vitest run",
+		"db:up": "docker compose up -d",
+		"db:down": "docker compose down",
+		"db:generate": "drizzle-kit generate",
+		"db:migrate": "drizzle-kit migrate",
+		"db:push": "drizzle-kit push",
+		"db:studio": "drizzle-kit studio",
+		"auth:generate": "bunx --bun @better-auth/cli@1.7.14 generate --config src/lib/auth.ts --output src/lib/server/db/auth.schema.ts"
+	},
+	"imports": {
+		"#lib": "./src/lib/index.ts",
+		"#lib/*": "./src/lib/*"
+	},
+	"dependencies": {
+		"@better-auth/passkey": "1.7.14",
+		"aws4fetch": "^1.0.20",
+		"better-auth": "1.7.14",
+		"drizzle-orm": "^0.45.4",
+		"mysql2": "^3.24.6",
+		"nanoid": "^6.0.2",
+		"nodemailer": "^10.5.0",
+		"sharp": "^0.35.5"
+	},
+	"devDependencies": {
+		"@sveltejs/adapter-node": "^6",
+		"@sveltejs/kit": "^3",
+		"@sveltejs/vite-plugin-svelte": "^7.2",
+		"@types/nodemailer": "^8.0.2",
+		"dotenv": "^18.0.10",
+		"drizzle-kit": "^0.31.11",
+		"svelte": "^5.57",
+		"svelte-check": "^4.7.8",
+		"typescript": "^6",
+		"vite": "^8.3",
+		"vitest": "^5.1.0",
+		"zod": "^4"
+	},
+	"overrides": {
+		"@better-auth/core": "1.7.14"
+	}
+}

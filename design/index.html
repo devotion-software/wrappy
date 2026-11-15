@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Wishful — design handoff</title>
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@700&amp;family=Inter:wght@400;600&amp;display=swap" rel="stylesheet">
+<style>
+:root { --desk:#ECECEA; --paper:#FAFAF8; --ink:#1C1C1C; --ink2:#4A4A4A; --gold:#C9A24A; --rule:#E4E4E0; color-scheme: light; }
+@media (prefers-color-scheme: dark) { :root { --desk:#0E0E0E; --paper:#1A1A1A; --ink:#ECEAE4; --ink2:#C9C7C1; --gold:#D9B65E; --rule:#2A2A2A; color-scheme: dark; } }
+body { margin: 0; background: var(--desk); color: var(--ink); font-family: 'Inter', system-ui, sans-serif; }
+main { max-width: 640px; margin: 64px auto; padding: 36px 32px 28px 64px; background: var(--paper); border-radius: 4px; position: relative; }
+main::before { content: ""; position: absolute; left: 40px; top: 0; bottom: 0; width: 2px; background: var(--gold); }
+h1 { font-family: 'Caveat', cursive; font-size: 48px; margin: 0 0 8px; }
+p { color: var(--ink2); line-height: 1.5; }
+.row { display: flex; justify-content: space-between; gap: 16px; padding: 14px 0; border-bottom: 1px solid var(--rule); }
+a { color: var(--ink); }
+:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Wishful — key screens</h1>
+  <p>Notebook style. Read DESIGN.md for the full spec.</p>
+  <div class="row"><span>Landing</span><span><a href="pages/landing.html?theme=light">Light</a> · <a href="pages/landing.html?theme=dark">Dark</a></span></div>
+  <div class="row"><span>Log in</span><span><a href="pages/login.html?theme=light">Light</a> · <a href="pages/login.html?theme=dark">Dark</a></span></div>
+  <div class="row"><span>Home</span><span><a href="pages/home.html?theme=light">Light</a> · <a href="pages/home.html?theme=dark">Dark</a></span></div>
+  <div class="row"><span>List (clickable)</span><span><a href="pages/list.html?theme=light">Light</a> · <a href="pages/list.html?theme=dark">Dark</a></span></div>
+  <div class="row"><span>Secret Santa invite (clickable)</span><span><a href="pages/invite.html?theme=light">Light</a> · <a href="pages/invite.html?theme=dark">Dark</a></span></div>
+</main>
+</body>
+</html>

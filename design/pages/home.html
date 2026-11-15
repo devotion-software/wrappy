@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Wishful — home</title>
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@500;700&amp;family=Patrick+Hand&amp;family=Inter:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<style>
+/* Notebook theme tokens — see DESIGN.md */
+:root { --desk: #ECECEA; --paper: #FAFAF8; --ink: #1C1C1C; --ink2: #4A4A4A; --muted: #5E5E5A; --faint: #6E6E6A; --rule: #E4E4E0; --line: #D2D2CE; --gold: #C9A24A; --gold-text: #8A6A1F; --on-gold: #1C1C1C; --gold-soft: #F4EEDD; --tape: rgba(160,160,155,0.28); --shadow: 0 1px 2px rgba(0,0,0,0.08), 0 10px 24px rgba(0,0,0,0.07); color-scheme: light; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --desk: #0E0E0E; --paper: #1A1A1A; --ink: #ECEAE4; --ink2: #C9C7C1; --muted: #A8A8A4; --faint: #9C9A94; --rule: #2A2A2A; --line: #333333; --gold: #D9B65E; --gold-text: #D9B65E; --on-gold: #141414; --gold-soft: #2A261C; --tape: rgba(200,200,195,0.16); --shadow: 0 0 0 1px #2A2A2A; color-scheme: dark; } }
+:root[data-theme="dark"] { --desk: #0E0E0E; --paper: #1A1A1A; --ink: #ECEAE4; --ink2: #C9C7C1; --muted: #A8A8A4; --faint: #9C9A94; --rule: #2A2A2A; --line: #333333; --gold: #D9B65E; --gold-text: #D9B65E; --on-gold: #141414; --gold-soft: #2A261C; --tape: rgba(200,200,195,0.16); --shadow: 0 0 0 1px #2A2A2A; color-scheme: dark; }
+:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+body{margin:0}a{color:inherit}
+</style>
+<script>/* preview helper: ?theme=dark or ?theme=light */
+(function(){var m=location.search.match(/theme=(dark|light)/);if(m)document.documentElement.setAttribute('data-theme',m[1]);})();</script>
+</head>
+<body>
+<div style="min-height: 100vh; box-sizing: border-box; background: var(--desk); color: var(--ink); font-family: 'Inter', system-ui, sans-serif">
+  <header style="background: var(--paper); border-bottom: 1px solid var(--line)">
+    <div style="max-width: 1240px; margin: 0 auto; padding: 14px 24px; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px 24px">
+      <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 12px 36px">
+        <a href="home.html" style="display: flex; align-items: center; gap: 8px; text-decoration: none; color: var(--ink)">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--gold)" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 13c2 1.5 3.5 3.5 4.5 5.5C11 12 15 7 21 3"></path></svg>
+          <span style="font-family: 'Caveat', cursive; font-size: 32px; font-weight: 700; line-height: 1">wishful</span>
+        </a>
+        <nav style="display: flex; gap: 4px; font-size: 15px">
+          <a href="home.html" style="padding: 10px 14px; border-radius: 999px; background: var(--desk); text-decoration: none; font-weight: 600; color: var(--ink)">My lists</a>
+          <a href="invite.html" style="padding: 10px 14px; border-radius: 999px; text-decoration: none; color: var(--ink2)">Secret Santa</a>
+          <a href="#friends" style="padding: 10px 14px; border-radius: 999px; text-decoration: none; color: var(--ink2)">Friends</a>
+        </nav>
+      </div>
+      <div style="display: flex; align-items: center; gap: 12px">
+        <a href="list.html" style="display: inline-flex; align-items: center; gap: 6px; height: 44px; padding: 0 18px; border-radius: 999px; background: var(--gold); color: var(--on-gold); text-decoration: none; font-weight: 600; font-size: 14px"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg>New list</a>
+        <button aria-label="Account menu" style="width: 44px; height: 44px; border-radius: 999px; border: 1.5px solid var(--ink); background: transparent; color: var(--ink); font: 600 14px 'Inter', sans-serif">M</button>
+      </div>
+    </div>
+  </header>
+
+  <main style="max-width: 1240px; margin: 0 auto; padding: 48px 24px 80px; display: flex; flex-wrap: wrap; gap: 40px">
+    <div style="flex: 999 1 600px; min-width: 0; display: flex; flex-direction: column; gap: 48px">
+      <div>
+        <h1 style="margin: 0; font-family: 'Caveat', cursive; font-size: 60px; line-height: 1; font-weight: 700">Hi Maya</h1>
+        <p style="margin: 8px 0 0; font-size: 16px; color: var(--ink2)">Your birthday is coming up — 4 friends have opened your list.</p>
+      </div>
+
+      <section style="display: flex; flex-direction: column; gap: 20px">
+        <div style="display: flex; align-items: baseline; justify-content: space-between; gap: 12px">
+          <h2 style="margin: 0; font-size: 20px; font-weight: 600">Your lists</h2>
+          <span style="font-size: 14px; color: var(--muted)">3 lists</span>
+        </div>
+        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 24px">
+          <a href="list.html" style="position: relative; display: flex; flex-direction: column; gap: 6px; min-height: 250px; box-sizing: border-box; padding: 24px 22px 20px 46px; background-color: var(--paper); border-radius: 4px; box-shadow: var(--shadow); text-decoration: none; color: var(--ink); transform: rotate(-0.6deg)">
+            <div style="position: absolute; left: 30px; top: 0; bottom: 0; width: 2px; background: var(--gold)"></div>
+            <p style="margin: 0; font-family: 'Caveat', cursive; font-size: 34px; font-weight: 700; line-height: 1">30th birthday</p>
+            <p style="margin: 0 0 10px; font-size: 13px; color: var(--muted)">6 wishes · [DATE]</p>
+            <p style="margin: 0; padding: 5px 0; border-bottom: 1px solid var(--rule); font-family: 'Patrick Hand', cursive; font-size: 19px; color: var(--ink2)">Wireless headphones</p>
+            <p style="margin: 0; padding: 5px 0; border-bottom: 1px solid var(--rule); font-family: 'Patrick Hand', cursive; font-size: 19px; color: var(--ink2)">Hardback cookbook</p>
+            <p style="margin: 0; padding: 5px 0; border-bottom: 1px solid var(--rule); font-family: 'Patrick Hand', cursive; font-size: 19px; color: var(--ink2)">Film camera</p>
+            <p style="margin: auto 0 0; padding-top: 12px; font-size: 13px; color: var(--ink2); display: flex; align-items: center; gap: 6px"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M22 21v-2a4 4 0 0 0-3-3.9M16 3.1a4 4 0 0 1 0 7.8"></path></svg>Shared with 8 people</p>
+          </a>
+          <a href="list.html" style="position: relative; display: flex; flex-direction: column; gap: 6px; min-height: 250px; box-sizing: border-box; padding: 24px 22px 20px 46px; background-color: var(--paper); border-radius: 4px; box-shadow: var(--shadow); text-decoration: none; color: var(--ink); transform: rotate(0.5deg)">
+            <div style="position: absolute; left: 30px; top: 0; bottom: 0; width: 2px; background: var(--gold)"></div>
+            <p style="margin: 0; font-family: 'Caveat', cursive; font-size: 34px; font-weight: 700; line-height: 1">Christmas 2026</p>
+            <p style="margin: 0 0 10px; font-size: 13px; color: var(--muted)">4 wishes · 25 Dec</p>
+            <p style="margin: 0; padding: 5px 0; border-bottom: 1px solid var(--rule); font-family: 'Patrick Hand', cursive; font-size: 19px; color: var(--ink2)">Wool scarf, charcoal</p>
+            <p style="margin: 0; padding: 5px 0; border-bottom: 1px solid var(--rule); font-family: 'Patrick Hand', cursive; font-size: 19px; color: var(--ink2)">Board game for 4+</p>
+            <p style="margin: 0; padding: 5px 0; border-bottom: 1px solid var(--rule); font-family: 'Patrick Hand', cursive; font-size: 19px; color: var(--ink2)">Good olive oil</p>
+            <p style="margin: auto 0 0; padding-top: 12px; font-size: 13px; color: var(--ink2); display: flex; align-items: center; gap: 6px"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M22 21v-2a4 4 0 0 0-3-3.9M16 3.1a4 4 0 0 1 0 7.8"></path></svg>Shared with family</p>
+          </a>
+          <a href="list.html" style="position: relative; display: flex; flex-direction: column; gap: 6px; min-height: 250px; box-sizing: border-box; padding: 24px 22px 20px 46px; background-color: var(--paper); border-radius: 4px; box-shadow: var(--shadow); text-decoration: none; color: var(--ink); transform: rotate(-0.3deg)">
+            <div style="position: absolute; left: 30px; top: 0; bottom: 0; width: 2px; background: var(--gold)"></div>
+            <p style="margin: 0; font-family: 'Caveat', cursive; font-size: 34px; font-weight: 700; line-height: 1">New flat</p>
+            <p style="margin: 0 0 10px; font-size: 13px; color: var(--muted)">2 wishes · no date</p>
+            <p style="margin: 0; padding: 5px 0; border-bottom: 1px solid var(--rule); font-family: 'Patrick Hand', cursive; font-size: 19px; color: var(--ink2)">Linen bedding set</p>
+            <p style="margin: 0; padding: 5px 0; border-bottom: 1px solid var(--rule); font-family: 'Patrick Hand', cursive; font-size: 19px; color: var(--ink2)">Coffee grinder</p>
+            <p style="margin: auto 0 0; padding-top: 12px; font-size: 13px; color: var(--ink2); display: flex; align-items: center; gap: 6px"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="11" width="16" height="10" rx="2"></rect><path d="M8 11V7a4 4 0 0 1 8 0v4"></path></svg>Only you</p>
+          </a>
+          <a href="list.html" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; min-height: 250px; border-radius: 4px; border: 2px dashed var(--line); text-decoration: none; color: var(--ink2)">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg>
+            <span style="font-family: 'Patrick Hand', cursive; font-size: 22px">Start a new list</span>
+          </a>
+        </div>
+      </section>
+
+      <section id="friends" style="display: flex; flex-direction: column; gap: 16px">
+        <h2 style="margin: 0; font-size: 20px; font-weight: 600">Friends' lists</h2>
+        <div style="background: var(--paper); border-radius: 4px; box-shadow: var(--shadow); padding: 4px 24px">
+          <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 12px 16px; padding: 16px 0; border-bottom: 1px solid var(--rule)">
+            <div style="width: 40px; height: 40px; border-radius: 999px; background: var(--desk); display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 14px">S</div>
+            <div style="flex: 1 1 200px"><p style="margin: 0; font-family: 'Patrick Hand', cursive; font-size: 21px">Sam · Christmas wishes</p><p style="margin: 2px 0 0; font-size: 13px; color: var(--muted)">7 wishes · you've reserved 1</p></div>
+            <a href="list.html" style="display: inline-flex; align-items: center; height: 40px; padding: 0 16px; border-radius: 999px; border: 1.5px solid var(--ink); text-decoration: none; font-weight: 600; font-size: 14px; box-sizing: border-box">Open</a>
+          </div>
+          <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 12px 16px; padding: 16px 0; border-bottom: 1px solid var(--rule)">
+            <div style="width: 40px; height: 40px; border-radius: 999px; background: var(--desk); display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 14px">P</div>
+            <div style="flex: 1 1 200px"><p style="margin: 0; font-family: 'Patrick Hand', cursive; font-size: 21px">Priya · Housewarming</p><p style="margin: 2px 0 0; font-size: 13px; color: var(--muted)">12 wishes · [DATE]</p></div>
+            <a href="list.html" style="display: inline-flex; align-items: center; height: 40px; padding: 0 16px; border-radius: 999px; border: 1.5px solid var(--ink); text-decoration: none; font-weight: 600; font-size: 14px; box-sizing: border-box">Open</a>
+          </div>
+          <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 12px 16px; padding: 16px 0">
+            <div style="width: 40px; height: 40px; border-radius: 999px; background: var(--desk); display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 14px">L</div>
+            <div style="flex: 1 1 200px"><p style="margin: 0; font-family: 'Patrick Hand', cursive; font-size: 21px">Leo · 8th birthday</p><p style="margin: 2px 0 0; font-size: 13px; color: var(--muted)">5 wishes · shared by Tom</p></div>
+            <a href="list.html" style="display: inline-flex; align-items: center; height: 40px; padding: 0 16px; border-radius: 999px; border: 1.5px solid var(--ink); text-decoration: none; font-weight: 600; font-size: 14px; box-sizing: border-box">Open</a>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <aside style="flex: 1 1 300px; display: flex; flex-direction: column; gap: 28px">
+      <h2 style="margin: 0; font-size: 20px; font-weight: 600">Secret Santa</h2>
+      <div style="background: var(--gold-soft); padding: 22px 24px; box-shadow: var(--shadow); transform: rotate(1.2deg)">
+        <p style="margin: 0; font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--gold-text)">Family · names drawn</p>
+        <p style="margin: 8px 0 0; font-family: 'Caveat', cursive; font-size: 34px; font-weight: 700; line-height: 1.05">You're buying for Sam</p>
+        <p style="margin: 8px 0 16px; font-size: 14px; line-height: 1.5; color: var(--ink2)">Budget $[BUDGET] · swap on [DATE]</p>
+        <a href="list.html" style="display: inline-flex; align-items: center; gap: 6px; height: 42px; padding: 0 16px; border-radius: 999px; background: var(--ink); color: var(--paper); text-decoration: none; font-weight: 600; font-size: 14px">See Sam's list<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"></path></svg></a>
+      </div>
+      <div style="background: var(--paper); padding: 22px 24px; box-shadow: var(--shadow); transform: rotate(-0.8deg); border-top: 3px solid var(--gold)">
+        <p style="margin: 0; font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--gold-text)">New invitation</p>
+        <p style="margin: 8px 0 0; font-family: 'Caveat', cursive; font-size: 32px; font-weight: 700; line-height: 1.05">Office Secret Santa</p>
+        <p style="margin: 8px 0 16px; font-size: 14px; line-height: 1.5; color: var(--ink2)">Priya invited you · 9 people joined</p>
+        <a href="invite.html" style="display: inline-flex; align-items: center; height: 42px; padding: 0 16px; border-radius: 999px; background: var(--gold); color: var(--on-gold); text-decoration: none; font-weight: 600; font-size: 14px">View invite</a>
+      </div>
+      <a href="invite.html" style="display: flex; align-items: center; gap: 10px; padding: 16px 4px; color: var(--ink2); text-decoration: none; font-family: 'Patrick Hand', cursive; font-size: 21px"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg>Organise a Secret Santa</a>
+    </aside>
+  </main>
+</div>
+</body>
+</html>

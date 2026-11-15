@@ -1,0 +1,144 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Wishful — Secret Santa invitation</title>
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@500;700&amp;family=Patrick+Hand&amp;family=Inter:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<style>
+/* Notebook theme tokens — see DESIGN.md */
+:root { --desk: #ECECEA; --paper: #FAFAF8; --ink: #1C1C1C; --ink2: #4A4A4A; --muted: #5E5E5A; --faint: #6E6E6A; --rule: #E4E4E0; --line: #D2D2CE; --gold: #C9A24A; --gold-text: #8A6A1F; --on-gold: #1C1C1C; --gold-soft: #F4EEDD; --tape: rgba(160,160,155,0.28); --shadow: 0 1px 2px rgba(0,0,0,0.08), 0 10px 24px rgba(0,0,0,0.07); color-scheme: light; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --desk: #0E0E0E; --paper: #1A1A1A; --ink: #ECEAE4; --ink2: #C9C7C1; --muted: #A8A8A4; --faint: #9C9A94; --rule: #2A2A2A; --line: #333333; --gold: #D9B65E; --gold-text: #D9B65E; --on-gold: #141414; --gold-soft: #2A261C; --tape: rgba(200,200,195,0.16); --shadow: 0 0 0 1px #2A2A2A; color-scheme: dark; } }
+:root[data-theme="dark"] { --desk: #0E0E0E; --paper: #1A1A1A; --ink: #ECEAE4; --ink2: #C9C7C1; --muted: #A8A8A4; --faint: #9C9A94; --rule: #2A2A2A; --line: #333333; --gold: #D9B65E; --gold-text: #D9B65E; --on-gold: #141414; --gold-soft: #2A261C; --tape: rgba(200,200,195,0.16); --shadow: 0 0 0 1px #2A2A2A; color-scheme: dark; }
+:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+body{margin:0}a{color:inherit}
+</style>
+<script>/* preview helper: ?theme=dark or ?theme=light */
+(function(){var m=location.search.match(/theme=(dark|light)/);if(m)document.documentElement.setAttribute('data-theme',m[1]);})();</script>
+</head>
+<body>
+<div id="app"></div>
+<template id="tpl">
+<div style="min-height: 100vh; box-sizing: border-box; background: var(--desk); color: var(--ink); font-family: 'Inter', system-ui, sans-serif">
+  <header style="max-width: 1200px; margin: 0 auto; padding: 24px; display: flex; align-items: center; justify-content: space-between; gap: 16px">
+    <a href="home.html" style="display: flex; align-items: center; gap: 8px; text-decoration: none; color: var(--ink)">
+      <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="var(--gold)" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 13c2 1.5 3.5 3.5 4.5 5.5C11 12 15 7 21 3"></path></svg>
+      <span style="font-family: 'Caveat', cursive; font-size: 34px; font-weight: 700; line-height: 1">wishful</span>
+    </a>
+    <a href="home.html" style="font-size: 15px; color: var(--ink2); text-decoration: none">Back to my lists</a>
+  </header>
+
+  <main style="max-width: 1100px; margin: 0 auto; padding: 24px 20px 96px; display: flex; flex-wrap: wrap; gap: 40px; align-items: flex-start">
+    <section style="flex: 999 1 560px; min-width: 0; position: relative; background-color: var(--paper); border-radius: 4px; box-shadow: var(--shadow); padding: 48px 40px 40px 76px; box-sizing: border-box">
+      <div style="position: absolute; left: 50px; top: 0; bottom: 0; width: 2px; background: var(--gold)"></div>
+      <div style="position: absolute; top: -11px; left: 50%; width: 110px; height: 24px; margin-left: -55px; background: var(--tape); transform: rotate(-3deg)"></div>
+
+      <p style="margin: 0; font-size: 15px; color: var(--ink2)">Priya invited you to</p>
+      <h1 style="margin: 6px 0 0; font-family: 'Caveat', cursive; font-size: clamp(56px, 6vw, 78px); line-height: 0.95; font-weight: 700">Office Secret Santa</h1>
+      <p style="margin: 14px 0 0; font-family: 'Patrick Hand', cursive; font-size: 22px; line-height: 1.4; color: var(--ink2)">"Let's keep it fun and small — something under the budget that made you think of them!"</p>
+
+      <div style="margin-top: 32px; display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 0 32px">
+        <div style="padding: 14px 0; border-top: 1px solid var(--rule)"><p style="margin: 0; font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted)">Budget</p><p style="margin: 4px 0 0; font-family: 'Patrick Hand', cursive; font-size: 24px">$[BUDGET]</p></div>
+        <div style="padding: 14px 0; border-top: 1px solid var(--rule)"><p style="margin: 0; font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted)">Names drawn</p><p style="margin: 4px 0 0; font-family: 'Patrick Hand', cursive; font-size: 24px">[DATE]</p></div>
+        <div style="padding: 14px 0; border-top: 1px solid var(--rule)"><p style="margin: 0; font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted)">Gift swap</p><p style="margin: 4px 0 0; font-family: 'Patrick Hand', cursive; font-size: 24px">[DATE] · [PLACE]</p></div>
+      </div>
+
+      <sc-if value="{{ notJoined }}" hint-placeholder-val="{{ true }}">
+        <div style="margin-top: 32px; display: flex; flex-wrap: wrap; align-items: center; gap: 12px 20px">
+          <button onClick="{{ join }}" style="height: 54px; padding: 0 30px; border-radius: 999px; border: 0; background: var(--gold); color: var(--on-gold); font: 600 16px 'Inter', sans-serif; cursor: pointer">Count me in</button>
+          <a href="home.html" style="font-size: 15px; color: var(--ink2); text-underline-offset: 3px; min-height: 44px; display: inline-flex; align-items: center">I can't make it this year</a>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ joined }}" hint-placeholder-val="{{ false }}">
+        <div style="margin-top: 32px; padding: 24px 26px; background: var(--gold-soft); transform: rotate(-0.5deg)">
+          <p style="margin: 0; font-family: 'Caveat', cursive; font-size: 40px; font-weight: 700; line-height: 1">You're in!</p>
+          <p style="margin: 8px 0 16px; font-size: 15px; line-height: 1.5; color: var(--ink2)">Pick a wish list to share with whoever draws your name. You'll find out who you're buying for on [DATE].</p>
+          <div role="radiogroup" aria-label="Wish list to share" style="display: flex; flex-direction: column; gap: 4px">
+            <sc-for list="{{ lists }}" as="l" hint-placeholder-count="3">
+              <label style="display: flex; align-items: center; gap: 12px; min-height: 44px; font-family: 'Patrick Hand', cursive; font-size: 22px; cursor: pointer"><input type="radio" name="sharedlist" checked="{{ l.checked }}" onChange="{{ l.pick }}" style="width: 18px; height: 18px; margin: 0; accent-color: var(--gold)">{{ l.label }}</label>
+            </sc-for>
+          </div>
+          <div style="margin-top: 16px; display: flex; flex-wrap: wrap; align-items: center; gap: 12px 20px">
+            <a href="home.html" style="display: inline-flex; align-items: center; height: 48px; padding: 0 24px; border-radius: 999px; background: var(--ink); color: var(--paper); text-decoration: none; font-weight: 600">Done</a>
+            <button onClick="{{ leave }}" style="height: 44px; padding: 0 4px; border: 0; background: transparent; color: var(--ink2); font: 500 14px 'Inter', sans-serif; text-decoration: underline; text-underline-offset: 3px; cursor: pointer">Leave the exchange</button>
+          </div>
+        </div>
+      </sc-if>
+    </section>
+
+    <aside style="flex: 1 1 300px; display: flex; flex-direction: column; gap: 28px">
+      <div style="background: var(--paper); border-radius: 4px; box-shadow: var(--shadow); padding: 24px">
+        <div style="display: flex; align-items: baseline; justify-content: space-between; gap: 12px">
+          <h2 style="margin: 0; font-family: 'Caveat', cursive; font-size: 32px; font-weight: 700; line-height: 1">Who's playing</h2>
+          <span style="font-size: 13px; color: var(--muted)">{{ joinedCount }} of {{ totalCount }} in</span>
+        </div>
+        <div style="margin-top: 10px; display: flex; flex-direction: column">
+          <sc-for list="{{ people }}" as="p" hint-placeholder-count="10">
+            <div style="display: flex; align-items: center; gap: 12px; padding: 8px 0; border-bottom: 1px solid var(--rule)">
+              <div style="width: 20px; height: 20px; flex: none; border: 1.5px solid var(--ink); border-radius: 3px; display: flex; align-items: center; justify-content: center; color: var(--gold); box-sizing: border-box">
+                <sc-if value="{{ p.in }}" hint-placeholder-val="{{ true }}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 13c2 1.5 3.5 3.5 4.5 5.5C11 12 15 7 21 3"></path></svg></sc-if>
+              </div>
+              <span style="flex: 1; font-family: 'Patrick Hand', cursive; font-size: 21px; color: {{ p.color }}">{{ p.name }}</span>
+              <span style="font-size: 12px; color: var(--muted)">{{ p.tag }}</span>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+      <div style="padding: 0 4px; display: flex; flex-direction: column; gap: 14px">
+        <h2 style="margin: 0; font-size: 16px; font-weight: 600">How it works</h2>
+        <div style="display: flex; gap: 12px"><span style="font-family: 'Caveat', cursive; font-size: 28px; font-weight: 700; line-height: 1; color: var(--gold-text)">1.</span><p style="margin: 0; font-size: 14px; line-height: 1.5; color: var(--ink2)">Join and choose a wish list so your Santa has ideas.</p></div>
+        <div style="display: flex; gap: 12px"><span style="font-family: 'Caveat', cursive; font-size: 28px; font-weight: 700; line-height: 1; color: var(--gold-text)">2.</span><p style="margin: 0; font-size: 14px; line-height: 1.5; color: var(--ink2)">On [DATE] names are drawn automatically — nobody gets themselves.</p></div>
+        <div style="display: flex; gap: 12px"><span style="font-family: 'Caveat', cursive; font-size: 28px; font-weight: 700; line-height: 1; color: var(--gold-text)">3.</span><p style="margin: 0; font-size: 14px; line-height: 1.5; color: var(--ink2)">You'll get an email with your match. Only you can see it.</p></div>
+      </div>
+    </aside>
+  </main>
+</div>
+</template>
+<script>
+/* Tiny preview runtime: fills {{holes}}, <sc-if> and <sc-for> in #tpl from render().
+   Reference only — rebuild this screen as real components in your app. */
+function _get(s,p){p=p.trim();if(p==='true')return true;if(p==='false')return false;return p.split('.').reduce(function(o,k){return o==null?undefined:o[k];},s);}
+function _whole(v){var m=v.match(/^\s*\{\{([^}]+)\}\}\s*$/);return m?m[1]:null;}
+function _str(v,s){return v.replace(/\{\{([^}]+)\}\}/g,function(_,p){var x=_get(s,p);return x==null?'':x;});}
+function _proc(n,s){
+  if(n.nodeType===3){if(n.nodeValue.indexOf('{{')>-1)n.nodeValue=_str(n.nodeValue,s);return;}
+  if(n.nodeType!==1)return;
+  var tag=n.tagName.toLowerCase(),f=document.createDocumentFragment();
+  if(tag==='sc-if'){if(_get(s,_whole(n.getAttribute('value')))){while(n.firstChild)f.appendChild(n.firstChild);Array.from(f.childNodes).forEach(function(c){_proc(c,s);});}n.replaceWith(f);return;}
+  if(tag==='sc-for'){var list=_get(s,_whole(n.getAttribute('list')))||[],as=n.getAttribute('as');
+    list.forEach(function(it,i){var sc=Object.create(s);sc[as]=it;sc.$index=i;Array.from(n.childNodes).forEach(function(c){var cl=c.cloneNode(true);f.appendChild(cl);_proc(cl,sc);});});
+    n.replaceWith(f);return;}
+  Array.from(n.attributes).forEach(function(a){if(a.value.indexOf('{{')<0)return;var w=_whole(a.value);
+    if(a.name.indexOf('on')===0&&w){var fn=_get(s,w);n.removeAttribute(a.name);if(fn)n.addEventListener(a.name.slice(2),fn);}
+    else if(a.name==='checked'){var v=_get(s,w);n.removeAttribute('checked');n.checked=!!v;if(v)n.setAttribute('checked','');}
+    else n.setAttribute(a.name,_str(a.value,s));});
+  Array.from(n.childNodes).forEach(function(c){_proc(c,s);});
+}
+function mount(){var root=document.getElementById('app'),frag=document.getElementById('tpl').content.cloneNode(true),s=render();
+  Array.from(frag.childNodes).forEach(function(c){_proc(c,s);});root.replaceChildren(frag);}
+</script>
+<script>
+
+/* Secret Santa invite behaviour (see DESIGN.md › Invite page) */
+var state = { joined: false, list: 'xmas' };
+function setState(p) { Object.assign(state, p); mount(); }
+function render() {
+  var j = state.joined;
+  var raw = [['Priya', true, 'organiser'], ['Tom', true, ''], ['Ade', true, ''], ['Hannah', true, ''], ['Jun', true, ''], ['Rosa', true, ''], ['Ben', true, ''], ['Chloe', true, ''], ['Marcus', true, ''], ['You (Maya)', j, j ? 'just joined' : 'invited'], ['Ella', false, 'invited'], ['Dev', false, 'invited']];
+  var people = raw.map(function (r) { return { name: r[0], in: r[1], tag: r[2], color: r[1] ? 'var(--ink)' : 'var(--faint)' }; });
+  var lists = [['xmas', 'Christmas 2026'], ['bday', '30th birthday'], ['new', 'Start a new list']].map(function (o) {
+    return { label: o[1], checked: state.list === o[0], pick: function () { state.list = o[0]; } };
+  });
+  return {
+    people: people, lists: lists, joined: j, notJoined: !j,
+    joinedCount: people.filter(function (p) { return p.in; }).length, totalCount: people.length,
+    join: function () { setState({ joined: true }); },
+    leave: function () { setState({ joined: false }); }
+  };
+}
+mount();
+
+</script>
+</body>
+</html>
