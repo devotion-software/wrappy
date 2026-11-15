@@ -15,14 +15,14 @@
 	<Sheet tape margin={50} padding="40px 36px 32px 72px" class="sheet">
 		<h1 class="hand">New wish</h1>
 		{#if data.target?.santaLimit}
-			<p class="sub">For your Secret Santa list — keep it to {data.target.santaLimit} or less.</p>
+			<p class="sub">For your Secret Santa list. If you add a price, keep it to {data.target.santaLimit} or less.</p>
 		{:else if data.target}
 			<p class="sub">It'll be added to {data.target.title}. You can add pictures and links next.</p>
 		{:else}
 			<p class="sub">You can add pictures, links and lists next.</p>
 		{/if}
 		<form method="POST" class="stack">
-			<ItemFields values={{ currency: data.target?.currency ?? 'GBP' }} priceRequired={!!data.target?.santaLimit} />
+			<ItemFields values={{ currency: data.target?.currency ?? 'GBP' }} />
 			{#if form?.error}<p class="field-error" role="alert">{form.error}</p>{/if}
 			<button class="btn btn-primary btn-lg">Save wish</button>
 		</form>

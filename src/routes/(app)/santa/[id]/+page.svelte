@@ -74,9 +74,13 @@
 					<StickyNote tilt={drawn ? 0.5 : -0.5} padding="24px 26px">
 						<p class="hand big">{drawn ? 'Your Santa list' : "You're in!"}</p>
 						<p class="copy">
-							Tick the wishes your Santa should see{s.budget ? ` — up to ${s.budget} each` : ''}. {drawn
-								? 'Your Santa can see this list now.'
-								: "You'll find out who you're buying for when names are drawn."}
+							{#if !data.wishes.length}
+								You can add items to your wish list below
+							{:else}
+								Tick the wishes your Santa should see{s.budget ? ` — up to ${s.budget} each` : ''}. {drawn
+									? 'Your Santa can see this list now.'
+									: "You'll find out who you're buying for when names are drawn."}
+							{/if}
 						</p>
 						<div class="wishes">
 							{#each data.wishes as w (w.id)}
@@ -88,19 +92,17 @@
 										<span class="write">{w.title}</span>
 										<span class="meta"
 											>{w.price === null
-												? 'add a price to include'
+												? 'no price'
 												: `${formatPrice(w.price, w.currency)}${!w.fits && !w.onList ? (w.currency !== s.currency ? ` · needs a ${s.currency} price` : ' · over budget') : ''}`}</span
 										>
 									</button>
 								</form>
 								{#if form?.wishError?.itemId === w.id}<p class="field-error">{form.wishError.message}</p>{/if}
-							{:else}
-								<p class="meta">You haven't written any wishes yet.</p>
 							{/each}
 						</div>
 						<div class="note-actions">
 							{#if data.me.listId}
-								<a href="/items/new?list={data.me.listId}" class="btn btn-dark"><Icon name="plus" />New wish with a price</a>
+								<a href="/items/new?list={data.me.listId}" class="btn btn-dark"><Icon name="plus" />New wish</a>
 								<a href="/lists/{data.me.listId}" class="btn btn-text">Open my Santa list ({onCount})</a>
 							{/if}
 							{#if !drawn}
@@ -246,9 +248,9 @@
 
 			<div class="how">
 				<h2 class="how-title">How it works</h2>
-				<div class="step"><span class="hand num">1.</span><p>Join and tick the wishes your Santa should see.</p></div>
-				<div class="step"><span class="hand num">2.</span><p>The organiser draws names — nobody gets themselves.</p></div>
-				<div class="step"><span class="hand num">3.</span><p>You get an email with your match. Only you can see it.</p></div>
+				<div class="step"><span class="hand num">1.</span><p>Join and add items to your wishlist</p></div>
+				<div class="step"><span class="hand num">2.</span><p>The organiser draws names.</p></div>
+				<div class="step"><span class="hand num">3.</span><p>You get an email with your match.</p></div>
 			</div>
 		</aside>
 	</div>

@@ -41,7 +41,8 @@ export const load: PageServerLoad = async (event) => {
 			onList: on.has(it.id),
 			fits:
 				s.priceLimit === null ||
-				(it.price !== null && it.currency === s.currency && Number(it.price) <= Number(s.priceLimit))
+				it.price === null ||
+				(it.currency === s.currency && Number(it.price) <= Number(s.priceLimit))
 		}));
 	}
 

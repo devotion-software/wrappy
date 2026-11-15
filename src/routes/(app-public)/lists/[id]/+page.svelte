@@ -237,8 +237,7 @@
 					</form>
 				{/if}
 
-				{#if !isSanta}
-					<form method="POST" action="?/addWish" class="add-line" use:enhance={busyEnhance}>
+				<form method="POST" action="?/addWish" class="add-line" use:enhance={busyEnhance}>
 						<Icon name="plus" size={24} strokeWidth={2} />
 						<label for="newwish" class="sr-only">Add a wish</label>
 						<input
@@ -251,12 +250,6 @@
 						/>
 						<button class="btn btn-dark btn-md" disabled={busy}>{busy ? 'Adding…' : 'Add'}</button>
 					</form>
-				{:else}
-					<div class="add-line santa-add">
-						<a href="/items/new?list={data.list.id}" class="btn btn-dark btn-md"><Icon name="plus" />New wish with a price</a>
-						<span class="meta">Secret Santa wishes need to be {data.santa?.limit ?? 'within budget'} or less.</span>
-					</div>
-				{/if}
 				{#if form?.addError}<p class="field-error" role="alert">{form.addError}</p>{/if}
 
 				{#if data.owned?.library.length}
@@ -293,7 +286,7 @@
 				{:else}
 					<Sheet margin={false} padding="24px">
 						<h2 class="hand h2">Secret Santa list</h2>
-						<p class="copy">Only whoever draws your name will see this list. Keep each wish to {data.santa?.limit ?? 'the budget'} or less.</p>
+						<p class="copy">Only whoever draws your name will see this list.{data.santa?.limit ? ` Wishes with a price need to be ${data.santa.limit} or less.` : ''}</p>
 					</Sheet>
 				{/if}
 
@@ -444,9 +437,6 @@
 	.add-input {
 		flex: 1 1 260px;
 		min-width: 0;
-	}
-	.santa-add .meta {
-		flex: 1 1 200px;
 	}
 	.panel {
 		margin: 18px 0 4px;

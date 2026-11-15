@@ -47,9 +47,9 @@
 			</Sheet>
 			<div class="how">
 				<h2 class="how-title">How it works</h2>
-				<div class="step"><span class="hand num">1.</span><p>Join and tick the wishes your Santa should see.</p></div>
-				<div class="step"><span class="hand num">2.</span><p>{data.organiserName} draws names — nobody gets themselves.</p></div>
-				<div class="step"><span class="hand num">3.</span><p>You'll get an email with your match. Only you can see it.</p></div>
+				<div class="step"><span class="hand num">1.</span><p>Join and add items to your wishlist</p></div>
+				<div class="step"><span class="hand num">2.</span><p>{data.organiserName} draws names.</p></div>
+				<div class="step"><span class="hand num">3.</span><p>You'll get an email with your match.</p></div>
 			</div>
 		</aside>
 	</div>

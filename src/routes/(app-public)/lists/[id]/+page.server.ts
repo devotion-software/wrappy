@@ -126,9 +126,6 @@ export const actions: Actions = {
 		}
 
 		if (text.length > 200) return fail(400, { addError: 'Keep the wish under 200 characters.' });
-		if (l.santaId) {
-			return fail(400, { addError: 'Secret Santa wishes need a price. Use "New wish with a price" below.' });
-		}
 		await createItem(me.id, { title: text, notes: null, price: null, currency: 'GBP', mostWanted: false }, { listIds: [l.id] });
 		return { added: true };
 	},

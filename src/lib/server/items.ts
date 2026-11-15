@@ -46,7 +46,7 @@ export function parseItemForm(fd: FormData): { error: string } | { input: ItemIn
 }
 
 /**
- * Secret Santa lists only accept items under the exchange's price limit, in its currency.
+ * Secret Santa lists accept unpriced items, and priced items at or under the exchange's limit (in its currency).
  * Returns an error message, or null if the item is allowed.
  */
 export async function santaPriceProblem(listId: string, it: Pick<ItemRow, 'price' | 'currency'>): Promise<string | null> {
@@ -58,7 +58,8 @@ export async function santaPriceProblem(listId: string, it: Pick<ItemRow, 'price
 		.limit(1);
 	if (!row || row.priceLimit === null) return null;
 	const limit = formatPrice(row.priceLimit, row.currency);
-	if (it.price === null) return `Add a price first — Secret Santa wishes need to be ${limit} or less.`;
+	// Wishes without a price are allowed; priced ones must fit the budget.
+	if (it.price === null) return null;
 	if (it.currency !== row.currency) return `This Secret Santa uses ${row.currency}. Set the price in ${row.currency}.`;
 	if (Number(it.price) > Number(row.priceLimit)) return `That's over the ${limit} limit for this Secret Santa.`;
 	return null;
