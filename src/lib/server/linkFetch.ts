@@ -11,7 +11,8 @@ export function looksLikeUrl(s: string): boolean {
 
 export function normaliseUrl(s: string): string {
 	const t = s.trim();
-	return validateUrl(/^https?:\/\//i.test(t) ? t : `https://${t}`).toString();
+	// Only add https:// when there's no scheme at all; other schemes (ftp://…) go to validateUrl and are rejected.
+	return validateUrl(/^[a-z][a-z0-9+.-]*:\/\//i.test(t) ? t : `https://${t}`).toString();
 }
 
 /** Fetch a shop page and pull product details. Returns null if the page can't be read. */

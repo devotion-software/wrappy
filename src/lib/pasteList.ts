@@ -18,9 +18,11 @@ export interface PastedWish {
 export const MAX_PASTED_WISHES = 100;
 const MAX_TITLE = 200;
 
-const BULLET = /^[-*+•●▪◦·–—]\s*/;
+// A `*` bullet needs a space after it, so `**bold**` at the start of a line isn't taken for one.
+const BULLET = /^(?:\*\s+|[-+•●▪◦·–—]\s*)/;
 const CHECKBOX = /^(?:\[[ xX✓✔]?\]|[☐☑☒✓✔✅⬜🔲])\s*/u;
-const NUMBER = /^\(?\d{1,3}[.)]\s+/;
+// Followed by a space or nothing (an empty numbered line), but not `1.5m`.
+const NUMBER = /^\(?\d{1,3}[.)](?:\s+|$)/;
 
 function stripMarkers(line: string): string {
 	let s = line.trim().replace(/^>\s*/, '');

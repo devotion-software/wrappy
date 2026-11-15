@@ -1,7 +1,22 @@
+/// <reference types="vitest/config" />
 import adapter from '@sveltejs/adapter-node';
 import { sveltekit } from '@sveltejs/kit/vite';
-import { defineConfig } from 'vite';
+import { defineConfig, loadEnv } from 'vite';
 import pkg from './package.json' with { type: 'json' };
+import { testDatabaseUrl } from './tests/setup/testDb.ts';
+
+// Tests never touch the dev database or send real email.
+const devEnv = loadEnv('development', process.cwd(), '');
+const testEnv = {
+	DATABASE_URL: testDatabaseUrl(devEnv),
+	RESEND_API_KEY: '',
+	SMTP_HOST: '',
+	R2_ACCOUNT_ID: '',
+	R2_ACCESS_KEY_ID: '',
+	R2_SECRET_ACCESS_KEY: '',
+	BETTER_AUTH_SECRET: 'test-only-secret-test-only-secret-0123456789',
+	BETTER_AUTH_URL: 'http://localhost:5182'
+};
 
 export default defineConfig({
 	define: {
@@ -39,5 +54,32 @@ export default defineConfig({
 		// Fixed port keeps BETTER_AUTH_URL / passkey origin stable across restarts.
 		port: 5182,
 		strictPort: true
+	},
+	test: {
+		projects: [
+			{
+				extends: true,
+				test: {
+					name: 'unit',
+					include: ['src/**/*.test.ts'],
+					exclude: ['src/**/*.db.test.ts'],
+					env: testEnv
+				}
+			},
+			{
+				// Needs MariaDB (`bun run db:up`). Runs against a separate `<db>_test` database.
+				extends: true,
+				test: {
+					name: 'db',
+					include: ['src/**/*.db.test.ts', 'tests/**/*.db.test.ts'],
+					globalSetup: ['tests/setup/db.global.ts'],
+					env: testEnv,
+					// One file at a time keeps row locks and timing-sensitive tests predictable.
+					fileParallelism: false,
+					testTimeout: 20_000,
+					hookTimeout: 60_000
+				}
+			}
+		]
 	}
 });

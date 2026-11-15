@@ -242,11 +242,20 @@ export const actions: Actions = {
 			.toLowerCase();
 		if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return fail(400, { shareError: 'Enter a full email address.' });
 		if (email === me.email.toLowerCase()) return fail(400, { shareError: "That's your own email." });
+		// Already invited: nothing to do, and don't email them again.
+		const [already] = await db
+			.select({ id: listShare.id })
+			.from(listShare)
+			.where(and(eq(listShare.listId, l.id), eq(listShare.email, email)))
+			.limit(1);
+		if (already) return { shared: email };
 		const [existingUser] = await db.select({ id: user.id }).from(user).where(eq(user.email, email)).limit(1);
 		const inserted = await db
 			.insert(listShare)
 			.values({ id: newId(), listId: l.id, email, userId: existingUser?.id ?? null })
 			.onDuplicateKeyUpdate({ set: { email } });
+		// affectedRows can't tell a new row from an existing one (the driver reports found rows),
+		// so this is only a guard against a simultaneous duplicate invite.
 		if ((inserted[0] as { affectedRows?: number }).affectedRows === 1) {
 			await sendListInviteEmail({
 				email,

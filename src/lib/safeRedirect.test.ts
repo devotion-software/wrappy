@@ -22,3 +22,23 @@ describe('safeRedirect', () => {
 
 	it('keeps path, query and hash', () => expect(safeRedirect('/lists/abc?x=1#y')).toBe('/lists/abc?x=1#y'));
 });
+
+describe('safeRedirect — more', () => {
+	it('uses a custom fallback', () => {
+		expect(safeRedirect('https://evil.com', '/home')).toBe('/home');
+		expect(safeRedirect(undefined, '/x')).toBe('/x');
+	});
+
+	it.each(['/\u0000/evil.com', '/\u007f', '/a\\b', '///evil.com'])('rejects %j', (t) => expect(safeRedirect(t)).toBe('/lists'));
+
+	it('normalises dot segments without leaving the site', () => {
+		expect(safeRedirect('/a/../../b')).toBe('/b');
+		expect(safeRedirect('/./lists')).toBe('/lists');
+	});
+
+	it('keeps percent-encoding as-is', () => {
+		expect(safeRedirect('/lists?next=%2F%2Fevil.com')).toBe('/lists?next=%2F%2Fevil.com');
+	});
+
+	it('keeps the root path', () => expect(safeRedirect('/')).toBe('/'));
+});

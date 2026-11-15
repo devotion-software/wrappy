@@ -18,3 +18,31 @@ describe('spend', () => {
 		expect(spend(null, 0, 4, opts)).toBeNull();
 	});
 });
+
+describe('spend — more', () => {
+	it('starts a fresh window when there is no bucket', () => {
+		expect(spend(null, 500, 1, opts)).toEqual({ windowStart: 500, used: 1 });
+	});
+
+	it('does not mutate the bucket it is given', () => {
+		const b = { windowStart: 0, used: 1 };
+		spend(b, 10, 1, opts);
+		expect(b).toEqual({ windowStart: 0, used: 1 });
+	});
+
+	it('keeps the original window start while inside the window', () => {
+		expect(spend({ windowStart: 100, used: 0 }, 1099, 1, opts)).toEqual({ windowStart: 100, used: 1 });
+	});
+
+	it('resets exactly when the window ends, forgetting earlier use', () => {
+		expect(spend({ windowStart: 100, used: 3 }, 1100, 1, opts)).toEqual({ windowStart: 1100, used: 1 });
+	});
+
+	it('allows zero-cost checks even when full', () => {
+		expect(spend({ windowStart: 0, used: 3 }, 1, 0, opts)).toEqual({ windowStart: 0, used: 3 });
+	});
+
+	it('blocks a big spend in a fresh window if it exceeds the limit', () => {
+		expect(spend({ windowStart: 0, used: 0 }, 5000, 4, opts)).toBeNull();
+	});
+});

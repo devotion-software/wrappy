@@ -26,3 +26,7 @@ vite.config.ts.timestamp-*
 dev.log
 # Local image uploads (R2 fallback)
 /.uploads
+
+# Test output
+/test-results
+/playwright-report

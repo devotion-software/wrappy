@@ -17,6 +17,23 @@ bun run dev          # http://localhost:5182
 
 Sign-in codes land in Mailpit at http://localhost:8028.
 
+## Test
+
+```sh
+bun run test         # unit + database tests (needs `bun run db:up`)
+bun run test:unit    # pure logic only, no database
+bun run test:db      # server code, routes and form actions against MariaDB
+bun run test:e2e     # browser tests (Playwright); first time: bunx playwright install chromium
+```
+
+- **Unit** tests (`src/**/*.test.ts`) cover parsing, formatting, URL safety, email rendering and hooks.
+- **Database** tests (`*.db.test.ts`, in `src/lib/server/` and `tests/routes/`) call loads, form actions and
+  endpoints directly. They run against a separate `<DB_NAME>_test` database, created and migrated
+  automatically (using `DB_ROOT_PASSWORD`). Rows are uniquely named, so the database is kept between
+  runs; set `TEST_DB_RESET=1` to rebuild it. Helpers live in `tests/helpers/`.
+- **Browser** tests (`tests/e2e/`) start a dev server on :5183 against the test database and read
+  sign-in codes from Mailpit.
+
 ## Database
 
 Edit `src/lib/server/db/app.schema.ts`, then `bun run db:generate` and `bun run db:migrate`.

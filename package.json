@@ -11,6 +11,11 @@
 		"check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
 		"check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
 		"test": "vitest run",
+		"test:unit": "vitest run --project unit",
+		"test:db": "vitest run --project db",
+		"test:watch": "vitest",
+		"test:e2e": "playwright test",
+		"test:all": "vitest run && playwright test",
 		"db:up": "docker compose up -d",
 		"db:down": "docker compose down",
 		"db:generate": "drizzle-kit generate",
@@ -36,6 +41,7 @@
 		"undici": "^8.12.4"
 	},
 	"devDependencies": {
+		"@playwright/test": "^1.65.1",
 		"@sveltejs/adapter-node": "^6",
 		"@sveltejs/kit": "^3",
 		"@sveltejs/vite-plugin-svelte": "^7.2",
