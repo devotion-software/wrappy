@@ -10,6 +10,8 @@
 
 	let { data, form } = $props();
 
+	// Keep ?list= on every form post so the back link still points at the list after saving.
+	const listQuery = $derived(data.back ? `&list=${data.back}` : '');
 	const backHref = $derived(data.back ? `/lists/${data.back}` : '/items');
 	const backLabel = $derived(data.back ? (data.allLists.find((l) => l.id === data.back)?.title ?? 'Back') : 'All my wishes');
 	const host = (u: string) => {
@@ -109,7 +111,7 @@
 	<div class="with-aside">
 		<div class="main-col stack-lg">
 			<Sheet tape margin={50} padding="32px 28px 28px 72px" class="sheet">
-				<form method="POST" action="?/save" class="stack" use:enhance={busyEnhance}>
+				<form method="POST" action="?/save{listQuery}" class="stack" use:enhance={busyEnhance}>
 					<ItemFields values={data.item} />
 					{#if form?.saveError}<p class="field-error" role="alert">{form.saveError}</p>{/if}
 					<div class="row-actions">
@@ -158,12 +160,12 @@
 									{#if i === 0}<span class="cover-tag">cover</span>{/if}
 									<div class="pic-actions">
 										{#if i !== 0}
-											<form method="POST" action="?/imageCover" use:enhance={busyEnhance}>
+											<form method="POST" action="?/imageCover{listQuery}" use:enhance={busyEnhance}>
 												<input type="hidden" name="imageId" value={id} />
 												<button class="mini" disabled={busy}>Make cover</button>
 											</form>
 										{/if}
-										<form method="POST" action="?/imageDelete" use:enhance={busyEnhance}>
+										<form method="POST" action="?/imageDelete{listQuery}" use:enhance={busyEnhance}>
 											<input type="hidden" name="imageId" value={id} />
 											<button class="mini" aria-label="Delete picture {i + 1}" disabled={busy}><Icon name="trash" size={15} /></button>
 										</form>
@@ -221,7 +223,7 @@
 								>
 								<form
 									method="POST"
-									action="?/removeLink"
+									action="?/removeLink{listQuery}"
 									use:enhance={busyEnhance}
 									onsubmit={(e) => {
 										const hasPics = data.images.some((img) => img.linkId === l.id);
@@ -238,7 +240,7 @@
 					</ul>
 				{/if}
 
-				<form method="POST" action="?/addLink" class="add-link" use:enhance={busyEnhance}>
+				<form method="POST" action="?/addLink{listQuery}" class="add-link" use:enhance={busyEnhance}>
 					<label for="link-url" class="sr-only">Shop link</label>
 					<input id="link-url" name="url" class="line-input dashed" placeholder="Paste another shop link…" required autocomplete="off" />
 					<button class="btn btn-dark btn-md" disabled={busy}>{busy ? 'Adding…' : 'Add link'}</button>
@@ -251,7 +253,7 @@
 							<p class="copy">Link saved. We couldn't read details from that page — add pictures and a price yourself.</p>
 						{:else}
 							{#if form.linkFound.price && form.linkFound.rawPrice !== data.item.price}
-								<form method="POST" action="?/usePrice" class="use-price" use:enhance={busyEnhance}>
+								<form method="POST" action="?/usePrice{listQuery}" class="use-price" use:enhance={busyEnhance}>
 									<input type="hidden" name="price" value={form.linkFound.rawPrice} />
 									<input type="hidden" name="currency" value={form.linkFound.currency ?? data.item.currency} />
 									<span class="copy">This shop lists it at <strong>{form.linkFound.price}</strong>.</span>
@@ -259,7 +261,7 @@
 								</form>
 							{/if}
 							{#if form.linkFound.images.length && remaining > 0}
-								<form method="POST" action="?/importImages" use:enhance={busyEnhance}>
+								<form method="POST" action="?/importImages{listQuery}" use:enhance={busyEnhance}>
 									<input type="hidden" name="linkId" value={form.linkFound.linkId} />
 									<p class="label">Choose pictures to keep</p>
 									<div class="candidates">
@@ -290,7 +292,7 @@
 		<aside>
 			<Sheet margin={false} padding="24px">
 				<h2 class="hand h2">On your lists</h2>
-				<form method="POST" action="?/lists" class="stack-sm" use:enhance={busyEnhance}>
+				<form method="POST" action="?/lists{listQuery}" class="stack-sm" use:enhance={busyEnhance}>
 					{#each data.allLists as l (l.id)}
 						<label class="check-row">
 							<input type="checkbox" name="listId" value={l.id} bind:group={selectedLists} class="sr-only" />
@@ -315,7 +317,7 @@
 				<h2 class="hand h2">Good idea for…</h2>
 				<p class="copy">Suggest who might like to get you this. Everyone sees the hint, and it's highlighted for them.</p>
 				{#if data.people.length}
-					<form method="POST" action="?/suggest" class="suggest" use:enhance={busyEnhance}>
+					<form method="POST" action="?/suggest{listQuery}" class="suggest" use:enhance={busyEnhance}>
 						<label for="suggest" class="sr-only">Suggested person</label>
 						<select id="suggest" name="userId" class="line-input select">
 							<option value="">No one in particular</option>
@@ -332,7 +334,7 @@
 
 			<form
 				method="POST"
-				action="?/delete{data.back ? `&list=${data.back}` : ''}"
+				action="?/delete{listQuery}"
 				onsubmit={(e) => {
 					const n = data.onLists.length;
 					if (!confirm(n ? `Delete this wish from ${plural(n, 'list')} and everywhere else?` : 'Delete this wish?')) e.preventDefault();
