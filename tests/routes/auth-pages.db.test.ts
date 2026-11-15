@@ -11,7 +11,9 @@ import { load as publicLayout } from '../../src/routes/(app-public)/+layout.serv
 import { load as appLayout } from '../../src/routes/(app)/+layout.server';
 import { load as signin } from '../../src/routes/signin/+page.server';
 import { actions as welcomeActions, load as welcome } from '../../src/routes/welcome/+page.server';
-import { actions as accountActions } from '../../src/routes/(app)/account/+page.server';
+import { actions as accountActions, load as accountLoad } from '../../src/routes/(app)/account/+page.server';
+import { actions as unsubActions, load as unsubLoad } from '../../src/routes/unsubscribe/[token]/+page.server';
+import { getEmailPrefs, unsubscribeToken } from '#lib/server/emailPrefs';
 
 const L = (fn: any, init: Parameters<typeof fakeEvent>[0]) => outcome(() => fn(fakeEvent(init)));
 const fresh = async (id: string) => (await db.select().from(user).where(eq(user.id, id)))[0];
@@ -186,19 +188,19 @@ describe('welcome', () => {
 describe('account', () => {
 	it('validates the name', async () => {
 		const u = await createUser();
-		expect(await L(accountActions.default, { user: u, form: { name: '' } })).toEqual({
+		expect(await L(accountActions.profile, { user: u, form: { name: '' } })).toEqual({
 			kind: 'fail',
 			status: 400,
 			data: { error: 'Add the name your friends know you by.' }
 		});
-		expect(await L(accountActions.default, { user: u, form: { name: 'n'.repeat(61) } })).toMatchObject({ kind: 'fail', status: 400 });
+		expect(await L(accountActions.profile, { user: u, form: { name: 'n'.repeat(61) } })).toMatchObject({ kind: 'fail', status: 400 });
 		expect((await fresh(u.id)).name).toBe(u.name);
 	});
 
 	it('saves the name and a changed username', async () => {
 		const u = await createUser({ username: `old${uniq()}` });
 		const next = `new${uniq()}`;
-		expect(await L(accountActions.default, { user: u, form: { name: 'Renamed', username: next } })).toEqual({
+		expect(await L(accountActions.profile, { user: u, form: { name: 'Renamed', username: next } })).toEqual({
 			kind: 'ok',
 			data: { saved: true }
 		});
@@ -207,19 +209,48 @@ describe('account', () => {
 
 	it('leaves the username alone when unchanged or blank', async () => {
 		const u = await createUser({ username: `same${uniq()}` });
-		await L(accountActions.default, { user: u, form: { name: 'A', username: u.username! } });
-		await L(accountActions.default, { user: u, form: { name: 'B', username: '' } });
+		await L(accountActions.profile, { user: u, form: { name: 'A', username: u.username! } });
+		await L(accountActions.profile, { user: u, form: { name: 'B', username: '' } });
 		expect(await fresh(u.id)).toMatchObject({ name: 'B', username: u.username });
 	});
 
 	it('reports a taken username', async () => {
 		const other = await createUser({ username: `tk${uniq()}` });
 		const u = await createUser({ username: `me${uniq()}` });
-		expect(await L(accountActions.default, { user: u, form: { name: 'X', username: other.username!.toUpperCase() } })).toEqual({
+		expect(await L(accountActions.profile, { user: u, form: { name: 'X', username: other.username!.toUpperCase() } })).toEqual({
 			kind: 'fail',
 			status: 400,
 			data: { usernameError: 'That username is taken. Try another.' }
 		});
 		expect((await fresh(u.id)).username).toBe(u.username);
+	});
+});
+
+describe('account emails', () => {
+	it('shows every reminder on by default and saves the ticked ones', async () => {
+		const u = await createUser();
+		const before = await outcome(() => accountLoad(fakeEvent({ user: u }) as any));
+		expect(before).toMatchObject({ kind: 'ok', data: { emails: [{ kind: 'list', on: true }, { kind: 'buying', on: true }, { kind: 'santa', on: true }] } });
+		expect(await L(accountActions.emails, { user: u, form: { santa: 'on' } })).toEqual({ kind: 'ok', data: { emailsSaved: true } });
+		const after = await outcome(() => accountLoad(fakeEvent({ user: u }) as any));
+		expect((after as any).data.emails.map((e: any) => e.on)).toEqual([false, false, true]);
+	});
+});
+
+describe('/unsubscribe/[token]', () => {
+	it('shows what it turns off, and turns it off on POST only', async () => {
+		const u = await createUser();
+		const token = unsubscribeToken(u.id, 'buying');
+		expect(await L(unsubLoad, { params: { token } })).toMatchObject({ kind: 'ok', data: { kind: 'buying', on: true } });
+		expect((await getEmailPrefs(u.id)).buying).toBe(true);
+		expect(await L(unsubActions.default, { params: { token }, form: {} })).toEqual({ kind: 'ok', data: { done: true } });
+		expect(await getEmailPrefs(u.id)).toEqual({ list: true, buying: false, santa: true });
+	});
+
+	it('404s for a forged link', async () => {
+		const u = await createUser();
+		const token = `${u.id}.list.forged`;
+		expect(await L(unsubLoad, { params: { token } })).toMatchObject({ kind: 'error', status: 404 });
+		expect(await L(unsubActions.default, { params: { token }, form: {} })).toMatchObject({ kind: 'error', status: 404 });
 	});
 });

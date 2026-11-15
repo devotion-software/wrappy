@@ -50,6 +50,13 @@
       "when": 1794773694187,
       "tag": "0006_gift_thanks",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "5",
+      "when": 1794774105650,
+      "tag": "0007_reminders",
+      "breakpoints": true
     }
   ]
 }

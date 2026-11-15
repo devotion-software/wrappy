@@ -33,7 +33,7 @@
 <main class="container page">
 	<h1 class="hand">Account</h1>
 	<Sheet tape margin={50} padding="36px 32px 30px 72px" class="sheet">
-		<form method="POST" class="stack" use:enhance={() => async ({ update }) => update({ reset: false })}>
+		<form method="POST" action="?/profile" class="stack" use:enhance={() => async ({ update }) => update({ reset: false })}>
 			<div class="field">
 				<label for="name">Your name</label>
 				<input id="name" name="name" class="line-input" required maxlength="60" value={data.user?.name ?? ''} />
@@ -57,6 +57,29 @@
 			<div class="row-actions">
 				<button class="btn btn-dark btn-md">Save</button>
 				{#if form?.saved}<span class="meta" role="status">Saved.</span>{/if}
+			</div>
+		</form>
+	</Sheet>
+
+	<Sheet margin={false} padding="24px">
+		<h2 class="hand h2" id="emails">Emails</h2>
+		<p class="copy">
+			Sign-in codes, invites and Secret Santa draws always come through. These reminders are up to you.
+		</p>
+		<form method="POST" action="?/emails" use:enhance={() => async ({ update }) => update({ reset: false })}>
+			<ul class="prefs">
+				{#each data.emails as e (e.kind)}
+					<li>
+						<label>
+							<input type="checkbox" name={e.kind} checked={e.on} />
+							<span>{e.label}</span>
+						</label>
+					</li>
+				{/each}
+			</ul>
+			<div class="row-actions">
+				<button class="btn btn-outline">Save emails</button>
+				{#if form?.emailsSaved}<span class="meta" role="status">Saved.</span>{/if}
 			</div>
 		</form>
 	</Sheet>
@@ -126,6 +149,28 @@
 		font-size: 14px;
 		line-height: 1.5;
 		color: var(--ink2);
+	}
+	.prefs {
+		list-style: none;
+		margin: 0 0 14px;
+		padding: 0;
+	}
+	.prefs li {
+		border-bottom: 1px solid var(--rule);
+	}
+	.prefs label {
+		display: flex;
+		align-items: center;
+		gap: 12px;
+		min-height: 44px;
+		font-size: 15px;
+		cursor: pointer;
+	}
+	.prefs input {
+		width: 18px;
+		height: 18px;
+		accent-color: var(--gold);
+		flex: none;
 	}
 	.keys {
 		list-style: none;

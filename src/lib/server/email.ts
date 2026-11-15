@@ -84,6 +84,83 @@ export async function sendSantaAssignmentEmail(opts: {
 	);
 }
 
+// ── Reminders (sent by server/reminders.ts) ─────────────────────────────────
+
+interface ReminderBase {
+	email: string;
+	url: string;
+	/** Turns off this kind of reminder. Shown in the footer and as a List-Unsubscribe header. */
+	unsubscribeUrl: string;
+	settingsUrl: string;
+}
+
+function reminderFootnote(r: ReminderBase): string {
+	return `You're getting this because you use Wishlist. <a href="${escapeHtml(r.unsubscribeUrl)}" style="color:#5E5E5A;">Stop these reminders</a> or <a href="${escapeHtml(r.settingsUrl)}" style="color:#5E5E5A;">choose which emails you get</a>.`;
+}
+const reminderTextFooter = (r: ReminderBase) => `\n\n—\nStop these reminders: ${r.unsubscribeUrl}\nChoose which emails you get: ${r.settingsUrl}`;
+
+/** A friend's list date is coming up and you haven't claimed anything on it. */
+export async function sendListReminderEmail(
+	r: ReminderBase & { ownerName: string; listTitle: string; when: string; daysLeft: number; unclaimed: number }
+) {
+	const soon = r.daysLeft <= 0 ? 'today' : r.daysLeft === 1 ? 'tomorrow' : `in ${r.daysLeft} days`;
+	const left = r.unclaimed === 1 ? '1 wish is' : `${r.unclaimed} wishes are`;
+	await deliver(
+		{
+			to: r.email,
+			subject: `${r.ownerName}'s ${r.listTitle} is ${soon}`,
+			html: renderLayout(
+				`<strong>${escapeHtml(r.ownerName)}</strong>'s list <strong>${escapeHtml(r.listTitle)}</strong> is for ${escapeHtml(r.when)}, ${soon}. ${left} still free to claim.`,
+				button(r.url, `Open ${r.listTitle}`),
+				reminderFootnote(r)
+			),
+			text: `${r.ownerName}'s list "${r.listTitle}" is for ${r.when}, ${soon}. ${left} still free to claim.\n\nOpen it: ${r.url}${reminderTextFooter(r)}`,
+			headers: { 'List-Unsubscribe': `<${r.unsubscribeUrl}>` }
+		},
+		`list reminder: ${r.listTitle} ${soon} → ${r.url}`
+	);
+}
+
+/** You said "I'll get it" a while ago and haven't marked it bought. */
+export async function sendBuyingReminderEmail(r: ReminderBase & { ownerName: string; itemTitle: string; weeks: number }) {
+	await deliver(
+		{
+			to: r.email,
+			subject: `Did you get ${r.itemTitle} for ${r.ownerName}?`,
+			html: renderLayout(
+				`${r.weeks} weeks ago you said you'd get <strong>${escapeHtml(r.itemTitle)}</strong> for ${escapeHtml(r.ownerName)}. If you've bought it, mark it as bought. If not, it's still reserved for you, or you can let it go so someone else can get it.`,
+				button(r.url, 'Open the wish'),
+				reminderFootnote(r)
+			),
+			text: `${r.weeks} weeks ago you said you'd get "${r.itemTitle}" for ${r.ownerName}. If you've bought it, mark it as bought. If not, it's still reserved for you, or you can let it go so someone else can get it.\n\nOpen it: ${r.url}${reminderTextFooter(r)}`,
+			headers: { 'List-Unsubscribe': `<${r.unsubscribeUrl}>` }
+		},
+		`buying reminder: ${r.itemTitle} → ${r.url}`
+	);
+}
+
+/** The Secret Santa swap is coming up. */
+export async function sendSantaReminderEmail(
+	r: ReminderBase & { santaName: string; recipientName: string; when: string; daysLeft: number; budget: string | null }
+) {
+	const soon = r.daysLeft <= 0 ? 'today' : r.daysLeft === 1 ? 'tomorrow' : `in ${r.daysLeft} days`;
+	const budget = r.budget ? ` The limit is ${r.budget}.` : '';
+	await deliver(
+		{
+			to: r.email,
+			subject: `${r.santaName}: the swap is ${soon}`,
+			html: renderLayout(
+				`The <strong>${escapeHtml(r.santaName)}</strong> swap is on ${escapeHtml(r.when)}, ${soon}. You're buying for <strong>${escapeHtml(r.recipientName)}</strong>.${escapeHtml(budget)}`,
+				button(r.url, `See ${r.recipientName}'s list`),
+				reminderFootnote(r)
+			),
+			text: `The ${r.santaName} swap is on ${r.when}, ${soon}. You're buying for ${r.recipientName}.${budget}\n\nSee their list: ${r.url}${reminderTextFooter(r)}`,
+			headers: { 'List-Unsubscribe': `<${r.unsubscribeUrl}>` }
+		},
+		`santa reminder: ${r.santaName} ${soon} → ${r.url}`
+	);
+}
+
 async function deliver(msg: Omit<Message, 'from'>, consoleBody: string): Promise<void> {
 	const from = process.env.EMAIL_FROM || 'Wishlist <no-reply@wishlist.local>';
 	const full: Message = { from, ...msg };
@@ -102,6 +179,7 @@ interface Message {
 	subject: string;
 	html: string;
 	text: string;
+	headers?: Record<string, string>;
 }
 
 async function sendViaResend(msg: Message): Promise<void> {
@@ -116,7 +194,8 @@ async function sendViaResend(msg: Message): Promise<void> {
 			to: [msg.to],
 			subject: msg.subject,
 			html: msg.html,
-			text: msg.text
+			text: msg.text,
+			...(msg.headers ? { headers: msg.headers } : {})
 		})
 	});
 	if (!res.ok) {

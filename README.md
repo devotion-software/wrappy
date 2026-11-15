@@ -49,3 +49,16 @@ sessions, OTPs, passkey challenges and rate limits all live in MariaDB, and imag
 (production won't start without R2 unless `ALLOW_LOCAL_UPLOADS=true`). Every instance runs
 migrations on start; a database lock makes them take turns. Point health checks at `/healthz`,
 and size `DB_POOL_SIZE` so instances × pool stays under MariaDB's `max_connections`.
+
+### Reminder emails
+
+Every instance runs `src/lib/server/reminders.ts` hourly (a MariaDB lock lets one do the work, and
+`reminder_sent` makes each email go out once):
+
+- people who can see a list get a nudge 14 and 3 days before its date, if they haven't claimed anything;
+- anyone who said "I'll get it" two weeks ago and hasn't marked it bought gets one reminder;
+- Secret Santa givers get a reminder a week before the swap.
+
+Owners never get emails about their own lists. Each email has an unsubscribe link, and people pick
+which reminders they want on their account page. Set `REMINDERS=off` to stop them, or `REMINDERS=on`
+to try them in dev (`REMINDER_INTERVAL_MINUTES` changes how often it checks).

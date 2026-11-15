@@ -345,3 +345,32 @@ export const rateBucket = mysqlTable('rate_bucket', {
 	windowStart: bigint('window_start', { mode: 'number' }).notNull(),
 	used: int('used').notNull()
 });
+
+// ── Emails ───────────────────────────────────────────────────────────────────
+
+/** Which reminder emails someone wants. No row = everything on. */
+export const emailPref = mysqlTable('email_pref', {
+	userId: userRef('user_id')
+		.primaryKey()
+		.references(() => user.id, { onDelete: 'cascade' }),
+	listReminders: boolean('list_reminders').default(true).notNull(),
+	buyingReminders: boolean('buying_reminders').default(true).notNull(),
+	santaReminders: boolean('santa_reminders').default(true).notNull()
+});
+
+/**
+ * One row per reminder sent, so each is sent once even with several app instances.
+ * `subjectKey` names what it was about, e.g. "<listId>:<eventDate>:final".
+ */
+export const reminderSent = mysqlTable(
+	'reminder_sent',
+	{
+		kind: mysqlEnum('kind', ['list', 'buying', 'santa']).notNull(),
+		subjectKey: varchar('subject_key', { length: 80 }).notNull(),
+		userId: userRef('user_id')
+			.notNull()
+			.references(() => user.id, { onDelete: 'cascade' }),
+		sentAt: created()
+	},
+	(t) => [primaryKey({ columns: [t.kind, t.subjectKey, t.userId] })]
+);
