@@ -1,11 +1,15 @@
 import { error, fail, type RequestEvent } from '@sveltejs/kit';
 import { and, asc, eq, inArray, sql } from 'drizzle-orm';
 import { db } from './db';
-import { giftContact, item, itemClaim, itemImage, receivedFrom, receivedGift, user } from './db/schema';
+import { giftAttribution, giftContact, item, itemClaim, itemImage, receivedFrom, receivedGift, user } from './db/schema';
 import { knownPeople } from './lists';
 import { newId } from './ids';
 import { imageUrl } from '#lib/images';
 
+/**
+ * People are keyed by id: an account's user id or a contact's id. Both are random,
+ * different lengths, and never collide, so one string identifies either.
+ */
 export interface GiftFromList {
 	kind: 'list';
 	itemId: string;
@@ -13,7 +17,10 @@ export interface GiftFromList {
 	price: string | null;
 	currency: string;
 	cover: string | null;
+	/** Who it's shown as from: the owner's correction if any, else whoever marked it bought. */
 	giverId: string;
+	/** True when the owner reassigned it away from the person who claimed it. */
+	reassigned: boolean;
 }
 export interface NotedGift {
 	kind: 'noted';
@@ -29,38 +36,37 @@ export async function revealedGivers(ownerId: string): Promise<string[]> {
 }
 
 /**
- * Everything these givers gave the owner: wishes they marked BOUGHT on the owner's lists
- * (only for givers the owner has marked received from — "buying" is never revealed),
- * plus gifts the owner noted themselves.
+ * Every present the owner can see, grouped later by person:
+ *  - wishes marked BOUGHT on their lists, by someone they've marked received from
+ *    ("buying" is never revealed), or that they've already reassigned;
+ *  - presents they noted themselves.
+ * The owner's reassignments (gift_attribution) decide who a bought wish is shown as from.
  */
-export async function giftsFrom(ownerId: string, giverIds: string[]) {
-	const revealed = new Set(await revealedGivers(ownerId));
-	const listGivers = giverIds.filter((g) => revealed.has(g));
-	const [fromLists, noted] = await Promise.all([
-		listGivers.length
-			? db
-					.select({
-						itemId: item.id,
-						title: item.title,
-						price: item.price,
-						currency: item.currency,
-						giverId: itemClaim.userId
-					})
-					.from(itemClaim)
-					.innerJoin(item, eq(item.id, itemClaim.itemId))
-					.where(and(eq(item.ownerId, ownerId), eq(itemClaim.status, 'bought'), inArray(itemClaim.userId, listGivers)))
-					.orderBy(asc(item.title))
-			: [],
-		giverIds.length
-			? db
-					.select({ id: receivedGift.id, title: receivedGift.title, giverId: receivedGift.giverId })
-					.from(receivedGift)
-					.where(and(eq(receivedGift.ownerId, ownerId), inArray(receivedGift.giverId, giverIds)))
-					.orderBy(asc(receivedGift.createdAt))
-			: []
+export async function allReceived(ownerId: string): Promise<{ fromLists: GiftFromList[]; noted: NotedGift[] }> {
+	const [revealed, bought, attributions, noted] = await Promise.all([
+		revealedGivers(ownerId),
+		db
+			.select({ itemId: item.id, title: item.title, price: item.price, currency: item.currency, claimerId: itemClaim.userId })
+			.from(itemClaim)
+			.innerJoin(item, eq(item.id, itemClaim.itemId))
+			.where(and(eq(item.ownerId, ownerId), eq(itemClaim.status, 'bought')))
+			.orderBy(asc(item.title)),
+		db
+			.select({ itemId: giftAttribution.itemId, giverId: giftAttribution.giverId, contactId: giftAttribution.contactId })
+			.from(giftAttribution)
+			.where(eq(giftAttribution.ownerId, ownerId)),
+		db
+			.select({ id: receivedGift.id, title: receivedGift.title, giverId: receivedGift.giverId, contactId: receivedGift.contactId })
+			.from(receivedGift)
+			.where(eq(receivedGift.ownerId, ownerId))
+			.orderBy(asc(receivedGift.createdAt))
 	]);
 
-	const ids = fromLists.map((g) => g.itemId);
+	const revealedSet = new Set(revealed);
+	const attrBy = new Map(attributions.map((a) => [a.itemId, (a.giverId ?? a.contactId)!]));
+	const visible = bought.filter((b) => revealedSet.has(b.claimerId) || attrBy.has(b.itemId));
+
+	const ids = visible.map((g) => g.itemId);
 	const covers = ids.length
 		? await db
 				.select({ itemId: itemImage.itemId, key: itemImage.storageKey })
@@ -72,10 +78,30 @@ export async function giftsFrom(ownerId: string, giverIds: string[]) {
 	for (const c of covers) if (!coverBy.has(c.itemId)) coverBy.set(c.itemId, imageUrl(c.key, 'thumb'));
 
 	return {
-		fromLists: fromLists.map((g): GiftFromList => ({ kind: 'list', ...g, cover: coverBy.get(g.itemId) ?? null })),
-		// This query filters on giverId, so it's always set here.
-		noted: noted.map((n): NotedGift => ({ kind: 'noted', ...n, giverId: n.giverId! }))
+		fromLists: visible.map((b) => {
+			const shownAs = attrBy.get(b.itemId) ?? b.claimerId;
+			return {
+				kind: 'list',
+				itemId: b.itemId,
+				title: b.title,
+				price: b.price,
+				currency: b.currency,
+				cover: coverBy.get(b.itemId) ?? null,
+				giverId: shownAs,
+				reassigned: shownAs !== b.claimerId
+			};
+		}),
+		noted: noted.map((n) => ({ kind: 'noted', id: n.id, title: n.title, giverId: (n.giverId ?? n.contactId)! }))
 	};
+}
+
+/** Everyone a present can be from: account holders you know, then your contacts. */
+export async function giverOptions(ownerId: string) {
+	const [people, contacts] = await Promise.all([knownPeople(ownerId), contactsOf(ownerId)]);
+	return [
+		...people.map((p) => ({ id: p.id, name: p.name, isContact: false })),
+		...contacts.map((c) => ({ id: c.id, name: c.name, isContact: true }))
+	];
 }
 
 async function requireKnownGiver(ownerId: string, giverId: string) {
@@ -103,17 +129,6 @@ export async function getContact(ownerId: string, contactId: string): Promise<Co
 		.where(and(eq(giftContact.id, contactId), eq(giftContact.ownerId, ownerId)))
 		.limit(1);
 	return c ?? null;
-}
-
-/** Presents the owner noted from these contacts. */
-export async function giftsFromContacts(ownerId: string, contactIds: string[]) {
-	if (!contactIds.length) return [];
-	const rows = await db
-		.select({ id: receivedGift.id, title: receivedGift.title, contactId: receivedGift.contactId })
-		.from(receivedGift)
-		.where(and(eq(receivedGift.ownerId, ownerId), inArray(receivedGift.contactId, contactIds)))
-		.orderBy(asc(receivedGift.createdAt));
-	return rows.map((r) => ({ kind: 'noted' as const, id: r.id, title: r.title, giverId: r.contactId! }));
 }
 
 function cleanTitle(raw: FormDataEntryValue | null): { title: string } | { error: string } {
@@ -179,6 +194,68 @@ export const giftNoteActions = {
 			.limit(1);
 		if (t) await db.insert(receivedGift).values({ id: newId(), ownerId: me.id, contactId: c.id, title: t.title });
 		return { contactAdded: c.id };
+	},
+
+	/**
+	 * Change who a present was from. `kind` is 'list' (a bought wish, by itemId) or 'noted'
+	 * (by giftId). `to` is a person id, or 'new' with `newName` to add a contact on the fly.
+	 * For bought wishes only the owner's private record changes — the claim is untouched.
+	 */
+	reassign: async ({ locals, request }: RequestEvent) => {
+		const me = locals.user!;
+		const fd = await request.formData();
+		const kind = String(fd.get('kind') ?? '');
+		const id = String(fd.get('id') ?? '');
+		const to = String(fd.get('to') ?? '');
+		const fail400 = (message: string) => fail(400, { reassignError: { id, message } });
+
+		// Resolve the new giver.
+		let target: { giverId: string | null; contactId: string | null };
+		if (to === 'new') {
+			const name = String(fd.get('newName') ?? '').trim();
+			if (!name) return fail400('Add their name.');
+			if (name.length > 80) return fail400('Keep the name under 80 characters.');
+			await db
+				.insert(giftContact)
+				.values({ id: newId(), ownerId: me.id, name })
+				.onDuplicateKeyUpdate({ set: { name: sql`${giftContact.name}` } });
+			const [c] = await db
+				.select({ id: giftContact.id })
+				.from(giftContact)
+				.where(and(eq(giftContact.ownerId, me.id), eq(giftContact.name, name)))
+				.limit(1);
+			target = { giverId: null, contactId: c.id };
+		} else if (await getContact(me.id, to)) {
+			target = { giverId: null, contactId: to };
+		} else if ((await knownPeople(me.id)).some((p) => p.id === to)) {
+			target = { giverId: to, contactId: null };
+		} else {
+			return fail400('Pick who it was from.');
+		}
+
+		if (kind === 'noted') {
+			await db
+				.update(receivedGift)
+				.set(target)
+				.where(and(eq(receivedGift.id, id), eq(receivedGift.ownerId, me.id)));
+			return { reassigned: id };
+		}
+
+		if (kind !== 'list') error(400, 'Unknown present');
+		// Only presents the owner can already see may be reassigned.
+		const visible = (await allReceived(me.id)).fromLists.some((g) => g.itemId === id);
+		if (!visible) error(404, 'Present not found');
+		const [claim] = await db.select({ userId: itemClaim.userId }).from(itemClaim).where(eq(itemClaim.itemId, id)).limit(1);
+		if (target.giverId && target.giverId === claim?.userId) {
+			// Back to the person who marked it bought: no correction needed.
+			await db.delete(giftAttribution).where(and(eq(giftAttribution.itemId, id), eq(giftAttribution.ownerId, me.id)));
+		} else {
+			await db
+				.insert(giftAttribution)
+				.values({ itemId: id, ownerId: me.id, ...target })
+				.onDuplicateKeyUpdate({ set: target });
+		}
+		return { reassigned: id };
 	},
 
 	renameContact: async ({ locals, request }: RequestEvent) => {

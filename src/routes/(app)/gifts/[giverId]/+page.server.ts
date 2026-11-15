@@ -3,24 +3,25 @@ import { and, eq } from 'drizzle-orm';
 import { db } from '#lib/server/db';
 import { giftContact } from '#lib/server/db/schema';
 import { knownPeople } from '#lib/server/lists';
-import { getContact, giftNoteActions, giftsFrom, giftsFromContacts, revealedGivers } from '#lib/server/gifts';
+import { allReceived, getContact, giftNoteActions, giverOptions, revealedGivers } from '#lib/server/gifts';
 import type { Actions, PageServerLoad } from './$types';
 
 /** One giver's page: an account holder (by user id) or one of your contacts (by contact id). */
 export const load: PageServerLoad = async ({ locals, params }) => {
 	const me = locals.user!;
-	const person = (await knownPeople(me.id)).find((p) => p.id === params.giverId);
-	if (person) {
-		const [revealed, gifts] = await Promise.all([revealedGivers(me.id), giftsFrom(me.id, [person.id])]);
-		return { person: { ...person, isContact: false }, received: revealed.includes(person.id), ...gifts };
-	}
-	const contact = await getContact(me.id, params.giverId);
-	if (!contact) error(404, "We couldn't find that person.");
+	const account = (await knownPeople(me.id)).find((p) => p.id === params.giverId);
+	const contact = account ? null : await getContact(me.id, params.giverId);
+	if (!account && !contact) error(404, "We couldn't find that person.");
+	const person = account ? { ...account, isContact: false } : { ...contact!, isContact: true };
+
+	const [revealed, all, options] = await Promise.all([revealedGivers(me.id), allReceived(me.id), giverOptions(me.id)]);
 	return {
-		person: { ...contact, isContact: true },
-		received: true,
-		fromLists: [],
-		noted: await giftsFromContacts(me.id, [contact.id])
+		person,
+		received: person.isContact || revealed.includes(person.id),
+		fromLists: all.fromLists.filter((g) => g.giverId === person.id),
+		noted: all.noted.filter((g) => g.giverId === person.id),
+		// Who else a present could be from (for "From someone else?").
+		others: options.filter((o) => o.id !== person.id)
 	};
 };
 

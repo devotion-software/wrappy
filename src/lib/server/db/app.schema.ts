@@ -245,6 +245,23 @@ export const receivedGift = mysqlTable(
 	]
 );
 
+/**
+ * The owner's private correction of who a bought wish was really from
+ * ("Mum ticked off the scarf, but Granny bought it"). The claim itself is untouched,
+ * so the person who claimed it never sees this. Points at an account or a contact.
+ */
+export const giftAttribution = mysqlTable('gift_attribution', {
+	itemId: id('item_id')
+		.primaryKey()
+		.references(() => item.id, { onDelete: 'cascade' }),
+	ownerId: userRef('owner_id')
+		.notNull()
+		.references(() => user.id, { onDelete: 'cascade' }),
+	giverId: userRef('giver_id').references(() => user.id, { onDelete: 'cascade' }),
+	contactId: id('contact_id').references(() => giftContact.id, { onDelete: 'cascade' }),
+	createdAt: created()
+});
+
 // ── Secret Santa ─────────────────────────────────────────────────────────────
 
 export const santa = mysqlTable(

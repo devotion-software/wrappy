@@ -45,7 +45,7 @@
 					<Avatar name={p.name} size={36} />
 					<div class="who">
 						<p class="write name">{p.name}</p>
-						{#if isRevealed(p.id)}
+						{#if isRevealed(p.id) || gifts.length}
 							{#if gifts.length}
 								<p class="note">got you {gifts.join(', ')}</p>
 							{:else}
@@ -53,7 +53,7 @@
 							{/if}
 						{/if}
 					</div>
-					{#if isRevealed(p.id)}
+					{#if isRevealed(p.id) || gifts.length}
 						<a href="/gifts/{p.id}" class="btn btn-outline see-all"
 							>{gifts.length ? `See all ${gifts.length}` : 'Open'}</a
 						>
@@ -90,7 +90,7 @@
 		</div>
 		<Sheet margin={50} padding="18px 28px 22px 72px" class="sheet">
 			{#each data.contacts as c (c.id)}
-				{@const gifts = data.contactGifts.filter((g) => g.giverId === c.id).map((g) => g.title)}
+				{@const gifts = giftsFrom(c.id)}
 				{@const first = c.name.split(' ')[0]}
 				<div class="person">
 					<div class="person-head">

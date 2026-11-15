@@ -5,6 +5,7 @@
 	import Avatar from '#lib/components/ui/Avatar.svelte';
 	import Icon from '#lib/components/ui/Icon.svelte';
 	import AddGiftForm from '#lib/components/AddGiftForm.svelte';
+	import ReassignGift from '#lib/components/ReassignGift.svelte';
 	import { formatPrice, plural, tiltFor } from '#lib/format';
 
 	let { data, form } = $props();
@@ -37,12 +38,22 @@
 		{#if data.fromLists.length}
 			<h2 class="label">From your lists</h2>
 			{#each data.fromLists as g (g.itemId)}
-				<a href="/items/{g.itemId}" class="row">
+				<div class="row">
 					<Checkbox checked tilt={tiltFor(g.itemId)} />
 					{#if g.cover}<img src={g.cover} alt="" class="thumb" loading="lazy" />{/if}
-					<span class="write title">{g.title}</span>
+					<span class="title-wrap">
+						<a href="/items/{g.itemId}" class="write title">{g.title}</a>
+						{#if g.reassigned}<span class="meta">you moved this to {first}</span>{/if}
+					</span>
 					<span class="meta">{formatPrice(g.price, g.currency) ?? ''}</span>
-				</a>
+					<ReassignGift
+						kind="list"
+						id={g.itemId}
+						title={g.title}
+						others={data.others}
+						error={form?.reassignError?.id === g.itemId ? form.reassignError.message : null}
+					/>
+				</div>
 			{/each}
 		{/if}
 
@@ -51,7 +62,14 @@
 			{#each data.noted as g (g.id)}
 				<div class="row">
 					<Checkbox checked tilt={tiltFor(g.id)} />
-					<span class="write title">{g.title}</span>
+					<span class="title-wrap"><span class="write title">{g.title}</span></span>
+					<ReassignGift
+						kind="noted"
+						id={g.id}
+						title={g.title}
+						others={data.others}
+						error={form?.reassignError?.id === g.id ? form.reassignError.message : null}
+					/>
 					<form method="POST" action="?/removeGift" use:enhance>
 						<input type="hidden" name="giftId" value={g.id} />
 						<button class="btn btn-icon" aria-label="Remove {g.title}"><Icon name="trash" size={16} /></button>
@@ -149,12 +167,19 @@
 	}
 	.row {
 		display: flex;
+		flex-wrap: wrap;
 		align-items: center;
-		gap: 14px;
+		gap: 4px 14px;
 		min-height: 56px;
+		padding: 6px 0;
 		border-bottom: 1px solid var(--rule);
-		text-decoration: none;
 		color: var(--ink);
+	}
+	.title-wrap {
+		flex: 1 1 160px;
+		min-width: 0;
+		display: flex;
+		flex-direction: column;
 	}
 	.thumb {
 		width: 40px;
@@ -164,10 +189,15 @@
 		background: var(--desk);
 	}
 	.title {
-		flex: 1;
-		min-width: 0;
 		font-size: 22px;
+		color: var(--ink);
+		text-decoration: none;
 		overflow-wrap: anywhere;
+	}
+	a.title:hover {
+		text-decoration: underline;
+		text-decoration-color: var(--line);
+		text-underline-offset: 4px;
 	}
 	.row form {
 		margin: 0;

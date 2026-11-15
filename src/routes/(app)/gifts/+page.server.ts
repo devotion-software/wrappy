@@ -3,17 +3,18 @@ import { and, eq, sql } from 'drizzle-orm';
 import { db } from '#lib/server/db';
 import { receivedFrom } from '#lib/server/db/schema';
 import { knownPeople } from '#lib/server/lists';
-import { contactsOf, giftNoteActions, giftsFrom, giftsFromContacts, revealedGivers } from '#lib/server/gifts';
+import { allReceived, contactsOf, giftNoteActions, revealedGivers } from '#lib/server/gifts';
 import type { Actions, PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async ({ locals }) => {
 	const me = locals.user!;
-	const [people, revealed, contacts] = await Promise.all([knownPeople(me.id), revealedGivers(me.id), contactsOf(me.id)]);
-	const [{ fromLists, noted }, contactGifts] = await Promise.all([
-		giftsFrom(me.id, revealed),
-		giftsFromContacts(me.id, contacts.map((c) => c.id))
+	const [people, revealed, contacts, { fromLists, noted }] = await Promise.all([
+		knownPeople(me.id),
+		revealedGivers(me.id),
+		contactsOf(me.id),
+		allReceived(me.id)
 	]);
-	return { people, revealed, fromLists, noted, contacts, contactGifts };
+	return { people, revealed, fromLists, noted, contacts };
 };
 
 export const actions: Actions = {
