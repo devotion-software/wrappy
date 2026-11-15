@@ -709,3 +709,13 @@ describe('claim actions', () => {
 		expect(await act('claim', owner, l, { itemId: it.id })).toMatchObject({ kind: 'error', status: 403 });
 	});
 });
+
+describe('/lists/[id] link preview', () => {
+	it('describes the list for people who can see it', async () => {
+		const owner = await createUser({ name: 'Meg' });
+		const l = await createList(owner, { title: 'Christmas', visibility: 'public', eventDate: '2020-12-25' });
+		await createItem(owner, { title: 'Scarf' }, { lists: [l] });
+		const data = await ok<any>(() => (load as any)(fakeEvent({ params: { id: l.id }, path: `/lists/${l.id}` })));
+		expect(data.meta).toEqual({ title: 'Christmas', description: "Meg's wish list · 1 wish · 25 Dec 2020" });
+	});
+});

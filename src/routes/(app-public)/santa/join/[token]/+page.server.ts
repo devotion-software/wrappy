@@ -30,7 +30,11 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 			drawn: s.status === 'drawn'
 		},
 		organiserName: organiser?.name ?? 'Someone',
-		members: members.map((m) => ({ id: m.userId, name: m.name }))
+		members: members.map((m) => ({ id: m.userId, name: m.name })),
+		meta: {
+			title: `Join ${s.name}`,
+			description: `${organiser?.name ?? 'Someone'} invited you to a Secret Santa${s.priceLimit ? ` · ${formatPrice(s.priceLimit, s.currency)} limit` : ''}.`
+		}
 	};
 };
 

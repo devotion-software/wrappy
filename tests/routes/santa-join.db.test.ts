@@ -26,7 +26,8 @@ describe('/santa/join/[token] load', () => {
 		expect(data).toEqual({
 			santa: { name: 'Office', description: 'Fun', budget: '£15', exchangeDate: '2026-12-18', drawn: false },
 			organiserName: 'Olive',
-			members: [{ id: m.id, name: 'Max' }]
+			members: [{ id: m.id, name: 'Max' }],
+			meta: { title: 'Join Office', description: 'Olive invited you to a Secret Santa · £15 limit.' }
 		});
 		expect(JSON.stringify(data)).not.toContain(m.email);
 	});

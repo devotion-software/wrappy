@@ -12,6 +12,7 @@ import { sendListInviteEmail } from '#lib/server/email';
 import { claimActions } from '#lib/server/claims';
 import { FETCH_LIMIT_MESSAGE, takeFetchBudget } from '#lib/server/rateLimit';
 import { formatPrice } from '#lib/format';
+import { listMeta } from '#lib/meta';
 import type { Actions, PageServerLoad, RequestEvent } from './$types';
 
 const viewerOf = (locals: App.Locals) => (locals.user ? { id: locals.user.id, email: locals.user.email } : null);
@@ -44,7 +45,8 @@ export const load: PageServerLoad = async ({ params, locals, cookies }) => {
 		isOwner: access.isOwner,
 		santa: santaRow
 			? { id: santaRow.id, name: santaRow.name, limit: formatPrice(santaRow.priceLimit, santaRow.currency) }
-			: null
+			: null,
+		meta: listMeta(l, owner.name, items.length)
 	};
 
 	if (!access.isOwner) return { ...base, owned: null };
