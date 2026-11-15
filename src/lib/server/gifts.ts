@@ -1,7 +1,7 @@
 import { error, fail, type RequestEvent } from '@sveltejs/kit';
 import { and, asc, eq, inArray, sql } from 'drizzle-orm';
 import { db } from './db';
-import { giftAttribution, giftContact, item, itemClaim, itemImage, receivedFrom, receivedGift, user } from './db/schema';
+import { giftAttribution, giftContact, giftThanks, item, itemClaim, itemImage, receivedFrom, receivedGift, user } from './db/schema';
 import { knownPeople } from './lists';
 import { newId } from './ids';
 import { imageUrl } from '#lib/images';
@@ -272,6 +272,34 @@ export const giftNoteActions = {
 			return fail(400, { renameError: `You already have someone called ${name}.` });
 		}
 		return { renamed: true };
+	}
+};
+
+/** People (account or contact ids) the owner has marked as thanked. */
+export async function thankedPeople(ownerId: string): Promise<string[]> {
+	const rows = await db.select({ personId: giftThanks.personId }).from(giftThanks).where(eq(giftThanks.ownerId, ownerId));
+	return rows.map((r) => r.personId);
+}
+
+/**
+ * Tick or untick "thanked" for someone who gave you something. Unlike "received from" this can be
+ * undone freely: it only records what the owner has done, it reveals nothing.
+ */
+export const thanksActions = {
+	thanked: async ({ locals, request }: RequestEvent) => {
+		const me = locals.user!;
+		const fd = await request.formData();
+		const personId = String(fd.get('personId') ?? '');
+		const on = String(fd.get('on') ?? '1') !== '0';
+		if (on) {
+			const isKnown =
+				(await knownPeople(me.id)).some((p) => p.id === personId) || !!(await getContact(me.id, personId));
+			if (!isKnown) error(400, 'Pick someone from the list.');
+			await db.insert(giftThanks).values({ ownerId: me.id, personId }).onDuplicateKeyUpdate({ set: { personId } });
+		} else {
+			await db.delete(giftThanks).where(and(eq(giftThanks.ownerId, me.id), eq(giftThanks.personId, personId)));
+		}
+		return { thanked: { personId, on } };
 	}
 };
 

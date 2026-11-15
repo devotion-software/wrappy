@@ -263,6 +263,23 @@ export const giftAttribution = mysqlTable('gift_attribution', {
 	createdAt: created()
 });
 
+/**
+ * Who the owner has said thank you to. `personId` is an account's user id or a contact's id
+ * (they never collide; see server/gifts.ts). Private to the owner. No FK on personId because it
+ * can point at either table; rows for a deleted contact are removed with it in deleteContact.
+ */
+export const giftThanks = mysqlTable(
+	'gift_thanks',
+	{
+		ownerId: userRef('owner_id')
+			.notNull()
+			.references(() => user.id, { onDelete: 'cascade' }),
+		personId: varchar('person_id', { length: 36 }).notNull(),
+		thankedAt: timestamp('thanked_at', { fsp: 3 }).defaultNow().notNull()
+	},
+	(t) => [primaryKey({ columns: [t.ownerId, t.personId] })]
+);
+
 // ── Secret Santa ─────────────────────────────────────────────────────────────
 
 export const santa = mysqlTable(

@@ -106,3 +106,36 @@ describe('/gifts note actions', () => {
 		expect(await db.select().from(receivedGift).where(eq(receivedGift.id, g.id))).toEqual([]);
 	});
 });
+
+describe('/gifts thanked', () => {
+	it('ticks and unticks thanks for an account holder and a contact', async () => {
+		const { me, ann } = await scene();
+		const jo = await createContact(me, 'Grandma Jo');
+		expect(await ok(() => actions.thanked(ev(me, { personId: ann.id })))).toEqual({ thanked: { personId: ann.id, on: true } });
+		await ok(() => actions.thanked(ev(me, { personId: jo.id })));
+		await ok(() => actions.thanked(ev(me, { personId: jo.id }))); // idempotent
+		expect(((await ok<any>(() => load(ev(me)))).thanked as string[]).sort()).toEqual([ann.id, jo.id].sort());
+
+		await ok(() => actions.thanked(ev(me, { personId: ann.id, on: '0' })));
+		expect((await ok<any>(() => load(ev(me)))).thanked).toEqual([jo.id]);
+	});
+
+	it('only accepts people I know, and is private to me', async () => {
+		const { me, ann } = await scene();
+		const stranger = await createUser();
+		const someoneElsesContact = await createContact(ann, 'Not yours');
+		for (const personId of [stranger.id, someoneElsesContact.id, '']) {
+			expect(await outcome(() => actions.thanked(ev(me, { personId })))).toMatchObject({ kind: 'error', status: 400 });
+		}
+		await ok(() => actions.thanked(ev(me, { personId: ann.id })));
+		expect((await ok<any>(() => load(ev(ann)))).thanked).toEqual([]);
+	});
+
+	it('does not reveal what someone bought', async () => {
+		const { me, ann } = await scene();
+		await ok(() => actions.thanked(ev(me, { personId: ann.id })));
+		const data = await ok<any>(() => load(ev(me)));
+		expect(data.revealed).toEqual([]);
+		expect(data.fromLists).toEqual([]);
+	});
+});

@@ -3,18 +3,19 @@ import { sql } from 'drizzle-orm';
 import { db } from '#lib/server/db';
 import { receivedFrom } from '#lib/server/db/schema';
 import { knownPeople } from '#lib/server/lists';
-import { allReceived, contactsOf, giftNoteActions, revealedGivers } from '#lib/server/gifts';
+import { allReceived, contactsOf, giftNoteActions, revealedGivers, thankedPeople, thanksActions } from '#lib/server/gifts';
 import type { Actions, PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async ({ locals }) => {
 	const me = locals.user!;
-	const [people, revealed, contacts, { fromLists, noted }] = await Promise.all([
+	const [people, revealed, contacts, { fromLists, noted }, thanked] = await Promise.all([
 		knownPeople(me.id),
 		revealedGivers(me.id),
 		contactsOf(me.id),
-		allReceived(me.id)
+		allReceived(me.id),
+		thankedPeople(me.id)
 	]);
-	return { people, revealed, fromLists, noted, contacts };
+	return { people, revealed, fromLists, noted, contacts, thanked };
 };
 
 export const actions: Actions = {
@@ -37,5 +38,6 @@ export const actions: Actions = {
 		return { done: true };
 	},
 	// No "undo": received-from is one-way, or an owner could tick, peek at what was bought, and untick.
-	...giftNoteActions
+	...giftNoteActions,
+	...thanksActions
 };

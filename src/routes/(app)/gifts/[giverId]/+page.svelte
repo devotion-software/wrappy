@@ -6,6 +6,7 @@
 	import Icon from '#lib/components/ui/Icon.svelte';
 	import AddGiftForm from '#lib/components/AddGiftForm.svelte';
 	import ReassignGift from '#lib/components/ReassignGift.svelte';
+	import ThankedToggle from '#lib/components/ThankedToggle.svelte';
 	import { formatPrice, plural, tiltFor } from '#lib/format';
 
 	let { data, form } = $props();
@@ -25,6 +26,7 @@
 			<h1 class="hand">From {data.person.name}</h1>
 			<p class="meta">{plural(total, 'present')}{data.person.isContact ? ' · not on Wishlist' : ''}</p>
 		</div>
+		{#if total}<ThankedToggle personId={data.person.id} name={data.person.name} thanked={data.thanked} />{/if}
 	</div>
 
 	<Sheet tape margin={50} padding="18px 28px 22px 72px" class="sheet">
@@ -143,8 +145,13 @@
 	}
 	.who {
 		display: flex;
+		flex-wrap: wrap;
 		align-items: center;
 		gap: 18px;
+	}
+	.who > div {
+		flex: 1 1 auto;
+		min-width: 0;
 	}
 	h1 {
 		margin: 0;

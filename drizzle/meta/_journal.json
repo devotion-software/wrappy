@@ -43,6 +43,13 @@
       "when": 1794763486980,
       "tag": "0005_peaceful_genesis",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "5",
+      "when": 1794773694187,
+      "tag": "0006_gift_thanks",
+      "breakpoints": true
     }
   ]
 }

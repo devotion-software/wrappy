@@ -5,6 +5,7 @@
 	import Checkbox from '#lib/components/ui/Checkbox.svelte';
 	import Avatar from '#lib/components/ui/Avatar.svelte';
 	import AddGiftForm from '#lib/components/AddGiftForm.svelte';
+	import ThankedToggle from '#lib/components/ThankedToggle.svelte';
 	import { plural, tiltFor } from '#lib/format';
 
 	let { data, form } = $props();
@@ -14,6 +15,12 @@
 		...data.noted.filter((g) => g.giverId === id).map((g) => g.title)
 	];
 	const anyLeft = $derived(data.people.some((p) => !isRevealed(p.id)));
+	const isThanked = (id: string) => data.thanked.includes(id);
+	// Everyone (account or contact) you've got something from but haven't ticked off as thanked.
+	const toThank = $derived(
+		[...data.people, ...data.contacts].filter((p) => giftsFrom(p.id).length && !isThanked(p.id))
+	);
+	const anyGifts = $derived([...data.people, ...data.contacts].some((p) => giftsFrom(p.id).length));
 	// Marking is permanent, so check before revealing what someone bought.
 	const confirmReveal =
 		(who: string): SubmitFunction =>
@@ -67,6 +74,7 @@
 							{/if}
 						{/if}
 					</div>
+					{#if gifts.length}<ThankedToggle personId={p.id} name={p.name} thanked={isThanked(p.id)} />{/if}
 					{#if isRevealed(p.id) || gifts.length}
 						<a href="/gifts/{p.id}" class="btn btn-outline see-all"
 							>{gifts.length ? `See all ${gifts.length}` : 'Open'}</a
@@ -93,8 +101,17 @@
 			</form>
 		{/if}
 	</Sheet>
-	{#if data.revealed.length}
-		<p class="meta">{plural(data.revealed.length, 'person', 'people')} ticked off.</p>
+	{#if data.revealed.length || anyGifts}
+		<p class="meta">
+			{#if data.revealed.length}{plural(data.revealed.length, 'person', 'people')} ticked off.{/if}
+			{#if anyGifts}
+				{#if toThank.length}
+					Still to thank: {toThank.map((p) => p.name.split(' ')[0]).join(', ')}.
+				{:else}
+					Everyone's been thanked.
+				{/if}
+			{/if}
+		</p>
 	{/if}
 
 	<section class="others">
@@ -118,6 +135,7 @@
 								<p class="meta">Nothing noted from {first} yet.</p>
 							{/if}
 						</div>
+						{#if gifts.length}<ThankedToggle personId={c.id} name={c.name} thanked={isThanked(c.id)} />{/if}
 						<a href="/gifts/{c.id}" class="btn btn-outline see-all">{gifts.length ? `See all ${gifts.length}` : 'Open'}</a>
 					</div>
 					<div class="add">

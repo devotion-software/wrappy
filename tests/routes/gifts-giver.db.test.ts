@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { eq } from 'drizzle-orm';
 import { db } from '#lib/server/db';
-import { giftContact, receivedGift } from '#lib/server/db/schema';
+import { giftContact, giftThanks, receivedGift } from '#lib/server/db/schema';
 import { newId } from '#lib/server/ids';
 import { load, actions } from '../../src/routes/(app)/gifts/[giverId]/+page.server';
 import { claim, createContact, createItem, createList, createUser, markReceived, share, type TestUser } from '../helpers/fixtures';
@@ -85,12 +85,26 @@ describe('/gifts/[giverId] deleteContact', () => {
 		expect(await db.select().from(receivedGift).where(eq(receivedGift.id, fromAnn))).toHaveLength(1);
 	});
 
+	it('forgets that I thanked them', async () => {
+		const { me, jo } = await scene();
+		await ok(() => actions.thanked(ev(me, jo.id, { personId: jo.id })));
+		await outcome(() => actions.deleteContact(ev(me, jo.id, {})));
+		expect(await db.select().from(giftThanks).where(eq(giftThanks.personId, jo.id))).toEqual([]);
+	});
+
 	it('cannot delete someone else’s contact', async () => {
 		const me = await createUser();
 		const other = await createUser();
 		const theirs = await createContact(other, 'Keep me');
 		expect(await outcome(() => actions.deleteContact(ev(me, theirs.id, {})))).toMatchObject({ kind: 'redirect' });
 		expect(await db.select().from(giftContact).where(eq(giftContact.id, theirs.id))).toHaveLength(1);
+	});
+
+	it('shows whether I have thanked them', async () => {
+		const { me, jo } = await scene();
+		expect((await ok<any>(() => load(ev(me, jo.id)))).thanked).toBe(false);
+		await ok(() => actions.thanked(ev(me, jo.id, { personId: jo.id })));
+		expect((await ok<any>(() => load(ev(me, jo.id)))).thanked).toBe(true);
 	});
 
 	it('exposes the shared note actions', async () => {
