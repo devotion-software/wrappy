@@ -2,7 +2,6 @@
 	import { enhance, deserialize } from '$app/forms';
 	import { invalidateAll } from '$app/navigation';
 	import Sheet from '#lib/components/ui/Sheet.svelte';
-	import Segmented from '#lib/components/ui/Segmented.svelte';
 	import Icon from '#lib/components/ui/Icon.svelte';
 	import Checkbox from '#lib/components/ui/Checkbox.svelte';
 	import ItemRow from '#lib/components/ItemRow.svelte';
@@ -12,8 +11,7 @@
 
 	let { data, form } = $props();
 
-	let view = $state<'owner' | 'friend'>('owner');
-	const mode = $derived(data.isOwner ? (view === 'owner' ? 'owner' : 'preview') : 'guest');
+	const mode = $derived(data.isOwner ? 'owner' : 'guest');
 	const firstName = $derived(data.owner.name.split(' ')[0]);
 	const isSanta = $derived(!!data.list.santaId);
 
@@ -99,24 +97,12 @@
 					.join(' · ')}
 			</p>
 		</div>
-		{#if data.isOwner}
-			<Segmented
-				label="Preview the list as"
-				bind:value={view}
-				options={[
-					{ value: 'owner', label: 'My view' },
-					{ value: 'friend', label: 'What friends see' }
-				]}
-			/>
-		{/if}
 	</div>
 
 	<div class="with-aside">
 		<Sheet tape margin={50} padding="18px 28px 20px 72px" class="main-col list-sheet">
-			{#if data.isOwner && mode === 'owner'}
+			{#if data.isOwner}
 				<p class="banner"><Icon name="eye-off" size={16} />Reserved and bought gifts are hidden from you, so the surprise is safe.</p>
-			{:else if mode === 'preview'}
-				<p class="banner"><Icon name="lock" size={16} />This is what friends see. They can reserve gifts without you knowing.</p>
 			{:else}
 				<p class="banner"><Icon name="lock" size={16} />{firstName} can't see what you reserve or buy.</p>
 			{/if}
@@ -187,7 +173,7 @@
 				{/each}
 			</div>
 
-			{#if data.isOwner && mode === 'owner'}
+			{#if data.isOwner}
 				{#if form?.found}
 					<div class="panel">
 						<p class="hand panel-title">Found it</p>

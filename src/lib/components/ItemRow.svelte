@@ -8,8 +8,8 @@
 	interface Props {
 		item: ListItemView;
 		listId: string;
-		/** owner = editing own list; guest = friend view; preview = owner previewing the friend view. */
-		mode: 'owner' | 'guest' | 'preview';
+		/** owner = editing own list; guest = someone else viewing it. */
+		mode: 'owner' | 'guest';
 		signedIn: boolean;
 		ownerName: string;
 		claimError?: string | null;
@@ -18,7 +18,7 @@
 	}
 	let { item, listId, mode, signedIn, ownerName, claimError = null, dragHandle }: Props = $props();
 
-	const claim = $derived(mode === 'preview' ? null : item.claim);
+	const claim = $derived(item.claim);
 	const struck = $derived(!!claim && !claim.mine);
 	const price = $derived(formatPrice(item.price, item.currency));
 	const meta = $derived([item.notes, item.link?.host, price].filter(Boolean) as string[]);
@@ -71,8 +71,6 @@
 				>
 			{/if}
 			<a href={detailHref} class="btn btn-icon" aria-label="Edit {item.title}"><Icon name="edit" /></a>
-		{:else if mode === 'preview'}
-			<span class="btn btn-outline" aria-disabled="true">I'll get it</span>
 		{:else if !claim}
 			{#if signedIn}
 				<form method="POST" action="?/claim" use:enhance={submit}>
@@ -211,9 +209,5 @@
 	}
 	.full {
 		flex-basis: 100%;
-	}
-	span.btn[aria-disabled='true'] {
-		cursor: default;
-		opacity: 0.8;
 	}
 </style>
