@@ -50,7 +50,6 @@
 							name="name"
 							class="line-input"
 							autocomplete="name"
-							placeholder="Maya"
 							required
 							maxlength="60"
 							value={form?.name ?? data.name ?? ''}
@@ -69,7 +68,6 @@
 								autocomplete="username"
 								spellcheck="false"
 								maxlength="30"
-								placeholder="maya"
 								value={form?.username ?? data.username ?? ''}
 							/>
 						</div>

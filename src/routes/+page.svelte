@@ -12,7 +12,7 @@
 		{ name: 'Film camera', star: true, tilt: -1 },
 		{ name: 'Trailing pothos plant', tilt: 1.5 }
 	];
-	const santaNames = ['Maya', 'Sam', 'Priya', 'Tom', 'Grandma Jo', 'Leo'];
+	const santaNames = ['Meg', 'Sam', 'Priya', 'Tom', 'Grandma Jo', 'Leo'];
 </script>
 
 <svelte:head><title>Wishlist — write it down, share it, keep the surprise</title></svelte:head>
@@ -45,7 +45,7 @@
 
 	<div class="hero-art">
 		<Sheet tape tilt={-1.5} margin={46} padding="30px 28px 22px 68px" class="hero-sheet">
-			<p class="hand sheet-title">Maya's 30th</p>
+			<p class="hand sheet-title">Meg's 30th</p>
 			{#each heroItems as it (it.name)}
 				<div class="hero-row">
 					<Checkbox checked={it.taken} size={22} tilt={it.tilt} />
@@ -111,7 +111,7 @@
 	</div>
 	<div class="views">
 		<Sheet margin={false} padding="22px">
-			<p class="view-label">What Maya sees</p>
+			<p class="view-label">What Meg sees</p>
 			<div class="ruled">
 				<p class="write view-row">Wireless headphones</p>
 				<p class="write view-row">Hardback cookbook</p>
