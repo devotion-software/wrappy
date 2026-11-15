@@ -36,8 +36,12 @@
 	async function verify(e: SubmitEvent) {
 		e.preventDefault();
 		error = '';
+		if (code.length !== 6) {
+			error = 'Enter the 6-digit code from the email.';
+			return;
+		}
 		busy = true;
-		const res = await authClient.signIn.emailOtp({ email: email.trim(), otp: code.trim() });
+		const res = await authClient.signIn.emailOtp({ email: email.trim(), otp: code });
 		busy = false;
 		if (res.error) {
 			error = 'That code is wrong or has expired. Check the latest email, or send a new code.';
@@ -107,12 +111,10 @@
 							class="line-input code"
 							inputmode="numeric"
 							autocomplete="one-time-code"
-							pattern="[0-9]{6}"
-							maxlength="6"
 							placeholder="123456"
 							required
 							bind:this={codeInput}
-							bind:value={code}
+							bind:value={() => code, (v) => (code = v.replace(/\D/g, '').slice(0, 6))}
 						/>
 					</div>
 					{#if error}<p class="field-error" role="alert">{error}</p>{/if}
