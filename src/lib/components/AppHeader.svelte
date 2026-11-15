@@ -45,6 +45,8 @@
 	header {
 		background: var(--paper);
 		border-bottom: 1px solid var(--line);
+		/* Own view-transition layer, so it stays still while the page below cross-fades. */
+		view-transition-name: site-header;
 	}
 	.bar {
 		padding-top: 14px;
@@ -71,6 +73,13 @@
 		border-radius: 999px;
 		text-decoration: none;
 		color: var(--ink2);
+		transition:
+			background-color 0.2s,
+			color 0.2s;
+	}
+	nav a:hover {
+		color: var(--ink);
+		background: color-mix(in srgb, var(--desk) 60%, transparent);
 	}
 	nav a[aria-current='page'] {
 		background: var(--desk);

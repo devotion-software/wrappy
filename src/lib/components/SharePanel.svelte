@@ -3,7 +3,9 @@
 	import { page } from '$app/state';
 	import Sheet from '#lib/components/ui/Sheet.svelte';
 	import Avatar from '#lib/components/ui/Avatar.svelte';
+	import Icon from '#lib/components/ui/Icon.svelte';
 	import { plural } from '#lib/format';
+	import { pop } from '#lib/motion';
 
 	interface Props {
 		visibility: 'public' | 'private';
@@ -44,7 +46,9 @@
 		<div class="link-row">
 			<label for="sharelink" class="sr-only">Secret link</label>
 			<input id="sharelink" readonly value={link} onfocus={(e) => e.currentTarget.select()} />
-			<button type="button" class="btn btn-primary btn-md" onclick={copy}>{copied ? 'Copied' : 'Copy'}</button>
+			<button type="button" class="btn btn-primary btn-md" onclick={copy}
+				>{#key copied}<span class="copy-label" in:pop>{#if copied}<Icon name="tick" size={16} strokeWidth={2.4} />Copied{:else}Copy{/if}</span>{/key}</button
+			>
 		</div>
 		<div class="link-actions">
 			<form method="POST" action="?/newLink" use:enhance>

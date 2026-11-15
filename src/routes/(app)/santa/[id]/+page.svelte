@@ -7,6 +7,7 @@
 	import Icon from '#lib/components/ui/Icon.svelte';
 	import SantaFields from '#lib/components/SantaFields.svelte';
 	import { formatDate, formatPrice, plural, tiltFor } from '#lib/format';
+	import { pop } from '#lib/motion';
 
 	let { data, form } = $props();
 	const s = $derived(data.santa);
@@ -177,7 +178,9 @@
 					<div class="link-row">
 						<label for="joinlink" class="sr-only">Join link</label>
 						<input id="joinlink" readonly value={joinLink} onfocus={(e) => e.currentTarget.select()} />
-						<button type="button" class="btn btn-primary btn-md" onclick={copy}>{copied ? 'Copied' : 'Copy'}</button>
+						<button type="button" class="btn btn-primary btn-md" onclick={copy}
+							>{#key copied}<span class="copy-label" in:pop>{#if copied}<Icon name="tick" size={16} strokeWidth={2.4} />Copied{:else}Copy{/if}</span>{/key}</button
+						>
 					</div>
 				</Sheet>
 			{/if}

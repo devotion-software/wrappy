@@ -20,8 +20,8 @@
 	<section class="block">
 		<h2 class="section-title">Public lists</h2>
 		<div class="grid">
-			{#each data.lists as card (card.id)}
-				<ListCard {card} />
+			{#each data.lists as card, i (card.id)}
+				<ListCard {card} index={i} />
 			{:else}
 				<p class="empty">
 					{#if isMe}

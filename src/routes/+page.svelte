@@ -5,13 +5,16 @@
 	import StickyNote from '#lib/components/ui/StickyNote.svelte';
 	import Icon from '#lib/components/ui/Icon.svelte';
 	import SiteFooter from '#lib/components/SiteFooter.svelte';
+	import { writeIn } from '#lib/motion';
 
-	const heroItems = [
+	// The hero list is a little demo: tap a row to reserve it.
+	let heroItems = $state([
 		{ name: 'Wireless headphones', taken: true, tilt: -3 },
-		{ name: 'Hardback cookbook', tilt: 2 },
-		{ name: 'Film camera', star: true, tilt: -1 },
-		{ name: 'Trailing pothos plant', tilt: 1.5 }
-	];
+		{ name: 'Hardback cookbook', taken: false, tilt: 2 },
+		{ name: 'Film camera', taken: false, star: true, tilt: -1 },
+		{ name: 'Trailing pothos plant', taken: false, tilt: 1.5 }
+	]);
+	let tried = $state(false);
 	const santaNames = ['Meg', 'Sam', 'Priya', 'Tom', 'Grandma Jo', 'Leo'];
 </script>
 
@@ -28,7 +31,7 @@
 </header>
 
 <section class="container hero">
-	<div class="hero-copy">
+	<div class="hero-copy rise-in">
 		<p class="kicker hand">for birthdays, weddings &amp; the holidays</p>
 		<h1 class="hand">Write it down.<br />Share it.<br />Keep the surprise.</h1>
 		<p class="lede">
@@ -47,13 +50,22 @@
 		<Sheet tape tilt={-1.5} margin={46} padding="30px 28px 22px 68px" class="hero-sheet">
 			<p class="hand sheet-title">Meg's 30th</p>
 			{#each heroItems as it (it.name)}
-				<div class="hero-row">
+				<button
+					type="button"
+					class="hero-row"
+					aria-pressed={it.taken}
+					onclick={() => {
+						it.taken = !it.taken;
+						tried = true;
+					}}
+				>
 					<Checkbox checked={it.taken} size={22} tilt={it.tilt} />
-					<p class="write hero-item" class:struck={it.taken}>{it.name}</p>
-					{#if it.taken}<span class="note">reserved</span>{/if}
+					<span class="write hero-item" class:struck={it.taken}>{it.name}</span>
+					{#if it.taken}<span class="note" in:writeIn>reserved</span>{/if}
 					{#if it.star}<Icon name="star" size={20} label="Most wanted" />{/if}
-				</div>
+				</button>
 			{/each}
+			<p class="hand try" class:gone={tried} aria-hidden="true">go on, tick one off ↑</p>
 		</Sheet>
 		<div class="hero-sticky">
 			<StickyNote tilt={3} padding="18px 20px">
@@ -251,19 +263,87 @@
 		display: flex;
 		align-items: center;
 		gap: 14px;
+		width: 100%;
 		height: 56px;
+		padding: 0;
+		border: 0;
 		border-top: 1px solid var(--rule);
+		background: transparent;
+		color: var(--ink);
+		text-align: left;
+		cursor: pointer;
 	}
+	.hero-row:hover .hero-item:not(.struck) {
+		color: var(--gold-text);
+	}
+	/* Sized to its text (margin-right: auto keeps the note on the right) so the strike only spans the words. */
 	.hero-item {
-		margin: 0;
-		flex: 1;
+		margin-right: auto;
 		font-size: 23px;
+		background: linear-gradient(var(--gold), var(--gold)) no-repeat 0 58% / 0% 2px;
+		transition:
+			background-size 0.45s cubic-bezier(0.65, 0, 0.35, 1),
+			color 0.3s;
 	}
 	.struck {
 		color: var(--faint);
-		text-decoration: line-through;
-		text-decoration-color: var(--gold);
-		text-decoration-thickness: 2px;
+		background-size: 100% 2px;
+	}
+	.try {
+		margin: 10px 0 0;
+		font-size: 22px;
+		color: var(--gold-text);
+		transition: opacity 0.4s;
+		animation: nudge 2.4s ease-in-out 1.6s infinite;
+	}
+	.try.gone {
+		opacity: 0;
+	}
+	@keyframes nudge {
+		0%,
+		70%,
+		100% {
+			translate: 0 0;
+		}
+		80% {
+			translate: 0 -4px;
+		}
+		90% {
+			translate: 0 1px;
+		}
+	}
+
+	/* On load: the copy rises, the sheet drops onto the desk, then the sticky note is slapped on. */
+	.rise-in > :global(*) {
+		animation: rise 0.5s cubic-bezier(0.2, 0.7, 0.3, 1) both;
+	}
+	.rise-in > :global(:nth-child(2)) {
+		animation-delay: 60ms;
+	}
+	.rise-in > :global(:nth-child(3)) {
+		animation-delay: 120ms;
+	}
+	.rise-in > :global(:nth-child(4)) {
+		animation-delay: 180ms;
+	}
+	.hero-art :global(.hero-sheet) {
+		animation: drop 0.6s cubic-bezier(0.2, 0.8, 0.3, 1.1) 0.15s both;
+	}
+	@keyframes drop {
+		from {
+			opacity: 0;
+			translate: 0 -24px;
+			scale: 1.03;
+		}
+	}
+	.hero-sticky {
+		animation: slap 0.45s cubic-bezier(0.3, 1.4, 0.5, 1) 0.65s both;
+	}
+	@keyframes slap {
+		from {
+			opacity: 0;
+			scale: 1.25;
+		}
 	}
 	.hero-sticky {
 		position: absolute;

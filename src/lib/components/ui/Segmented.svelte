@@ -35,6 +35,17 @@
 		color: var(--ink2);
 		font: 600 14px var(--font-ui);
 		cursor: pointer;
+		transition:
+			background-color 0.2s,
+			color 0.2s,
+			transform 0.1s;
+	}
+	button:hover:not([aria-pressed='true']) {
+		color: var(--ink);
+		background: var(--desk);
+	}
+	button:active {
+		transform: scale(0.96);
 	}
 	button[aria-pressed='true'] {
 		background: var(--ink);

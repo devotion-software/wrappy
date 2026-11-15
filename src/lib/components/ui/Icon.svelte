@@ -42,6 +42,7 @@
 		stroke="var(--gold)"
 		stroke-width="1.5"
 		stroke-linejoin="round"
+		class="icon icon-{name}"
 		role={label ? 'img' : undefined}
 		aria-label={label}
 		aria-hidden={label ? undefined : 'true'}
@@ -57,6 +58,7 @@
 		stroke-width={strokeWidth}
 		stroke-linecap="round"
 		stroke-linejoin="round"
+		class="icon icon-{name}"
 		role={label ? 'img' : undefined}
 		aria-label={label}
 		aria-hidden={label ? undefined : 'true'}

@@ -38,8 +38,8 @@
 	<section class="block">
 		<h2 class="section-title">Shared with you</h2>
 		<div class="grid">
-			{#each data.shared as card (card.id)}
-				<ListCard {card} />
+			{#each data.shared as card, i (card.id)}
+				<ListCard {card} index={i} />
 			{:else}
 				<p class="empty">When someone shares a list with you, or you open one, it shows up here.</p>
 			{/each}

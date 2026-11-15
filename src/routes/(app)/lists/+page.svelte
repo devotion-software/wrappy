@@ -32,10 +32,10 @@
 				<a href="/items" class="meta all-items">All my wishes</a>
 			</div>
 			<div class="grid">
-				{#each data.mine as card (card.id)}
-					<ListCard {card} showSharing />
+				{#each data.mine as card, i (card.id)}
+					<ListCard {card} showSharing index={i} />
 				{/each}
-				<a href="/lists/new" class="new-tile">
+				<a href="/lists/new" class="new-tile rise" style="--i: {data.mine.length}">
 					<Icon name="plus" size={28} />
 					<span class="write">Start a new list</span>
 				</a>
@@ -137,6 +137,21 @@
 		border: 2px dashed var(--line);
 		text-decoration: none;
 		color: var(--ink2);
+		transition:
+			border-color 0.2s,
+			color 0.2s,
+			background-color 0.2s;
+	}
+	.new-tile:hover {
+		border-color: var(--gold);
+		color: var(--gold-text);
+		background: color-mix(in srgb, var(--gold-soft) 50%, transparent);
+	}
+	.new-tile :global(svg) {
+		transition: transform 0.3s cubic-bezier(0.3, 0.7, 0.4, 1);
+	}
+	.new-tile:hover :global(svg) {
+		transform: rotate(90deg) scale(1.1);
 	}
 	.new-tile span {
 		font-size: 22px;
@@ -186,6 +201,10 @@
 		color: var(--ink2);
 		text-decoration: none;
 		font-size: 21px;
+		transition: color 0.2s;
+	}
+	.organise:hover {
+		color: var(--gold-text);
 	}
 	.aside-copy {
 		margin: -12px 0 0;

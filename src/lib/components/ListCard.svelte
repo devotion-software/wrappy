@@ -16,8 +16,10 @@
 		};
 		/** Show the sharing line (only meaningful for your own lists). */
 		showSharing?: boolean;
+		/** Position in its grid; staggers the entrance animation. */
+		index?: number;
 	}
-	let { card, showSharing = false }: Props = $props();
+	let { card, showSharing = false, index }: Props = $props();
 
 	const tilt = $derived(tiltFor(card.id) / 5);
 	const sharing = $derived(
@@ -31,7 +33,7 @@
 	);
 </script>
 
-<a href="/lists/{card.id}" class="card" style="transform: rotate({tilt}deg)">
+<a href="/lists/{card.id}" class="card" class:rise={index !== undefined} style="--tilt: {tilt}deg; --i: {index ?? 0}">
 	<div class="margin" aria-hidden="true"></div>
 	<p class="hand title">{card.title}</p>
 	<p class="meta sub">
@@ -59,6 +61,22 @@
 		box-shadow: var(--shadow);
 		text-decoration: none;
 		color: var(--ink);
+		transform: rotate(var(--tilt));
+		transition:
+			transform 0.25s cubic-bezier(0.3, 0.7, 0.4, 1),
+			box-shadow 0.25s;
+	}
+	/* Picked up off the desk: straightens, lifts, shadow deepens. */
+	.card:hover,
+	.card:focus-visible {
+		transform: rotate(0deg) translateY(-4px);
+		box-shadow:
+			var(--shadow),
+			0 14px 28px -10px rgba(0, 0, 0, 0.18);
+	}
+	.card:active {
+		transform: rotate(0deg) translateY(-1px);
+		transition-duration: 0.08s;
 	}
 	.margin {
 		position: absolute;

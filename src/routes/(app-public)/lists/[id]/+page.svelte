@@ -9,6 +9,7 @@
 	import ListSettingsFields from '#lib/components/ListSettingsFields.svelte';
 	import PasteList from '#lib/components/PasteList.svelte';
 	import { CURRENCIES, formatDate, formatPrice, plural } from '#lib/format';
+	import { flip, slide } from '#lib/motion';
 
 	let { data, form } = $props();
 
@@ -34,10 +35,16 @@
 		const res = await fetch('?/reorder', { method: 'POST', body, headers: { 'x-sveltekit-action': 'true' } });
 		deserialize(await res.text());
 	}
-	function moveTo(id: string, targetId: string) {
+	function moveTo(id: string, targetId: string, e: DragEvent) {
 		if (id === targetId) return;
 		const from = order.indexOf(id);
 		const to = order.indexOf(targetId);
+		// Only swap once the pointer is past the target's middle in the direction of travel. Rows glide
+		// into place (animate:flip), so without this the target is still under the pointer mid-glide
+		// and the two rows would swap back and forth.
+		const r = (e.currentTarget as HTMLElement).getBoundingClientRect();
+		const mid = r.top + r.height / 2;
+		if ((from < to && e.clientY < mid) || (from > to && e.clientY > mid)) return;
 		const next = [...order];
 		next.splice(from, 1);
 		next.splice(to, 0, id);
@@ -112,6 +119,9 @@
 				{#each rows as item (item.id)}
 					<div
 						class="drag-wrap"
+						animate:flip
+						in:slide
+						out:slide
 						class:dragging={dragId === item.id}
 						draggable={mode === 'owner' && armed === item.id}
 						role="listitem"
@@ -122,7 +132,7 @@
 						ondragover={(e) => {
 							if (!dragId) return;
 							e.preventDefault();
-							moveTo(dragId, item.id);
+							moveTo(dragId, item.id, e);
 						}}
 						ondragend={() => {
 							if (dragId) saveOrder();
@@ -174,7 +184,7 @@
 
 			{#if data.isOwner}
 				{#if form?.found}
-					<div class="panel">
+					<div class="panel" in:slide>
 						<p class="hand panel-title">Found it</p>
 						<p class="write found-name">{form.found.title}{form.found.price ? ` · ${form.found.price}` : ''}</p>
 						{#if form.found.images.length}
@@ -213,7 +223,7 @@
 				{/if}
 
 				{#if form?.manualUrl !== undefined && form?.manualUrl !== null}
-					<form method="POST" action="?/addManual" class="panel" use:enhance={busyEnhance}>
+					<form method="POST" action="?/addManual" class="panel" use:enhance={busyEnhance} in:slide>
 						<p class="hand panel-title">Add the details</p>
 						<p class="copy">We couldn't read that page, so fill in what you know. The link is saved with it.</p>
 						<input type="hidden" name="url" value={form.manualUrl} />
@@ -309,6 +319,7 @@
 						>
 					</div>
 					{#if settingsOpen}
+						<div transition:slide>
 						<form method="POST" action="?/settings" class="settings" use:enhance={busyEnhance}>
 							<ListSettingsFields values={data.list} hasUsername={data.owned.hasUsername} />
 							{#if form?.settingsError}<p class="field-error" role="alert">{form.settingsError}</p>{/if}
@@ -326,6 +337,7 @@
 								<button class="btn btn-text">Delete this list</button>
 							</form>
 						{/if}
+						</div>
 					{/if}
 				</Sheet>
 
@@ -405,6 +417,9 @@
 	}
 	.drag-wrap.dragging {
 		opacity: 0.5;
+	}
+	.drag-wrap.dragging :global(.row) {
+		background: var(--gold-soft);
 	}
 	.drag-wrap :global(.row) {
 		position: relative;

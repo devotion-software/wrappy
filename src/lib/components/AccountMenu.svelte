@@ -3,6 +3,7 @@
 	import { authClient } from '#lib/auth-client';
 	import Segmented from '#lib/components/ui/Segmented.svelte';
 	import Icon from '#lib/components/ui/Icon.svelte';
+	import { fly } from '#lib/motion';
 
 	type Theme = 'system' | 'light' | 'dark';
 	interface Props {
@@ -60,7 +61,7 @@
 		onclick={() => (open = !open)}>{(user.name[0] ?? '?').toUpperCase()}</button
 	>
 	{#if open}
-		<div class="menu" role="menu">
+		<div class="menu" role="menu" transition:fly>
 			<div class="who">
 				<p class="write name">{user.name}</p>
 				<p class="meta">{user.email}</p>
@@ -100,6 +101,18 @@
 		color: var(--ink);
 		font: 600 14px var(--font-ui);
 		cursor: pointer;
+		transition:
+			background-color 0.15s,
+			color 0.15s,
+			transform 0.15s;
+	}
+	.avatar-btn:hover,
+	.avatar-btn[aria-expanded='true'] {
+		background: var(--ink);
+		color: var(--paper);
+	}
+	.avatar-btn:active {
+		transform: scale(0.94);
 	}
 	.menu {
 		position: absolute;
@@ -145,6 +158,13 @@
 		text-align: left;
 		cursor: pointer;
 		padding: 0;
+		transition:
+			padding-left 0.15s,
+			color 0.15s;
+	}
+	.item:hover {
+		padding-left: 6px;
+		color: var(--gold-text);
 	}
 	.note-line {
 		margin: 8px 0;

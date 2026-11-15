@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { draw } from '#lib/motion';
 	/**
 	 * Hand-drawn checkbox: 1.5px ink square, slightly rotated, gold tick when checked.
 	 * Purely visual — wrap it in a <button> or <label> for interaction.
@@ -26,7 +27,7 @@
 			stroke="currentColor"
 			stroke-width="3"
 			stroke-linecap="round"
-			stroke-linejoin="round"><path d="M4 13c2 1.5 3.5 3.5 4.5 5.5C11 12 15 7 21 3" /></svg
+			stroke-linejoin="round"><path d="M4 13c2 1.5 3.5 3.5 4.5 5.5C11 12 15 7 21 3" transition:draw /></svg
 		>
 	{/if}
 </span>

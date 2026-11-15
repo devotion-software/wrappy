@@ -86,9 +86,19 @@
 		overflow: hidden;
 		background: var(--desk);
 		cursor: pointer;
+		opacity: 0.7;
+		transition:
+			border-color 0.2s,
+			opacity 0.2s,
+			transform 0.2s;
+	}
+	.thumb:hover {
+		opacity: 1;
+		transform: translateY(-2px);
 	}
 	.thumb[aria-current='true'] {
 		border-color: var(--gold);
+		opacity: 1;
 	}
 	.thumb img {
 		width: 100%;

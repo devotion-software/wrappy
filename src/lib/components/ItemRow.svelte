@@ -4,6 +4,7 @@
 	import Icon from '#lib/components/ui/Icon.svelte';
 	import { formatPrice, tiltFor } from '#lib/format';
 	import type { ListItemView } from '#lib/server/lists';
+	import { writeIn, reducedMotion } from '#lib/motion';
 
 	interface Props {
 		item: ListItemView;
@@ -29,18 +30,31 @@
 		return claim.byName ? `${verb} by ${claim.byName}` : verb;
 	});
 	let pending = $state(false);
-	const submit = () => {
+	/** Bumped on a successful claim / mark-as-bought to replay the celebration burst. */
+	let burst = $state(0);
+	const submit = ({ action }: { action: URL }) => {
 		pending = true;
-		return async ({ update }: { update: () => Promise<void> }) => {
+		return async ({ result, update }: { result: { type: string }; update: () => Promise<void> }) => {
 			await update();
 			pending = false;
+			if (result.type === 'success' && /[?&]\/(claim|bought)\b/.test(action.search) && !reducedMotion()) burst++;
 		};
 	};
+	const sparks = Array.from({ length: 8 }, (_, i) => i * 45);
 </script>
 
 <div class="row" class:has-handle={!!dragHandle}>
 	{#if dragHandle}{@render dragHandle()}{/if}
-	<Checkbox checked={!!claim} tilt={tiltFor(item.id)} />
+	<span class="check">
+		<Checkbox checked={!!claim} tilt={tiltFor(item.id)} />
+		{#key burst}
+			{#if burst}
+				<span class="burst" aria-hidden="true">
+					{#each sparks as deg (deg)}<i style="--a: {deg}deg"></i>{/each}
+				</span>
+			{/if}
+		{/key}
+	</span>
 	{#if item.cover}
 		<a href={detailHref} class="thumb" tabindex="-1" aria-hidden="true">
 			<img src={item.cover} alt="" loading="lazy" />
@@ -64,7 +78,7 @@
 
 	<div class="actions">
 		{#if mode === 'owner'}
-			{#if claim}<span class="note">{takenNote}</span>{/if}
+			{#if claim}<span class="note" in:writeIn>{takenNote}</span>{/if}
 			{#if item.link}
 				<a href={item.link.url} target="_blank" rel="noopener noreferrer" class="btn btn-icon" aria-label="Open in shop"
 					><Icon name="link" /></a
@@ -81,7 +95,7 @@
 				<a class="btn btn-outline" href="/signin?next={encodeURIComponent(`/lists/${listId}`)}">I'll get it</a>
 			{/if}
 		{:else if claim.mine && claim.status === 'buying'}
-			<span class="note">you're getting this</span>
+			<span class="note" in:writeIn>you're getting this</span>
 			<form method="POST" action="?/bought" use:enhance={submit}>
 				<input type="hidden" name="itemId" value={item.id} />
 				<button class="btn btn-primary" disabled={pending}>Mark as bought</button>
@@ -91,13 +105,13 @@
 				<button class="btn btn-text" disabled={pending}>Undo</button>
 			</form>
 		{:else if claim.mine}
-			<span class="note">bought by you</span>
+			<span class="note" in:writeIn>bought by you</span>
 			<form method="POST" action="?/unclaim" use:enhance={submit}>
 				<input type="hidden" name="itemId" value={item.id} />
 				<button class="btn btn-text" disabled={pending}>Undo</button>
 			</form>
 		{:else}
-			<span class="note">{takenNote}</span>
+			<span class="note" in:writeIn>{takenNote}</span>
 		{/if}
 	</div>
 	{#if claimError}<p class="field-error full" role="alert">{claimError}</p>{/if}
@@ -170,11 +184,54 @@
 		text-decoration-color: var(--line);
 		text-underline-offset: 4px;
 	}
+	/* Strike-through drawn as a background line so it can sweep across when an item is taken. */
+	.name {
+		background: linear-gradient(var(--gold), var(--gold)) no-repeat 0 58% / 0% 2px;
+		-webkit-box-decoration-break: clone;
+		box-decoration-break: clone;
+		transition:
+			background-size 0.45s cubic-bezier(0.65, 0, 0.35, 1),
+			color 0.3s;
+	}
 	.name.struck {
 		color: var(--faint);
-		text-decoration: line-through;
-		text-decoration-color: var(--gold);
-		text-decoration-thickness: 2px;
+		background-size: 100% 2px;
+	}
+	.name.struck:hover {
+		text-decoration: none;
+	}
+	.check {
+		position: relative;
+		display: inline-flex;
+		flex: none;
+	}
+	/* Eight gold sparks fly out from the checkbox, then fade. */
+	.burst {
+		position: absolute;
+		inset: 50% auto auto 50%;
+		pointer-events: none;
+	}
+	.burst i {
+		position: absolute;
+		left: -2px;
+		top: -2px;
+		width: 4px;
+		height: 9px;
+		border-radius: 2px;
+		background: var(--gold);
+		opacity: 0;
+		transform: rotate(var(--a)) translateY(0);
+		animation: spark 0.75s cubic-bezier(0.2, 0.7, 0.3, 1) forwards;
+	}
+	@keyframes spark {
+		0% {
+			opacity: 1;
+			transform: rotate(var(--a)) translateY(-8px) scaleY(1);
+		}
+		100% {
+			opacity: 0;
+			transform: rotate(var(--a)) translateY(-28px) scaleY(0.5);
+		}
 	}
 	.line {
 		margin: 4px 0 0;
