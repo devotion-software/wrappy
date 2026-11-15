@@ -57,6 +57,25 @@
 						/>
 					</div>
 					{#if form?.error}<p class="field-error" role="alert">{form.error}</p>{/if}
+					<div class="field">
+						<label for="username">Username <span class="opt">(for your profile link — optional)</span></label>
+						<div class="handle-row">
+							<span class="at write">@</span>
+							<input
+								id="username"
+								name="username"
+								class="line-input"
+								autocapitalize="none"
+								autocomplete="username"
+								spellcheck="false"
+								maxlength="30"
+								placeholder="maya"
+								value={form?.username ?? data.username ?? ''}
+							/>
+						</div>
+						<p class="meta">Friends can find your public lists at /u/your-username.</p>
+					</div>
+					{#if form?.usernameError}<p class="field-error" role="alert">{form.usernameError}</p>{/if}
 					<button class="btn btn-primary btn-block submit" disabled={busy}>Continue</button>
 				</form>
 			{:else}
@@ -121,5 +140,22 @@
 	}
 	.skip {
 		align-self: center;
+	}
+	.opt {
+		font-weight: 400;
+		color: var(--muted);
+	}
+	.handle-row {
+		display: flex;
+		align-items: flex-end;
+		gap: 4px;
+	}
+	.at {
+		font-size: 22px;
+		color: var(--muted);
+		padding-bottom: 8px;
+	}
+	.meta {
+		margin: 4px 0 0;
 	}
 </style>

@@ -77,6 +77,8 @@
 					]}
 				/>
 			</div>
+			<a class="item" role="menuitem" href="/account" onclick={() => (open = false)}>Account settings</a>
+			<a class="item" role="menuitem" href="/gifts" onclick={() => (open = false)}>Presents received</a>
 			<button class="item" role="menuitem" onclick={addPasskey}><Icon name="key" />Add a passkey</button>
 			{#if note}<p class="meta note-line" role="status">{note}</p>{/if}
 			<button class="item" role="menuitem" onclick={signOut}>Log out</button>
@@ -139,6 +141,7 @@
 		background: transparent;
 		color: var(--ink);
 		font: 500 15px var(--font-ui);
+		text-decoration: none;
 		text-align: left;
 		cursor: pointer;
 		padding: 0;

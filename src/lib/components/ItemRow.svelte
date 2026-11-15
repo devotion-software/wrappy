@@ -142,8 +142,17 @@
 		font-weight: 600;
 	}
 	.body {
-		flex: 1 1 260px;
+		flex: 1 1 180px;
 		min-width: 0;
+	}
+	@media (max-width: 520px) {
+		.thumb {
+			width: 48px;
+			height: 48px;
+		}
+		.name {
+			font-size: 22px;
+		}
 	}
 	.name-line {
 		display: flex;

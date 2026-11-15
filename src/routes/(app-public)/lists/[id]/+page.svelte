@@ -89,10 +89,14 @@
 		<div>
 			<h1 class="hand">{data.list.title}</h1>
 			<p class="sub">
-				{data.isOwner ? 'Your list' : `${data.owner.name}'s list`}{#if data.list.eventDate}
-					· {formatDate(data.list.eventDate)}{/if}
-				· {plural(data.items.length, 'wish', 'wishes')}{#if data.santa}
-					· Secret Santa{data.santa.limit ? `, up to ${data.santa.limit}` : ''}{/if}
+				{[
+					data.isOwner ? 'Your list' : `${data.owner.name}'s list`,
+					formatDate(data.list.eventDate),
+					plural(data.items.length, 'wish', 'wishes'),
+					data.santa ? `Secret Santa${data.santa.limit ? `, up to ${data.santa.limit}` : ''}` : null
+				]
+					.filter(Boolean)
+					.join(' · ')}
 			</p>
 		</div>
 		{#if data.isOwner}
