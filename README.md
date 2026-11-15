@@ -26,3 +26,9 @@ Production applies `drizzle/` migrations on boot (`scripts/migrate.js`).
 
 Coolify, built from the `Dockerfile`. Target domain: wishlist.devotion.software (TBC).
 Set `DATABASE_URL`, `BETTER_AUTH_SECRET`, `BETTER_AUTH_URL`, `RESEND_API_KEY`, `EMAIL_FROM` and the `R2_*` vars.
+
+The app is stateless, so you can run as many instances as you like behind a load balancer:
+sessions, OTPs, passkey challenges and rate limits all live in MariaDB, and images in R2
+(production won't start without R2 unless `ALLOW_LOCAL_UPLOADS=true`). Every instance runs
+migrations on start; a database lock makes them take turns. Point health checks at `/healthz`,
+and size `DB_POOL_SIZE` so instances × pool stays under MariaDB's `max_connections`.

@@ -1,4 +1,4 @@
-// Better Auth tables (user, session, account, verification, passkey).
+// Better Auth tables (user, session, account, verification, passkey, rateLimit).
 // Based on the output of `@better-auth/cli generate`; keep in sync with src/lib/auth.ts.
 import { relations } from "drizzle-orm";
 import {
@@ -8,6 +8,7 @@ import {
   timestamp,
   boolean,
   int,
+  bigint,
   index,
 } from "drizzle-orm/mysql-core";
 
@@ -108,6 +109,14 @@ export const passkey = mysqlTable(
   ],
 );
 
+
+// Better Auth's request rate limits (rateLimit.storage = "database"), shared by every app instance.
+export const rateLimit = mysqlTable("rate_limit", {
+  id: varchar("id", { length: 36 }).primaryKey(),
+  key: varchar("key", { length: 255 }).notNull().unique(),
+  count: int("count").notNull(),
+  lastRequest: bigint("last_request", { mode: "number" }).notNull(),
+});
 
 export const userRelations = relations(user, ({ many }) => ({
   sessions: many(session),

@@ -1,4 +1,5 @@
 import { auth } from '#lib/auth';
+import { usingR2 } from '#lib/server/storage';
 import { redirect } from '@sveltejs/kit';
 import type { Handle, ServerInit } from '@sveltejs/kit/hooks';
 import { building, dev } from '$app/env';
@@ -9,6 +10,10 @@ export const init: ServerInit = () => {
 	const secret = process.env.BETTER_AUTH_SECRET ?? '';
 	if (secret.length < 32 || /change|example|secret|placeholder/i.test(secret)) {
 		throw new Error('BETTER_AUTH_SECRET must be a random value of at least 32 characters (openssl rand -base64 32).');
+	}
+	// Local-disk uploads are only visible to the instance that wrote them, so production needs shared storage.
+	if (!usingR2 && process.env.ALLOW_LOCAL_UPLOADS !== 'true') {
+		throw new Error('Set the R2_* variables for image storage (or ALLOW_LOCAL_UPLOADS=true for a single instance).');
 	}
 };
 

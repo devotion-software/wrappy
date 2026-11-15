@@ -11,7 +11,8 @@ import {
 	mysqlEnum,
 	index,
 	primaryKey,
-	uniqueIndex
+	uniqueIndex,
+	bigint
 } from 'drizzle-orm/mysql-core';
 import { user } from './auth.schema';
 
@@ -318,3 +319,12 @@ export const santaExclusion = mysqlTable(
 	},
 	(t) => [primaryKey({ columns: [t.santaId, t.userA, t.userB] })]
 );
+
+// ── Rate limits ──────────────────────────────────────────────────────────────
+
+/** Fixed-window usage counters for our own limits (see server/rateLimit.ts). Shared by every app instance. */
+export const rateBucket = mysqlTable('rate_bucket', {
+	key: varchar('bucket_key', { length: 191 }).primaryKey(),
+	windowStart: bigint('window_start', { mode: 'number' }).notNull(),
+	used: int('used').notNull()
+});

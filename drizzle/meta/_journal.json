@@ -36,6 +36,13 @@
       "when": 1794760486331,
       "tag": "0004_parallel_azazel",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "5",
+      "when": 1794763486980,
+      "tag": "0005_peaceful_genesis",
+      "breakpoints": true
     }
   ]
 }

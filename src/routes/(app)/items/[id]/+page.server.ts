@@ -97,7 +97,7 @@ export const actions: Actions = {
 		} catch {
 			return fail(400, { linkError: "That link doesn't look right. Check it and try again." });
 		}
-		if (!takeFetchBudget(it.ownerId)) return fail(429, { linkError: FETCH_LIMIT_MESSAGE });
+		if (!(await takeFetchBudget(it.ownerId))) return fail(429, { linkError: FETCH_LIMIT_MESSAGE });
 		const linkId = await addLink(it.id, url);
 		const meta = await fetchLinkMeta(url);
 		return {
@@ -132,7 +132,7 @@ export const actions: Actions = {
 		const fd = await request.formData();
 		const linkId = String(fd.get('linkId') ?? '') || null;
 		const urls = fd.getAll('image').map(String).filter(Boolean).slice(0, 10);
-		if (!takeFetchBudget(it.ownerId, urls.length)) return fail(429, { linkError: FETCH_LIMIT_MESSAGE });
+		if (!(await takeFetchBudget(it.ownerId, urls.length))) return fail(429, { linkError: FETCH_LIMIT_MESSAGE });
 		const saved = await importImages(it.id, urls, linkId);
 		return { imported: saved, wanted: urls.length };
 	},

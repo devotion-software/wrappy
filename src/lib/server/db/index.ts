@@ -15,7 +15,8 @@ const pool =
 	globalForDb.__wishlistPool ??
 	mysql.createPool({
 		uri: connectionString,
-		connectionLimit: 10,
+		// Per app instance: keep instances × DB_POOL_SIZE under the database's max_connections.
+		connectionLimit: Number(process.env.DB_POOL_SIZE) || 10,
 		// utf8mb4 so emoji in item names survive the round-trip.
 		charset: 'utf8mb4',
 		// MariaDB returns DECIMAL/BIGINT as strings by default; keep dates as JS Dates.

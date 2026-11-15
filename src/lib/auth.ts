@@ -18,6 +18,11 @@ export const auth = betterAuth({
 		provider: 'mysql',
 		schema
 	}),
+	// Keep request counts in the database (not process memory) so limits hold across app instances.
+	rateLimit: {
+		storage: 'database',
+		modelName: 'rateLimit'
+	},
 	// Passwordless only: email one-time codes + passkeys.
 	emailAndPassword: {
 		enabled: false
