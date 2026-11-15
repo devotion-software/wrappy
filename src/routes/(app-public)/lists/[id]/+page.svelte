@@ -460,8 +460,6 @@
 	.add-input {
 		flex: 1 1 260px;
 		min-width: 0;
-		border-bottom-style: dashed;
-		border-bottom-color: var(--line);
 	}
 	.santa-add .meta {
 		flex: 1 1 200px;
