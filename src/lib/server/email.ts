@@ -37,25 +37,51 @@ export async function sendOtpEmail({ email, otp, type }: OtpEmail): Promise<void
 	await deliver({ to: email, subject, html, text }, `code: ${otp}  (valid 10 min)`);
 }
 
-interface ProjectInvite {
-	email: string;
-	inviterName: string;
-	projectName: string;
-	/** Absolute URL to the invite-acceptance page. */
-	url: string;
+/** Someone shared a private list with this email address. */
+export async function sendListInviteEmail(opts: { email: string; ownerName: string; listTitle: string; url: string }) {
+	const owner = escapeHtml(opts.ownerName);
+	const title = escapeHtml(opts.listTitle);
+	await deliver(
+		{
+			to: opts.email,
+			subject: `${opts.ownerName} shared a wish list with you`,
+			html: renderLayout(
+				`<strong>${owner}</strong> shared their wish list <strong>${title}</strong> with you. Have a look, and quietly claim anything you'd like to get them — ${owner} won't see.`,
+				button(opts.url, `Open ${title}`)
+			),
+			text: `${opts.ownerName} shared their wish list "${opts.listTitle}" with you.\n\nOpen it: ${opts.url}`
+		},
+		`list invite: ${opts.url}`
+	);
 }
 
-export async function sendProjectInviteEmail({
-	email,
-	inviterName,
-	projectName,
-	url
-}: ProjectInvite): Promise<void> {
-	const subject = `${inviterName} invited you to “${projectName}” on Wishlist`;
-	const html = renderInviteHtml({ inviterName, projectName, url });
-	const text = `${inviterName} invited you to join "${projectName}" on Wishlist.\n\nAccept the invite: ${url}\n\nThis invite expires in 14 days.`;
-
-	await deliver({ to: email, subject, html, text }, `invite link: ${url}`);
+/** Secret Santa names have been drawn: tell one member who they're buying for. */
+export async function sendSantaAssignmentEmail(opts: {
+	email: string;
+	santaName: string;
+	recipientName: string;
+	budget: string | null;
+	exchangeDate: string | null;
+	url: string;
+}) {
+	const meta = [opts.budget ? `Budget ${opts.budget}` : null, opts.exchangeDate ? `swap on ${opts.exchangeDate}` : null]
+		.filter(Boolean)
+		.join(" · ");
+	await deliver(
+		{
+			to: opts.email,
+			subject: `${opts.santaName}: you're buying for ${opts.recipientName}`,
+			html: renderLayout(
+				`Names have been drawn for <strong>${escapeHtml(opts.santaName)}</strong>.` +
+					`<div style="margin:18px 0 6px;padding:18px 20px;background:#F4EEDD;font-family:Caveat,'Comic Sans MS',cursive;font-size:30px;font-weight:700;color:#1C1C1C;">You're buying for ${escapeHtml(opts.recipientName)}</div>` +
+					(meta ? `<div style="font-size:14px;color:#5E5E5A;">${escapeHtml(meta)}</div>` : "") +
+					`<p style="margin:12px 0 0;">Only you can see this. Their wish list is waiting for you.</p>`,
+				button(opts.url, `See ${opts.recipientName}'s list`)
+			),
+			text: `Names have been drawn for ${opts.santaName}.\n\nYou're buying for ${opts.recipientName}.${meta ? "\n" + meta : ""}\n\nSee their list: ${opts.url}`
+		},
+		`santa: buying for ${opts.recipientName} — ${opts.url}`
+	);
 }
 
 async function deliver(msg: Omit<Message, 'from'>, consoleBody: string): Promise<void> {
@@ -139,40 +165,25 @@ function escapeHtml(s: string): string {
 	return s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]!);
 }
 
-function renderInviteHtml({
-	inviterName,
-	projectName,
-	url
-}: {
-	inviterName: string;
-	projectName: string;
-	url: string;
-}): string {
-	const inviter = escapeHtml(inviterName);
-	const project = escapeHtml(projectName);
+function button(url: string, label: string): string {
+	return `<a href="${escapeHtml(url)}" style="display:inline-block;width:100%;box-sizing:border-box;text-align:center;background:#C9A24A;color:#1C1C1C;text-decoration:none;font-weight:600;font-size:15px;padding:14px 20px;border-radius:999px;">${escapeHtml(label)}</a>`;
+}
+
+/** Shared email shell in the Notebook style: paper card, gold margin line, handwritten logo. */
+function renderLayout(bodyHtml: string, actionHtml = "", footnote = ""): string {
 	return `<!doctype html>
 <html>
-	<body style="margin:0;background:#f6f7f9;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#16181d;">
-		<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f6f7f9;padding:32px 16px;">
+	<body style="margin:0;background:#ECECEA;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#1C1C1C;">
+		<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#ECECEA;padding:32px 16px;">
 			<tr><td align="center">
-				<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:440px;background:#ffffff;border:1px solid #e6e8ec;border-radius:16px;overflow:hidden;">
-					<tr><td style="padding:32px 32px 8px;">
-						<div style="display:inline-flex;align-items:center;gap:10px;">
-							<span style="display:inline-block;width:28px;height:28px;background:#6366f1;border-radius:8px;"></span>
-							<span style="font-size:20px;font-weight:700;letter-spacing:-0.02em;">Wishlist</span>
-						</div>
+				<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:460px;background:#FAFAF8;border-radius:4px;border-left:2px solid #C9A24A;box-shadow:0 1px 2px rgba(0,0,0,.08),0 10px 24px rgba(0,0,0,.07);">
+					<tr><td style="padding:30px 32px 6px;">
+						<span style="font-family:Caveat,'Comic Sans MS',cursive;font-size:30px;font-weight:700;color:#1C1C1C;"><span style="color:#C9A24A;">&#10003;</span> wishlist</span>
 					</td></tr>
-					<tr><td style="padding:16px 32px 4px;font-size:15px;color:#5b6270;line-height:1.5;">
-						<strong>${inviter}</strong> invited you to join <strong>${project}</strong> on Wishlist.
-					</td></tr>
-					<tr><td style="padding:20px 32px;">
-						<a href="${url}" style="display:inline-block;width:100%;box-sizing:border-box;text-align:center;background:#6366f1;color:#ffffff;text-decoration:none;font-weight:600;font-size:15px;padding:14px 20px;border-radius:10px;">Accept invite</a>
-					</td></tr>
-					<tr><td style="padding:4px 32px 32px;font-size:13px;color:#878e9c;line-height:1.5;">
-						This invite expires in 14 days. If you weren't expecting this, you can safely ignore this email.
-					</td></tr>
+					<tr><td style="padding:12px 32px 4px;font-size:15px;color:#4A4A4A;line-height:1.55;">${bodyHtml}</td></tr>
+					${actionHtml ? `<tr><td style="padding:20px 32px 8px;">${actionHtml}</td></tr>` : ""}
+					<tr><td style="padding:12px 32px 30px;font-size:13px;color:#5E5E5A;line-height:1.5;">${footnote || "If you weren't expecting this, you can ignore this email."}</td></tr>
 				</table>
-				<p style="max-width:440px;margin:16px auto 0;font-size:12px;color:#aab0bc;text-align:center;">Sent by Wishlist</p>
 			</td></tr>
 		</table>
 	</body>
@@ -180,33 +191,9 @@ function renderInviteHtml({
 }
 
 function renderOtpHtml(otp: string, intro: string): string {
-	return `<!doctype html>
-<html>
-	<body style="margin:0;background:#f6f7f9;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#16181d;">
-		<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f6f7f9;padding:32px 16px;">
-			<tr><td align="center">
-				<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:440px;background:#ffffff;border:1px solid #e6e8ec;border-radius:16px;overflow:hidden;">
-					<tr><td style="padding:32px 32px 8px;">
-						<div style="display:inline-flex;align-items:center;gap:10px;">
-							<span style="display:inline-block;width:28px;height:28px;background:#6366f1;border-radius:8px;"></span>
-							<span style="font-size:20px;font-weight:700;letter-spacing:-0.02em;">Wishlist</span>
-						</div>
-					</td></tr>
-					<tr><td style="padding:16px 32px 4px;font-size:15px;color:#5b6270;line-height:1.5;">
-						${intro}
-					</td></tr>
-					<tr><td style="padding:16px 32px;">
-						<div style="font-family:'JetBrains Mono',ui-monospace,Menlo,Consolas,monospace;font-size:32px;font-weight:700;letter-spacing:0.22em;text-align:center;white-space:nowrap;background:#f3f4f7;border:1px solid #e6e8ec;border-radius:12px;padding:20px 12px;color:#16181d;">
-							${otp}
-						</div>
-					</td></tr>
-					<tr><td style="padding:4px 32px 32px;font-size:13px;color:#878e9c;line-height:1.5;">
-						This code expires in 10 minutes. If you didn't request it, you can safely ignore this email.
-					</td></tr>
-				</table>
-				<p style="max-width:440px;margin:16px auto 0;font-size:12px;color:#aab0bc;text-align:center;">Sent by Wishlist</p>
-			</td></tr>
-		</table>
-	</body>
-</html>`;
+	return renderLayout(
+		`${intro}<div style="margin:18px 0 0;font-family:'JetBrains Mono',ui-monospace,Menlo,Consolas,monospace;font-size:32px;font-weight:700;letter-spacing:0.22em;text-align:center;white-space:nowrap;background:#F4EEDD;border-radius:4px;padding:20px 12px;color:#1C1C1C;">${otp}</div>`,
+		"",
+		"This code expires in 10 minutes. If you didn't ask for it, you can ignore this email."
+	);
 }

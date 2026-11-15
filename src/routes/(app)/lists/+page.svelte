@@ -1,9 +1,14 @@
 <script lang="ts">
 	import Icon from '#lib/components/ui/Icon.svelte';
 	import Sheet from '#lib/components/ui/Sheet.svelte';
+	import Avatar from '#lib/components/ui/Avatar.svelte';
+	import ListCard from '#lib/components/ListCard.svelte';
+	import SantaNote from '#lib/components/SantaNote.svelte';
+	import { formatDate, plural } from '#lib/format';
 
 	let { data } = $props();
 	const firstName = $derived(data.user?.name.split(' ')[0] ?? '');
+	const totalWishes = $derived(data.mine.reduce((n, l) => n + l.count, 0));
 </script>
 
 <svelte:head><title>My lists — Wishlist</title></svelte:head>
@@ -12,15 +17,24 @@
 	<div class="main-col">
 		<div>
 			<h1 class="hand">Hi {firstName}</h1>
-			<p class="greeting">Start a list, then share it with the people who buy you presents.</p>
+			<p class="greeting">
+				{#if data.mine.length}
+					You have {plural(totalWishes, 'wish', 'wishes')} across {plural(data.mine.length, 'list')}.
+				{:else}
+					Start a list, then share it with the people who buy you presents.
+				{/if}
+			</p>
 		</div>
 
 		<section class="block">
 			<div class="head">
 				<h2 class="section-title">Your lists</h2>
-				<span class="meta">0 lists</span>
+				<a href="/items" class="meta all-items">All my wishes</a>
 			</div>
 			<div class="grid">
+				{#each data.mine as card (card.id)}
+					<ListCard {card} showSharing />
+				{/each}
 				<a href="/lists/new" class="new-tile">
 					<Icon name="plus" size={28} />
 					<span class="write">Start a new list</span>
@@ -30,15 +44,40 @@
 
 		<section class="block" id="friends">
 			<h2 class="section-title">Friends' lists</h2>
-			<Sheet margin={false} padding="20px 24px">
-				<p class="empty">Lists friends share with you will show up here.</p>
+			<Sheet margin={false} padding="4px 24px">
+				{#each data.friends as f (f.id)}
+					<div class="friend">
+						<Avatar name={f.ownerName ?? '?'} />
+						<div class="who">
+							<p class="write">{f.ownerName} · {f.title}</p>
+							<p class="meta">
+								{plural(f.count, 'wish', 'wishes')}{f.eventDate ? ` · ${formatDate(f.eventDate)}` : ''}
+							</p>
+						</div>
+						<a href="/lists/{f.id}" class="btn btn-outline">Open</a>
+					</div>
+				{:else}
+					<p class="empty">
+						Lists friends share with you will show up here. You can also <a href="/friends">find people</a> with
+						public lists.
+					</p>
+				{/each}
 			</Sheet>
 		</section>
 	</div>
 
 	<aside>
 		<h2 class="section-title">Secret Santa</h2>
-		<a href="/santa" class="organise write"><Icon name="plus" size={22} />Organise a Secret Santa</a>
+		{#each data.santas as s (s.id)}
+			<SantaNote {s} />
+		{/each}
+		<a href="/santa/new" class="organise write"><Icon name="plus" size={22} />Organise a Secret Santa</a>
+
+		<h2 class="section-title">Opened your presents?</h2>
+		<p class="aside-copy">
+			Mark who you've received gifts from to see what they bought you. Until then, it stays a surprise.
+		</p>
+		<a href="/gifts" class="btn btn-outline self-start">Presents received</a>
 	</aside>
 </main>
 
@@ -77,6 +116,11 @@
 		justify-content: space-between;
 		gap: 12px;
 	}
+	.all-items {
+		font-size: 14px;
+		color: var(--ink2);
+		text-underline-offset: 3px;
+	}
 	.grid {
 		display: grid;
 		grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
@@ -97,24 +141,59 @@
 	.new-tile span {
 		font-size: 22px;
 	}
+	.friend {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: 12px 16px;
+		padding: 16px 0;
+		border-bottom: 1px solid var(--rule);
+	}
+	.friend:last-child {
+		border-bottom: 0;
+	}
+	.who {
+		flex: 1 1 200px;
+		min-width: 0;
+	}
+	.who p {
+		margin: 0;
+	}
+	.who .write {
+		font-size: 21px;
+	}
+	.who .meta {
+		margin-top: 2px;
+	}
 	.empty {
 		margin: 0;
+		padding: 16px 0;
 		font-size: 15px;
+		line-height: 1.5;
 		color: var(--ink2);
 	}
 	aside {
 		flex: 1 1 300px;
 		display: flex;
 		flex-direction: column;
-		gap: 28px;
+		gap: 24px;
 	}
 	.organise {
 		display: flex;
 		align-items: center;
 		gap: 10px;
-		padding: 16px 4px;
+		padding: 4px 4px 16px;
 		color: var(--ink2);
 		text-decoration: none;
 		font-size: 21px;
+	}
+	.aside-copy {
+		margin: -12px 0 0;
+		font-size: 14px;
+		line-height: 1.5;
+		color: var(--ink2);
+	}
+	.self-start {
+		align-self: flex-start;
 	}
 </style>

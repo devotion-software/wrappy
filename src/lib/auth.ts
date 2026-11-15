@@ -29,6 +29,23 @@ export const auth = betterAuth({
 				required: false,
 				defaultValue: 'system',
 				input: true
+			},
+			// Public handle for /u/<username>. Set through the welcome/account pages, which validate it.
+			username: {
+				type: 'string',
+				required: false,
+				input: false
+			}
+		}
+	},
+	databaseHooks: {
+		user: {
+			create: {
+				// Link any pending list invites sent to this email to the new account.
+				after: async (u) => {
+					const { claimInvitesForUser } = await import('./server/sharing');
+					await claimInvitesForUser(u.id, u.email);
+				}
 			}
 		}
 	},

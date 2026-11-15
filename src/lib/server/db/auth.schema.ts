@@ -23,6 +23,7 @@ export const user = mysqlTable("user", {
     .$onUpdate(() => /* @__PURE__ */ new Date())
     .notNull(),
   theme: text("theme").default("system"),
+  username: varchar("username", { length: 30 }).unique(),
 });
 
 export const session = mysqlTable(
