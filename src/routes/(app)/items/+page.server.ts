@@ -2,7 +2,9 @@ import { asc, eq, inArray } from 'drizzle-orm';
 import { db } from '#lib/server/db';
 import { item, itemImage, itemList, list } from '#lib/server/db/schema';
 import { imageUrl } from '#lib/images';
-import type { PageServerLoad } from './$types';
+import { fail } from '@sveltejs/kit';
+import { importPastedList } from '#lib/server/items';
+import type { Actions, PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async ({ locals }) => {
 	const me = locals.user!;
@@ -35,4 +37,14 @@ export const load: PageServerLoad = async ({ locals }) => {
 			lists: onLists.filter((l) => l.itemId === i.id).map((l) => ({ id: l.listId, title: l.title }))
 		}))
 	};
+};
+
+export const actions: Actions = {
+	/** Paste a list from a note: one wish per line. */
+	importList: async ({ locals, request }) => {
+		const text = String((await request.formData()).get('list') ?? '');
+		const res = await importPastedList(locals.user!.id, text, null);
+		if ('error' in res) return fail(400, { importError: res.error });
+		return { pasted: res };
+	}
 };

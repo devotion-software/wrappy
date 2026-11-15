@@ -6,7 +6,7 @@ import { getListAccess } from '#lib/server/access';
 import { loadListItems, addItemToList, hostOf } from '#lib/server/lists';
 import { newId, newToken } from '#lib/server/ids';
 import { parseListForm } from '#lib/server/listForm';
-import { createItem, importImages, parseItemForm, santaPriceProblem } from '#lib/server/items';
+import { createItem, importImages, importPastedList, parseItemForm, santaPriceProblem } from '#lib/server/items';
 import { fetchLinkMeta, looksLikeUrl, normaliseUrl } from '#lib/server/linkFetch';
 import { sendListInviteEmail } from '#lib/server/email';
 import { claimActions } from '#lib/server/claims';
@@ -150,6 +150,15 @@ export const actions: Actions = {
 		}
 		await createItem(me.id, parsed.input, { listIds: [l.id], linkUrl: url });
 		return { added: true };
+	},
+
+	/** Paste a list from a note: one wish per line. */
+	importList: async (event) => {
+		const { me, l } = await ownerList(event);
+		const text = String((await event.request.formData()).get('list') ?? '');
+		const res = await importPastedList(me.id, text, l.id);
+		if ('error' in res) return fail(400, { importError: res.error });
+		return { pasted: res };
 	},
 
 	importImages: async (event) => {

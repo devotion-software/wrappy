@@ -7,6 +7,8 @@ import { addItemToList } from './lists';
 import { deleteAllItemImages, importImageFromUrl } from './images';
 import { normalisePrice } from './linkMeta';
 import { CURRENCIES, formatPrice } from '#lib/format';
+import { MAX_PASTED_WISHES, parsePastedList } from '#lib/pasteList';
+import { normaliseUrl } from './linkFetch';
 
 export type ItemRow = typeof item.$inferSelect;
 
@@ -76,6 +78,48 @@ export async function createItem(
 	if (opts.linkUrl) linkId = await addLink(itemId, opts.linkUrl);
 	for (const listId of opts.listIds ?? []) await addItemToList(listId, itemId);
 	return { itemId, linkId };
+}
+
+/**
+ * Add every wish from a pasted list, optionally onto one of the owner's lists.
+ * Wishes over a Secret Santa limit are left out and reported.
+ */
+export async function importPastedList(
+	ownerId: string,
+	text: string,
+	listId: string | null
+): Promise<{ error: string } | { added: number; skipped: string[] }> {
+	if (text.length > 50_000) return { error: "That's too much to paste in one go. Try a shorter list." };
+	const wishes = parsePastedList(text);
+	if (!wishes.length) return { error: 'Paste a list with one wish per line.' };
+	if (wishes.length > MAX_PASTED_WISHES) return { error: `You can add up to ${MAX_PASTED_WISHES} wishes at a time.` };
+	const skipped: string[] = [];
+	let added = 0;
+	for (const w of wishes) {
+		let linkUrl: string | null = null;
+		try {
+			linkUrl = w.url ? normaliseUrl(w.url) : null;
+		} catch {
+			linkUrl = null;
+		}
+		const input: ItemInput = {
+			title: w.title,
+			notes: null,
+			price: w.price,
+			currency: w.currency && (CURRENCIES as readonly string[]).includes(w.currency) ? w.currency : 'GBP',
+			mostWanted: false
+		};
+		if (listId) {
+			const problem = await santaPriceProblem(listId, input);
+			if (problem) {
+				skipped.push(`${w.title}: ${problem}`);
+				continue;
+			}
+		}
+		await createItem(ownerId, input, { listIds: listId ? [listId] : [], linkUrl });
+		added++;
+	}
+	return { added, skipped };
 }
 
 export async function addLink(itemId: string, url: string): Promise<string> {

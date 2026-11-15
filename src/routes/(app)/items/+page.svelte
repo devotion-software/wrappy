@@ -1,6 +1,7 @@
 <script lang="ts">
 	import Sheet from '#lib/components/ui/Sheet.svelte';
 	import Icon from '#lib/components/ui/Icon.svelte';
+	import PasteList from '#lib/components/PasteList.svelte';
 	import { formatPrice, plural } from '#lib/format';
 
 	let { data } = $props();
@@ -20,6 +21,8 @@
 		</div>
 		<a href="/items/new" class="btn btn-primary btn-md"><Icon name="plus" strokeWidth={2.2} />New wish</a>
 	</div>
+
+	<PasteList />
 
 	<Sheet margin={50} padding="14px 28px 20px 72px" class="sheet">
 		{#if data.items.length > 6}
@@ -45,7 +48,7 @@
 			</a>
 		{:else}
 			<p class="empty-copy">
-				{data.items.length ? 'Nothing matches that search.' : 'No wishes yet. Add one here, or from any of your lists.'}
+				{data.items.length ? 'Nothing matches that search.' : 'No wishes yet. Add one here, paste a list, or add them from any of your lists.'}
 			</p>
 		{/each}
 	</Sheet>

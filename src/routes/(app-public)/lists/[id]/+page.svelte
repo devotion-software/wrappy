@@ -7,6 +7,7 @@
 	import ItemRow from '#lib/components/ItemRow.svelte';
 	import SharePanel from '#lib/components/SharePanel.svelte';
 	import ListSettingsFields from '#lib/components/ListSettingsFields.svelte';
+	import PasteList from '#lib/components/PasteList.svelte';
 	import { CURRENCIES, formatDate, formatPrice, plural } from '#lib/format';
 
 	let { data, form } = $props();
@@ -251,6 +252,8 @@
 						<button class="btn btn-dark btn-md" disabled={busy}>{busy ? 'Adding…' : 'Add'}</button>
 					</form>
 				{#if form?.addError}<p class="field-error" role="alert">{form.addError}</p>{/if}
+
+				<PasteList target={data.list.title} />
 
 				{#if data.owned?.library.length}
 					<details class="existing">
