@@ -70,12 +70,13 @@ export const load: PageServerLoad = async (event) => {
 		organiser: isOrganiser
 			? {
 					joinToken: s.joinToken,
-					exclusions: (await exclusionsOf(s.id)).map((e) => ({
-						a: e.userA,
-						b: e.userB,
-						aName: byId.get(e.userA) ?? '?',
-						bName: byId.get(e.userB) ?? '?'
-					}))
+					// Pairs are stored in id order; show the names alphabetically so the order is predictable.
+					exclusions: (await exclusionsOf(s.id)).map((e) => {
+						const [aName, bName] = [byId.get(e.userA) ?? '?', byId.get(e.userB) ?? '?'].sort((x, y) =>
+							x.localeCompare(y)
+						);
+						return { a: e.userA, b: e.userB, aName, bName };
+					})
 				}
 			: null
 	};

@@ -1,28 +1,16 @@
 import { error } from '@sveltejs/kit';
-import { and, asc, eq, inArray, sql } from 'drizzle-orm';
+import { and, eq, sql } from 'drizzle-orm';
 import { db } from '#lib/server/db';
-import { item, itemClaim, receivedFrom, user } from '#lib/server/db/schema';
+import { receivedFrom } from '#lib/server/db/schema';
 import { knownPeople } from '#lib/server/lists';
+import { giftNoteActions, giftsFrom, revealedGivers } from '#lib/server/gifts';
 import type { Actions, PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async ({ locals }) => {
 	const me = locals.user!;
-	const [people, received] = await Promise.all([
-		knownPeople(me.id),
-		db.select({ giverId: receivedFrom.giverId }).from(receivedFrom).where(eq(receivedFrom.ownerId, me.id))
-	]);
-	const revealed = received.map((r) => r.giverId);
-	// Only BOUGHT claims by givers the owner has marked received from. "Buying" stays hidden.
-	const gifts = revealed.length
-		? await db
-				.select({ itemId: item.id, title: item.title, giverId: itemClaim.userId, giverName: user.name })
-				.from(itemClaim)
-				.innerJoin(item, eq(item.id, itemClaim.itemId))
-				.innerJoin(user, eq(user.id, itemClaim.userId))
-				.where(and(eq(item.ownerId, me.id), eq(itemClaim.status, 'bought'), inArray(itemClaim.userId, revealed)))
-				.orderBy(asc(user.name), asc(item.title))
-		: [];
-	return { people, revealed, gifts };
+	const [people, revealed] = await Promise.all([knownPeople(me.id), revealedGivers(me.id)]);
+	const { fromLists, noted } = await giftsFrom(me.id, revealed);
+	return { people, revealed, fromLists, noted };
 };
 
 export const actions: Actions = {
@@ -47,7 +35,9 @@ export const actions: Actions = {
 	undo: async ({ locals, request }) => {
 		const me = locals.user!;
 		const giverId = String((await request.formData()).get('giverId') ?? '');
+		// Noted gifts are kept; they reappear if you tick this person again.
 		await db.delete(receivedFrom).where(and(eq(receivedFrom.ownerId, me.id), eq(receivedFrom.giverId, giverId)));
 		return { done: true };
-	}
+	},
+	...giftNoteActions
 };

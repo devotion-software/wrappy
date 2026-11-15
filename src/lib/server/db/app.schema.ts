@@ -205,6 +205,26 @@ export const receivedFrom = mysqlTable(
 	(t) => [primaryKey({ columns: [t.ownerId, t.giverId] })]
 );
 
+/**
+ * Presents the owner noted themselves — things a giver gave them that weren't on any list.
+ * Private to the owner; givers never see these.
+ */
+export const receivedGift = mysqlTable(
+	'received_gift',
+	{
+		id: id().primaryKey(),
+		ownerId: userRef('owner_id')
+			.notNull()
+			.references(() => user.id, { onDelete: 'cascade' }),
+		giverId: userRef('giver_id')
+			.notNull()
+			.references(() => user.id, { onDelete: 'cascade' }),
+		title: varchar('title', { length: 200 }).notNull(),
+		createdAt: created()
+	},
+	(t) => [index('received_gift_owner_giver_idx').on(t.ownerId, t.giverId)]
+);
+
 // ── Secret Santa ─────────────────────────────────────────────────────────────
 
 export const santa = mysqlTable(

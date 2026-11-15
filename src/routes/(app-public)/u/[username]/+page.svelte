@@ -10,7 +10,7 @@
 
 <main class="container page">
 	<div class="who">
-		<Avatar name={data.profile.name} size={64} />
+		<Avatar name={data.profile.name} size={64} onDesk />
 		<div>
 			<h1 class="hand">{data.profile.name}</h1>
 			<p class="meta">@{data.profile.username}</p>
