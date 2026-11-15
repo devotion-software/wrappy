@@ -13,7 +13,7 @@ import {
 	receivedFrom,
 	user
 } from './db/schema';
-import { usersWhoCanSee, type ListRow } from './access';
+import { santaGiftClaims, usersWhoCanSee, type ListRow } from './access';
 import { viewClaim, type ClaimView } from './claimView';
 import { imageUrl } from '#lib/images';
 
@@ -78,7 +78,14 @@ export async function loadListItems(l: ListRow, viewerId: string | null): Promis
 	]);
 
 	const revealedSet = new Set(revealed.map((r) => r.giverId));
-	const canSee = viewerId === l.ownerId ? new Set<string>() : await usersWhoCanSee(l, claims.map((c) => c.userId));
+	const isOwner = viewerId === l.ownerId;
+	const [canSee, santaGifts] = isOwner
+		? [new Set<string>(), new Set<string>()]
+		: await Promise.all([
+				usersWhoCanSee(l, claims.map((c) => c.userId)),
+				// On the Santa list itself only the owner and their Santa can look, so nothing to hide there.
+				l.santaId ? Promise.resolve(new Set<string>()) : santaGiftClaims(l.ownerId, claims)
+			]);
 
 	const imgBy = group(images, (i) => i.itemId);
 	const linkBy = group(links, (i) => i.itemId);
@@ -105,7 +112,7 @@ export async function loadListItems(l: ListRow, viewerId: string | null): Promis
 				viewerId,
 				ownerId: l.ownerId,
 				revealedGiverIds: revealedSet,
-				claimerCanSeeList: c ? canSee.has(c.userId) : false
+				claimerCanSeeList: c ? canSee.has(c.userId) && !santaGifts.has(`${c.itemId}:${c.userId}`) : false
 			}),
 			suggestion: s ? { name: s.name, forViewer: s.userId === viewerId } : null
 		};

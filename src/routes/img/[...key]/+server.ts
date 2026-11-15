@@ -18,8 +18,9 @@ export const GET: RequestHandler = async ({ params, setHeaders }) => {
 		return new Response(body as BodyInit, {
 			headers: {
 				'content-type': 'image/webp',
-				// Keys are immutable: a changed image gets a new id.
-				'cache-control': 'public, max-age=31536000, immutable'
+				// Keys are immutable: a changed image gets a new id. Private so shared caches/CDNs
+				// don't keep pictures of private items around after they're deleted.
+				'cache-control': 'private, max-age=31536000, immutable'
 			}
 		});
 	} catch {

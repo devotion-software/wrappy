@@ -1,7 +1,8 @@
 import { and, eq, or, inArray, sql } from 'drizzle-orm';
+import { alias } from 'drizzle-orm/mysql-core';
 import type { Cookies } from '@sveltejs/kit';
 import { db } from './db';
-import { list, listShare, listViewer, santa, santaMember } from './db/schema';
+import { itemList, list, listShare, listViewer, santa, santaMember } from './db/schema';
 
 export type ListRow = typeof list.$inferSelect;
 export interface Viewer {
@@ -105,6 +106,32 @@ export async function getListAccess(
 			});
 	}
 	return { list: l, isOwner: false };
+}
+
+/**
+ * Claims that must stay anonymous because they're Secret Santa gifts: the claimer is `ownerId`'s
+ * assigned Santa in a drawn exchange, and the item is on `ownerId`'s wish list for that exchange.
+ * Naming them on the owner's other lists would tell everyone who drew whom.
+ * Returns keys of the form `${itemId}:${userId}`.
+ */
+export async function santaGiftClaims(ownerId: string, claims: { itemId: string; userId: string }[]): Promise<Set<string>> {
+	if (!claims.length) return new Set();
+	const giver = alias(santaMember, 'giver');
+	const recv = alias(santaMember, 'recv');
+	const rows = await db
+		.select({ itemId: itemList.itemId, userId: giver.userId })
+		.from(giver)
+		.innerJoin(santa, and(eq(santa.id, giver.santaId), eq(santa.status, 'drawn')))
+		.innerJoin(recv, and(eq(recv.santaId, giver.santaId), eq(recv.userId, giver.assignedToId)))
+		.innerJoin(itemList, eq(itemList.listId, recv.listId))
+		.where(
+			and(
+				eq(giver.assignedToId, ownerId),
+				inArray(giver.userId, [...new Set(claims.map((c) => c.userId))]),
+				inArray(itemList.itemId, [...new Set(claims.map((c) => c.itemId))])
+			)
+		);
+	return new Set(rows.map((r) => `${r.itemId}:${r.userId}`));
 }
 
 /** Which of `userIds` can see list `l` (without link cookies). Used to decide whether to name a claimer. */

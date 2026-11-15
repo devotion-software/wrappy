@@ -16,7 +16,7 @@
 		<form method="GET" class="search">
 			<label for="q" class="label">Find someone's public lists</label>
 			<div class="search-row">
-				<input id="q" name="q" class="line-input" placeholder="Name, @username or email" value={data.q} minlength="2" />
+				<input id="q" name="q" class="line-input" placeholder="Name or @username" value={data.q} minlength="2" />
 				<button class="btn btn-dark btn-md">Search</button>
 			</div>
 		</form>
@@ -29,7 +29,7 @@
 						<span class="btn btn-outline">View</span>
 					</a>
 				{:else}
-					<p class="empty">No one with public lists matches "{data.q}". Email searches need the full address.</p>
+					<p class="empty">No one with public lists matches "{data.q}".</p>
 				{/each}
 			</div>
 		{/if}

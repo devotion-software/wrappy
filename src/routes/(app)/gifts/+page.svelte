@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
+	import type { SubmitFunction } from '$app/forms';
 	import Sheet from '#lib/components/ui/Sheet.svelte';
 	import Checkbox from '#lib/components/ui/Checkbox.svelte';
 	import Avatar from '#lib/components/ui/Avatar.svelte';
@@ -13,6 +14,15 @@
 		...data.noted.filter((g) => g.giverId === id).map((g) => g.title)
 	];
 	const anyLeft = $derived(data.people.some((p) => !isRevealed(p.id)));
+	// Marking is permanent, so check before revealing what someone bought.
+	const confirmReveal =
+		(who: string): SubmitFunction =>
+		({ cancel }) => {
+			const ok = confirm(
+				`Only do this once you've opened your presents. You'll see what ${who} marked as bought, and this can't be undone.`
+			);
+			if (!ok) cancel();
+		};
 </script>
 
 <svelte:head><title>Presents received — Wishlist</title></svelte:head>
@@ -21,8 +31,9 @@
 	<div>
 		<h1 class="hand">Presents received</h1>
 		<p class="sub">
-			Tick off who you've opened presents from. You'll then see what they marked as bought from your lists, and you
-			can note anything else they gave you.
+			Once you've opened your presents, tick off who they were from. You'll then see what they marked as bought from
+			your lists, and you can note anything else they gave you. Ticks can't be undone, so the surprise stays safe until
+			then.
 		</p>
 	</div>
 
@@ -32,16 +43,19 @@
 			{@const first = p.name.split(' ')[0]}
 			<div class="person">
 				<div class="person-head">
-					<form method="POST" action={isRevealed(p.id) ? '?/undo' : '?/received'} use:enhance>
-						<input type="hidden" name="giverId" value={p.id} />
-						<button
-							class="tick-btn"
-							aria-pressed={isRevealed(p.id)}
-							aria-label="{isRevealed(p.id) ? 'Unmark' : 'Mark'} received from {p.name}"
-						>
-							<Checkbox checked={isRevealed(p.id)} tilt={tiltFor(p.id)} />
-						</button>
-					</form>
+					{#if isRevealed(p.id)}
+						<!-- One-way: unticking would let you peek at what people bought and hide it again. -->
+						<span class="tick-btn" role="img" aria-label="Received from {p.name}">
+							<Checkbox checked tilt={tiltFor(p.id)} />
+						</span>
+					{:else}
+						<form method="POST" action="?/received" use:enhance={confirmReveal(p.name)}>
+							<input type="hidden" name="giverId" value={p.id} />
+							<button class="tick-btn" aria-pressed="false" aria-label="Mark received from {p.name}">
+								<Checkbox checked={false} tilt={tiltFor(p.id)} />
+							</button>
+						</form>
+					{/if}
 					<Avatar name={p.name} size={36} />
 					<div class="who">
 						<p class="write name">{p.name}</p>
@@ -74,7 +88,7 @@
 		{/each}
 
 		{#if anyLeft}
-			<form method="POST" action="?/receivedAll" use:enhance class="all">
+			<form method="POST" action="?/receivedAll" use:enhance={confirmReveal('everyone')} class="all">
 				<button class="btn btn-primary btn-md">Received from everyone</button>
 			</form>
 		{/if}

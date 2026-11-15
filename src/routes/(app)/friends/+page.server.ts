@@ -11,7 +11,7 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 
 	if (q.length >= 2) {
 		const term = q.toLowerCase().replace(/^@/, '').replace(/[%_\\]/g, (c) => `\\${c}`);
-		// Name / username are partial matches; email must match exactly (no address guessing).
+		// Name / username are partial matches. No email lookup: it would reveal who has an account.
 		results = await db
 			.select({ name: user.name, username: sql<string>`${user.username}`, lists: sql<number>`count(${list.id})` })
 			.from(user)
@@ -20,7 +20,7 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 				and(
 					ne(user.id, me.id),
 					isNotNull(user.username),
-					or(like(user.username, `${term}%`), like(user.name, `%${term}%`), eq(user.email, q.toLowerCase()))
+					or(like(user.username, `${term}%`), like(user.name, `%${term}%`))
 				)
 			)
 			.groupBy(user.id, user.name, user.username)

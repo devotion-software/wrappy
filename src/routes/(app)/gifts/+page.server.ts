@@ -1,5 +1,5 @@
 import { error } from '@sveltejs/kit';
-import { and, eq, sql } from 'drizzle-orm';
+import { sql } from 'drizzle-orm';
 import { db } from '#lib/server/db';
 import { receivedFrom } from '#lib/server/db/schema';
 import { knownPeople } from '#lib/server/lists';
@@ -36,12 +36,6 @@ export const actions: Actions = {
 		}
 		return { done: true };
 	},
-	undo: async ({ locals, request }) => {
-		const me = locals.user!;
-		const giverId = String((await request.formData()).get('giverId') ?? '');
-		// Noted gifts are kept; they reappear if you tick this person again.
-		await db.delete(receivedFrom).where(and(eq(receivedFrom.ownerId, me.id), eq(receivedFrom.giverId, giverId)));
-		return { done: true };
-	},
+	// No "undo": received-from is one-way, or an owner could tick, peek at what was bought, and untick.
 	...giftNoteActions
 };

@@ -10,6 +10,7 @@ import { createItem, importImages, parseItemForm, santaPriceProblem } from '#lib
 import { fetchLinkMeta, looksLikeUrl, normaliseUrl } from '#lib/server/linkFetch';
 import { sendListInviteEmail } from '#lib/server/email';
 import { claimActions } from '#lib/server/claims';
+import { FETCH_LIMIT_MESSAGE, takeFetchBudget } from '#lib/server/rateLimit';
 import { formatPrice } from '#lib/format';
 import type { Actions, PageServerLoad, RequestEvent } from './$types';
 
@@ -107,6 +108,7 @@ export const actions: Actions = {
 			} catch {
 				return fail(400, { addError: "That link doesn't look right. Check it and try again." });
 			}
+			if (!takeFetchBudget(me.id)) return fail(429, { addError: FETCH_LIMIT_MESSAGE });
 			const meta = await fetchLinkMeta(url);
 			if (!meta) return fail(422, { manualUrl: url });
 
@@ -157,7 +159,8 @@ export const actions: Actions = {
 		const linkId = String(fd.get('linkId') ?? '') || null;
 		const [it] = await db.select({ id: item.id }).from(item).where(and(eq(item.id, itemId), eq(item.ownerId, me.id)));
 		if (!it) error(404, 'Item not found');
-		const urls = fd.getAll('image').map(String).filter(Boolean);
+		const urls = fd.getAll('image').map(String).filter(Boolean).slice(0, 10);
+		if (!takeFetchBudget(me.id, urls.length)) return fail(429, { addError: FETCH_LIMIT_MESSAGE });
 		const saved = await importImages(itemId, urls, linkId);
 		return { imported: saved, wanted: urls.length };
 	},

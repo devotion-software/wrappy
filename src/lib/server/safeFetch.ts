@@ -1,4 +1,5 @@
 import { lookup as dnsLookup } from 'node:dns';
+import { isIP } from 'node:net';
 import { Agent, fetch, type Response } from 'undici';
 import { isPublicAddress } from './netGuard';
 
@@ -46,6 +47,10 @@ export function validateUrl(raw: string): URL {
 	if (u.protocol !== 'http:' && u.protocol !== 'https:') throw new FetchBlockedError('Only web links are supported');
 	if (u.port && u.port !== '80' && u.port !== '443') throw new FetchBlockedError('Unsupported port');
 	if (u.username || u.password) throw new FetchBlockedError('Links with credentials are not supported');
+	// Node connects to IP-literal hosts without calling the agent's DNS lookup, so check them here.
+	// (The URL parser has already normalised forms like http://2130706433/ to dotted IPv4.)
+	const host = u.hostname.replace(/^\[|\]$/g, '');
+	if (isIP(host) && !isPublicAddress(host)) throw new FetchBlockedError('Blocked address');
 	return u;
 }
 

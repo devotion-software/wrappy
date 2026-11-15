@@ -16,10 +16,14 @@ describe('isPublicAddress', () => {
 		'fe80::1',
 		'::ffff:127.0.0.1',
 		'::ffff:10.0.0.1',
+		'::ffff:7f00:1',
+		'::ffff:a9fe:a9fe',
+		'::7f00:1',
+		'2002:7f00:1::1',
 		'not-an-ip'
 	])('blocks %s', (ip) => expect(isPublicAddress(ip)).toBe(false));
 
-	it.each(['93.184.216.34', '1.1.1.1', '2606:4700:4700::1111', '::ffff:8.8.8.8'])('allows %s', (ip) =>
+	it.each(['93.184.216.34', '1.1.1.1', '2606:4700:4700::1111', '::ffff:8.8.8.8', '::ffff:808:808'])('allows %s', (ip) =>
 		expect(isPublicAddress(ip)).toBe(true)
 	);
 });
