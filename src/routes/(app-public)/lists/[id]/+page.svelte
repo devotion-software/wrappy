@@ -101,9 +101,7 @@
 
 	<div class="with-aside">
 		<Sheet tape margin={50} padding="18px 28px 20px 72px" class="main-col list-sheet">
-			{#if data.isOwner}
-				<p class="banner"><Icon name="eye-off" size={16} />Reserved and bought gifts are hidden from you, so the surprise is safe.</p>
-			{:else}
+			{#if !data.isOwner}
 				<p class="banner"><Icon name="lock" size={16} />{firstName} can't see what you reserve or buy.</p>
 			{/if}
 
