@@ -16,7 +16,7 @@
 	const firstName = $derived(data.ownerName.split(' ')[0]);
 </script>
 
-<svelte:head><title>{data.item.title} — Wishlist</title></svelte:head>
+<svelte:head><title>{data.item.title} — Wrappy</title></svelte:head>
 
 <main class="container page">
 	<a href="/lists/{data.list.id}" class="back"><Icon name="arrow-left" size={16} strokeWidth={2} />{data.list.title}</a>

@@ -1,4 +1,4 @@
-# Wishlist
+# Wrappy
 
 Wish lists you can share without spoiling the surprise, plus Secret Santa.
 
@@ -41,7 +41,7 @@ Production applies `drizzle/` migrations on boot (`scripts/migrate.js`).
 
 ## Deploy
 
-Coolify, built from the `Dockerfile`. Target domain: wishlist.devotion.software (TBC).
+Coolify, built from the `Dockerfile`. Domain: wrappy.gift.
 Set `DATABASE_URL`, `BETTER_AUTH_SECRET`, `BETTER_AUTH_URL`, `RESEND_API_KEY`, `EMAIL_FROM` and the `R2_*` vars.
 
 The app is stateless, so you can run as many instances as you like behind a load balancer:

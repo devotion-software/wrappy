@@ -6,7 +6,7 @@
 	let { form } = $props();
 </script>
 
-<svelte:head><title>Organise a Secret Santa — Wishlist</title></svelte:head>
+<svelte:head><title>Organise a Secret Santa — Wrappy</title></svelte:head>
 
 <main class="container page">
 	<a href="/santa" class="back"><Icon name="arrow-left" size={16} strokeWidth={2} />Secret Santa</a>

@@ -31,7 +31,7 @@ describe('safeFetch', () => {
 		const [url, init] = fetchMock.mock.calls[0];
 		expect(String(url)).toBe('https://example.com/a');
 		expect(init).toMatchObject({ redirect: 'manual', headers: expect.objectContaining({ accept: 'text/html' }) });
-		expect(init.headers['user-agent']).toMatch(/WishlistBot/);
+		expect(init.headers['user-agent']).toMatch(/WrappyBot/);
 		expect(init.dispatcher).toBeDefined();
 	});
 

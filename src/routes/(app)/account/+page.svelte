@@ -28,7 +28,7 @@
 	}
 </script>
 
-<svelte:head><title>Account — Wishlist</title></svelte:head>
+<svelte:head><title>Account — Wrappy</title></svelte:head>
 
 <main class="container page">
 	<h1 class="hand">Account</h1>

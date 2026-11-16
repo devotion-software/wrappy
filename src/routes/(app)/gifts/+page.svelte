@@ -32,7 +32,7 @@
 		};
 </script>
 
-<svelte:head><title>Presents received — Wishlist</title></svelte:head>
+<svelte:head><title>Presents received — Wrappy</title></svelte:head>
 
 <main class="container page">
 	<div>
@@ -116,7 +116,7 @@
 
 	<section class="others">
 		<div>
-			<h2 class="hand h2">Not on Wishlist</h2>
+			<h2 class="hand h2">Not on Wrappy</h2>
 			<p class="sub">Keep track of presents from people without an account, like grandparents or neighbours. Only you can see these.</p>
 		</div>
 		<Sheet margin={50} padding="18px 28px 22px 72px" class="sheet">

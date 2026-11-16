@@ -3,7 +3,7 @@
 	let { data } = $props();
 </script>
 
-<svelte:head><title>{data.title} — Wishlist</title></svelte:head>
+<svelte:head><title>{data.title} — Wrappy</title></svelte:head>
 
 <main class="container">
 	<h1 class="hand">{data.title}</h1>

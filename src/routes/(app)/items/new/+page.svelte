@@ -6,7 +6,7 @@
 	let { data, form } = $props();
 </script>
 
-<svelte:head><title>New wish — Wishlist</title></svelte:head>
+<svelte:head><title>New wish — Wrappy</title></svelte:head>
 
 <main class="container page">
 	<a href={data.target ? `/lists/${data.target.id}` : '/items'} class="back"

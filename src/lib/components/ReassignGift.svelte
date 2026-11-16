@@ -46,12 +46,12 @@
 			<select id="to-{id}" name="to" class="line-input select" bind:value={to} required>
 				<option value="" disabled>Choose someone</option>
 				{#if accounts.length}
-					<optgroup label="On Wishlist">
+					<optgroup label="On Wrappy">
 						{#each accounts as o (o.id)}<option value={o.id}>{o.name}</option>{/each}
 					</optgroup>
 				{/if}
 				{#if contacts.length}
-					<optgroup label="Not on Wishlist">
+					<optgroup label="Not on Wrappy">
 						{#each contacts as o (o.id)}<option value={o.id}>{o.name}</option>{/each}
 					</optgroup>
 				{/if}

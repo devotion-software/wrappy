@@ -2,7 +2,7 @@ import { and, eq, ne } from 'drizzle-orm';
 import { db } from './db';
 import { user } from './db/schema';
 
-const RESERVED = new Set(['admin', 'api', 'app', 'help', 'lists', 'items', 'santa', 'friends', 'gifts', 'account', 'signin', 'welcome', 'me', 'wishlist']);
+const RESERVED = new Set(['admin', 'api', 'app', 'help', 'lists', 'items', 'santa', 'friends', 'gifts', 'account', 'signin', 'welcome', 'me', 'wishlist', 'wrappy']);
 
 /** Lowercase letters, numbers, dots, dashes and underscores; 3–30 chars. Returns an error or null. */
 export function usernameProblem(u: string): string | null {

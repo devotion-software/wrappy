@@ -13,7 +13,7 @@ export interface PageMeta {
 }
 
 export const SITE_META: PageMeta = {
-	title: 'Wishlist',
+	title: 'Wrappy',
 	description: 'Write a wish list, share it, and keep the surprise.'
 };
 

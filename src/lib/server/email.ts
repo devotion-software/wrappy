@@ -1,5 +1,5 @@
 /**
- * Email delivery for Wishlist.
+ * Email delivery for Wrappy.
  *
  * Delivery is chosen at runtime, in order:
  *   1. Resend API   — when RESEND_API_KEY is set (production).
@@ -16,21 +16,21 @@ interface OtpEmail {
 }
 
 const SUBJECTS: Record<OtpType, string> = {
-	'sign-in': 'Your Wishlist sign-in code',
-	'email-verification': 'Verify your email for Wishlist',
-	'forget-password': 'Reset your Wishlist password',
-	'change-email': 'Confirm your new Wishlist email'
+	'sign-in': 'Your Wrappy sign-in code',
+	'email-verification': 'Verify your email for Wrappy',
+	'forget-password': 'Reset your Wrappy password',
+	'change-email': 'Confirm your new Wrappy email'
 };
 
 const INTRO: Record<OtpType, string> = {
-	'sign-in': 'Use this code to sign in to Wishlist.',
+	'sign-in': 'Use this code to sign in to Wrappy.',
 	'email-verification': 'Use this code to verify your email address.',
 	'forget-password': 'Use this code to reset your password.',
 	'change-email': 'Use this code to confirm your new email address.'
 };
 
 export async function sendOtpEmail({ email, otp, type }: OtpEmail): Promise<void> {
-	const subject = SUBJECTS[type] ?? 'Your Wishlist code';
+	const subject = SUBJECTS[type] ?? 'Your Wrappy code';
 	const html = renderOtpHtml(otp, INTRO[type] ?? INTRO['sign-in']);
 	const text = `${INTRO[type] ?? ''}\n\nYour code is ${otp}\nIt expires in 10 minutes.\n\nIf you didn't request this, you can ignore this email.`;
 
@@ -95,7 +95,7 @@ interface ReminderBase {
 }
 
 function reminderFootnote(r: ReminderBase): string {
-	return `You're getting this because you use Wishlist. <a href="${escapeHtml(r.unsubscribeUrl)}" style="color:#5E5E5A;">Stop these reminders</a> or <a href="${escapeHtml(r.settingsUrl)}" style="color:#5E5E5A;">choose which emails you get</a>.`;
+	return `You're getting this because you use Wrappy. <a href="${escapeHtml(r.unsubscribeUrl)}" style="color:#5E5E5A;">Stop these reminders</a> or <a href="${escapeHtml(r.settingsUrl)}" style="color:#5E5E5A;">choose which emails you get</a>.`;
 }
 const reminderTextFooter = (r: ReminderBase) => `\n\n—\nStop these reminders: ${r.unsubscribeUrl}\nChoose which emails you get: ${r.settingsUrl}`;
 
@@ -162,7 +162,7 @@ export async function sendSantaReminderEmail(
 }
 
 async function deliver(msg: Omit<Message, 'from'>, consoleBody: string): Promise<void> {
-	const from = process.env.EMAIL_FROM || 'Wishlist <no-reply@wishlist.local>';
+	const from = process.env.EMAIL_FROM || 'Wrappy <no-reply@wrappy.gift>';
 	const full: Message = { from, ...msg };
 	if (process.env.RESEND_API_KEY) {
 		await sendViaResend(full);
@@ -257,7 +257,7 @@ function renderLayout(bodyHtml: string, actionHtml = "", footnote = ""): string 
 			<tr><td align="center">
 				<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:460px;background:#FAFAF8;border-radius:4px;border-left:2px solid #C9A24A;box-shadow:0 1px 2px rgba(0,0,0,.08),0 10px 24px rgba(0,0,0,.07);">
 					<tr><td style="padding:30px 32px 6px;">
-						<span style="font-family:Caveat,'Comic Sans MS',cursive;font-size:30px;font-weight:700;color:#1C1C1C;"><span style="color:#C9A24A;">&#10003;</span> wishlist</span>
+						<span style="font-family:Caveat,'Comic Sans MS',cursive;font-size:30px;font-weight:700;color:#1C1C1C;"><span style="color:#C9A24A;">&#10003;</span> wrappy</span>
 					</td></tr>
 					<tr><td style="padding:12px 32px 4px;font-size:15px;color:#4A4A4A;line-height:1.55;">${bodyHtml}</td></tr>
 					${actionHtml ? `<tr><td style="padding:20px 32px 8px;">${actionHtml}</td></tr>` : ""}

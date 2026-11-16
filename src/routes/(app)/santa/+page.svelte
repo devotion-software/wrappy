@@ -6,7 +6,7 @@
 	let { data } = $props();
 </script>
 
-<svelte:head><title>Secret Santa — Wishlist</title></svelte:head>
+<svelte:head><title>Secret Santa — Wrappy</title></svelte:head>
 
 <main class="container page">
 	<div class="title-row">

@@ -18,7 +18,7 @@
 	const santaNames = ['Meg', 'Sam', 'Priya', 'Tom', 'Grandma Jo', 'Leo'];
 </script>
 
-<svelte:head><title>Wishlist — write it down, share it, keep the surprise</title></svelte:head>
+<svelte:head><title>Wrappy — write it down, share it, keep the surprise</title></svelte:head>
 
 <header class="container top">
 	<Logo />

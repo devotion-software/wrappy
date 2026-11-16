@@ -23,7 +23,7 @@
 	}
 </script>
 
-<svelte:head><title>Welcome — Wishlist</title></svelte:head>
+<svelte:head><title>Welcome — Wrappy</title></svelte:head>
 
 <div class="page">
 	<header class="container top"><Logo href="/lists" /></header>

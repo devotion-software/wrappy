@@ -1,17 +1,17 @@
 services:
   mariadb:
     image: mariadb:11.4
-    container_name: wishlist-mariadb
+    container_name: wrappy-mariadb
     restart: unless-stopped
     environment:
       MARIADB_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-rootpass}
-      MARIADB_DATABASE: ${DB_NAME:-wishlist}
-      MARIADB_USER: ${DB_USER:-wishlist}
-      MARIADB_PASSWORD: ${DB_PASSWORD:-wishlistpass}
+      MARIADB_DATABASE: ${DB_NAME:-wrappy}
+      MARIADB_USER: ${DB_USER:-wrappy}
+      MARIADB_PASSWORD: ${DB_PASSWORD:-wrappypass}
     ports:
       - '${DB_PORT:-3313}:3306'
     volumes:
-      - wishlist-db-data:/var/lib/mysql
+      - wrappy-db-data:/var/lib/mysql
     healthcheck:
       test: ['CMD', 'healthcheck.sh', '--connect', '--innodb_initialized']
       interval: 5s
@@ -21,7 +21,7 @@ services:
   # Catches all outgoing dev email — view it at http://localhost:8028
   mailpit:
     image: axllent/mailpit:latest
-    container_name: wishlist-mailpit
+    container_name: wrappy-mailpit
     restart: unless-stopped
     ports:
       - '${MAILPIT_SMTP_PORT:-1028}:1025'
@@ -31,4 +31,4 @@ services:
       MP_SMTP_AUTH_ALLOW_INSECURE: 1
 
 volumes:
-  wishlist-db-data:
+  wrappy-db-data:

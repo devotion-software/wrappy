@@ -7,7 +7,7 @@
 	let { data } = $props();
 </script>
 
-<svelte:head><title>Friends — Wishlist</title></svelte:head>
+<svelte:head><title>Friends — Wrappy</title></svelte:head>
 
 <main class="container page">
 	<h1 class="hand">Friends</h1>

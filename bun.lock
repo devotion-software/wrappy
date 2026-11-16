@@ -3,7 +3,7 @@
   "configVersion": 1,
   "workspaces": {
     "": {
-      "name": "wishlist",
+      "name": "wrappy",
       "dependencies": {
         "@better-auth/passkey": "1.7.14",
         "aws4fetch": "^1.0.20",

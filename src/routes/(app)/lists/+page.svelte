@@ -11,7 +11,7 @@
 	const totalWishes = $derived(data.mine.reduce((n, l) => n + l.count, 0));
 </script>
 
-<svelte:head><title>My lists — Wishlist</title></svelte:head>
+<svelte:head><title>My lists — Wrappy</title></svelte:head>
 
 <main class="container home">
 	<div class="main-col">

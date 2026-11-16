@@ -235,7 +235,7 @@ async function santaReminders(baseUrl: string, now: Date, links: Links): Promise
 
 // ── Scheduler ────────────────────────────────────────────────────────────────
 
-const LOCK = 'wishlist_reminders';
+const LOCK = 'wrappy_reminders';
 let timer: ReturnType<typeof setInterval> | null = null;
 
 /**

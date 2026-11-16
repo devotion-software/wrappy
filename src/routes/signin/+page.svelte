@@ -64,7 +64,7 @@
 	}
 </script>
 
-<svelte:head><title>Log in — Wishlist</title></svelte:head>
+<svelte:head><title>Log in — Wrappy</title></svelte:head>
 
 <div class="page">
 	<header class="container top">

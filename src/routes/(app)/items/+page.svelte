@@ -11,7 +11,7 @@
 	);
 </script>
 
-<svelte:head><title>All my wishes — Wishlist</title></svelte:head>
+<svelte:head><title>All my wishes — Wrappy</title></svelte:head>
 
 <main class="container page">
 	<div class="title-row">

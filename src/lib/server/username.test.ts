@@ -14,7 +14,7 @@ describe('usernameProblem', () => {
 		expect(usernameProblem(u)).toBe('Use lowercase letters, numbers, dots, dashes or underscores.');
 	});
 
-	it.each(['admin', 'lists', 'santa', 'signin', 'welcome', 'wishlist', 'api'])('reserves %j', (u) => {
+	it.each(['admin', 'lists', 'santa', 'signin', 'welcome', 'wishlist', 'wrappy', 'api'])('reserves %j', (u) => {
 		expect(usernameProblem(u)).toBe('That username is taken.');
 	});
 });

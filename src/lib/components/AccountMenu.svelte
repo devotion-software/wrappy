@@ -24,8 +24,8 @@
 		if (t === 'system') el.removeAttribute('data-theme');
 		else el.setAttribute('data-theme', t);
 		try {
-			if (t === 'system') localStorage.removeItem('wishlist-theme');
-			else localStorage.setItem('wishlist-theme', t);
+			if (t === 'system') localStorage.removeItem('wrappy-theme');
+			else localStorage.setItem('wrappy-theme', t);
 		} catch {}
 		authClient.updateUser({ theme: t });
 	}

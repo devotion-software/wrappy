@@ -6,7 +6,7 @@
 	const isMe = $derived(data.user?.id === data.profileUserId);
 </script>
 
-<svelte:head><title>{data.profile.name}'s wish lists — Wishlist</title></svelte:head>
+<svelte:head><title>{data.profile.name}'s wish lists — Wrappy</title></svelte:head>
 
 <main class="container page">
 	<div class="who">

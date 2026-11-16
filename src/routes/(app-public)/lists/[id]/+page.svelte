@@ -78,7 +78,7 @@
 	let settingsOpen = $state(false);
 </script>
 
-<svelte:head><title>{data.list.title} — Wishlist</title></svelte:head>
+<svelte:head><title>{data.list.title} — Wrappy</title></svelte:head>
 
 <main class="container page">
 	{#if data.isOwner}

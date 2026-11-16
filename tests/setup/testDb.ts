@@ -4,8 +4,8 @@
  */
 export function testDatabaseUrl(env: Record<string, string | undefined>): string {
 	if (env.TEST_DATABASE_URL) return env.TEST_DATABASE_URL;
-	const u = new URL(env.DATABASE_URL || 'mysql://wishlist:wishlistpass@localhost:3313/wishlist');
-	const name = u.pathname.replace(/^\//, '') || 'wishlist';
+	const u = new URL(env.DATABASE_URL || 'mysql://wrappy:wrappypass@localhost:3313/wrappy');
+	const name = u.pathname.replace(/^\//, '') || 'wrappy';
 	u.pathname = `/${name.endsWith('_test') ? name : `${name}_test`}`;
 	return u.toString();
 }

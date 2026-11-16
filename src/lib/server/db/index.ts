@@ -9,10 +9,10 @@ if (!connectionString) {
 }
 
 // Reuse a single pool across HMR reloads in dev.
-const globalForDb = globalThis as unknown as { __wishlistPool?: mysql.Pool };
+const globalForDb = globalThis as unknown as { __wrappyPool?: mysql.Pool };
 
 const pool =
-	globalForDb.__wishlistPool ??
+	globalForDb.__wrappyPool ??
 	mysql.createPool({
 		uri: connectionString,
 		// Per app instance: keep instances × DB_POOL_SIZE under the database's max_connections.
@@ -23,7 +23,7 @@ const pool =
 		dateStrings: false
 	});
 
-if (process.env.NODE_ENV !== 'production') globalForDb.__wishlistPool = pool;
+if (process.env.NODE_ENV !== 'production') globalForDb.__wrappyPool = pool;
 
 export const db = drizzle(pool, { schema, mode: 'default' });
 export type DB = typeof db;

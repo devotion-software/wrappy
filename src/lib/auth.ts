@@ -72,7 +72,7 @@ export const auth = betterAuth({
 		}),
 		passkey({
 			rpID,
-			rpName: 'Wishlist',
+			rpName: 'Wrappy',
 			origin: baseURL
 		})
 	]

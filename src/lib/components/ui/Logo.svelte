@@ -16,7 +16,7 @@
 		stroke-linejoin="round"
 		aria-hidden="true"><path d="M4 13c2 1.5 3.5 3.5 4.5 5.5C11 12 15 7 21 3" /></svg
 	>
-	<span>wishlist</span>
+	<span>wrappy</span>
 </a>
 
 <style>

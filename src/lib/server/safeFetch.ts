@@ -35,7 +35,7 @@ const agent = new Agent({
 });
 
 const UA =
-	'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0 Safari/537.36 WishlistBot/1.0';
+	'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0 Safari/537.36 WrappyBot/1.0';
 
 export function validateUrl(raw: string): URL {
 	let u: URL;

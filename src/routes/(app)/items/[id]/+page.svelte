@@ -102,7 +102,7 @@
 	});
 </script>
 
-<svelte:head><title>{data.item.title} — Wishlist</title></svelte:head>
+<svelte:head><title>{data.item.title} — Wrappy</title></svelte:head>
 
 <main class="container page">
 	<a href={backHref} class="back"><Icon name="arrow-left" size={16} strokeWidth={2} />{backLabel}</a>

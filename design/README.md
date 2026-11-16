@@ -1,4 +1,4 @@
-# Wishful — design handoff
+# Wrappy — design handoff
 
 Designs for a wish list + Secret Santa web app, in the "Notebook" style.
 

@@ -1,4 +1,4 @@
-const BASE = 'https://wishlist.invalid';
+const BASE = 'https://wrappy.invalid';
 
 /** Only allow same-origin relative paths as post-sign-in destinations (no open redirects). */
 export function safeRedirect(target: string | null | undefined, fallback = '/lists'): string {

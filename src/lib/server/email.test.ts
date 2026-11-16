@@ -36,7 +36,7 @@ const resendBody = () => JSON.parse(fetchMock.mock.calls[0][1].body);
 
 describe('Resend delivery', () => {
 	it('posts to the Resend API with the key and sender', async () => {
-		const m = await load({ RESEND_API_KEY: 're_test', EMAIL_FROM: 'Wishlist <hi@example.test>', SMTP_HOST: 'smtp.example' });
+		const m = await load({ RESEND_API_KEY: 're_test', EMAIL_FROM: 'Wrappy <hi@example.test>', SMTP_HOST: 'smtp.example' });
 		await m.sendOtpEmail({ email: 'a@example.test', otp: '123456', type: 'sign-in' });
 		expect(fetchMock).toHaveBeenCalledTimes(1);
 		const [url, init] = fetchMock.mock.calls[0];
@@ -44,7 +44,7 @@ describe('Resend delivery', () => {
 		expect(init.method).toBe('POST');
 		expect(init.headers).toMatchObject({ authorization: 'Bearer re_test', 'content-type': 'application/json' });
 		const body = resendBody();
-		expect(body).toMatchObject({ from: 'Wishlist <hi@example.test>', to: ['a@example.test'], subject: 'Your Wishlist sign-in code' });
+		expect(body).toMatchObject({ from: 'Wrappy <hi@example.test>', to: ['a@example.test'], subject: 'Your Wrappy sign-in code' });
 		expect(body.html).toContain('123456');
 		expect(body.text).toContain('Your code is 123456');
 		// Resend wins over SMTP.
@@ -54,7 +54,7 @@ describe('Resend delivery', () => {
 	it('uses a default sender when EMAIL_FROM is unset', async () => {
 		const m = await load({ RESEND_API_KEY: 're_test' });
 		await m.sendOtpEmail({ email: 'a@example.test', otp: '1', type: 'sign-in' });
-		expect(resendBody().from).toBe('Wishlist <no-reply@wishlist.local>');
+		expect(resendBody().from).toBe('Wrappy <no-reply@wrappy.gift>');
 	});
 
 	it('throws with the status and body when Resend refuses', async () => {
@@ -72,7 +72,7 @@ describe('SMTP delivery', () => {
 		await m.sendOtpEmail({ email: 'b@example.test', otp: '654321', type: 'email-verification' });
 		expect(createTransport).toHaveBeenCalledWith({ host: 'smtp.example', port: 2525, secure: true, auth: { user: 'u', pass: 'p' } });
 		expect(sendMail).toHaveBeenCalledWith(
-			expect.objectContaining({ to: 'b@example.test', subject: 'Verify your email for Wishlist', from: 'Wishlist <no-reply@wishlist.local>' })
+			expect.objectContaining({ to: 'b@example.test', subject: 'Verify your email for Wrappy', from: 'Wrappy <no-reply@wrappy.gift>' })
 		);
 		expect(fetchMock).not.toHaveBeenCalled();
 	});
@@ -108,7 +108,7 @@ describe('console fallback', () => {
 		const out = log.mock.calls.flat().join('\n');
 		expect(out).toContain('c@example.test');
 		expect(out).toContain('999000');
-		expect(out).toContain('Your Wishlist sign-in code');
+		expect(out).toContain('Your Wrappy sign-in code');
 	});
 });
 
@@ -120,10 +120,10 @@ describe('message content', () => {
 	}
 
 	it.each([
-		['sign-in', 'Your Wishlist sign-in code', 'Use this code to sign in to Wishlist.'],
-		['email-verification', 'Verify your email for Wishlist', 'Use this code to verify your email address.'],
-		['forget-password', 'Reset your Wishlist password', 'Use this code to reset your password.'],
-		['change-email', 'Confirm your new Wishlist email', 'Use this code to confirm your new email address.']
+		['sign-in', 'Your Wrappy sign-in code', 'Use this code to sign in to Wrappy.'],
+		['email-verification', 'Verify your email for Wrappy', 'Use this code to verify your email address.'],
+		['forget-password', 'Reset your Wrappy password', 'Use this code to reset your password.'],
+		['change-email', 'Confirm your new Wrappy email', 'Use this code to confirm your new email address.']
 	] as const)('OTP %s has the right subject and intro', async (type, subject, intro) => {
 		const b = await capture((m) => m.sendOtpEmail({ email: 'a@example.test', otp: '112233', type }));
 		expect(b.subject).toBe(subject);
@@ -138,17 +138,17 @@ describe('message content', () => {
 				email: 'friend@example.test',
 				ownerName: '<script>alert(1)</script>',
 				listTitle: `Tom & Jerry's "best"`,
-				url: 'https://wishlist.example/lists/abc?x=1&y="2"'
+				url: 'https://wrappy.example/lists/abc?x=1&y="2"'
 			})
 		);
 		expect(b.subject).toBe('<script>alert(1)</script> shared a wish list with you');
 		expect(b.html).not.toContain('<script>');
 		expect(b.html).toContain('&lt;script&gt;alert(1)&lt;/script&gt;');
 		expect(b.html).toContain('Tom &amp; Jerry&#39;s &quot;best&quot;');
-		expect(b.html).toContain('href="https://wishlist.example/lists/abc?x=1&amp;y=&quot;2&quot;"');
+		expect(b.html).toContain('href="https://wrappy.example/lists/abc?x=1&amp;y=&quot;2&quot;"');
 		// Plain text is not HTML-escaped.
 		expect(b.text).toContain(`"Tom & Jerry's "best""`);
-		expect(b.text).toContain('Open it: https://wishlist.example/lists/abc');
+		expect(b.text).toContain('Open it: https://wrappy.example/lists/abc');
 	});
 
 	it('escapes Secret Santa names and includes budget and date', async () => {
@@ -159,7 +159,7 @@ describe('message content', () => {
 				recipientName: 'Ann & Bob',
 				budget: '£20',
 				exchangeDate: '20 Dec',
-				url: 'https://wishlist.example/santa/x'
+				url: 'https://wrappy.example/santa/x'
 			})
 		);
 		expect(b.subject).toBe("Office <Party>: you're buying for Ann & Bob");
@@ -168,7 +168,7 @@ describe('message content', () => {
 		expect(b.html).not.toContain('<Party>');
 		expect(b.html).toContain('Budget £20 · swap on 20 Dec');
 		expect(b.text).toContain("You're buying for Ann & Bob.\nBudget £20 · swap on 20 Dec");
-		expect(b.text).toContain('See their list: https://wishlist.example/santa/x');
+		expect(b.text).toContain('See their list: https://wrappy.example/santa/x');
 	});
 
 	it('leaves out the budget line when there is no budget or date', async () => {
@@ -179,12 +179,12 @@ describe('message content', () => {
 				recipientName: 'Sam',
 				budget: null,
 				exchangeDate: null,
-				url: 'https://wishlist.example/santa/x'
+				url: 'https://wrappy.example/santa/x'
 			})
 		);
 		expect(b.html).not.toContain('Budget');
 		expect(b.html).not.toContain('swap on');
-		expect(b.text).toBe("Names have been drawn for Family.\n\nYou're buying for Sam.\n\nSee their list: https://wishlist.example/santa/x");
+		expect(b.text).toBe("Names have been drawn for Family.\n\nYou're buying for Sam.\n\nSee their list: https://wrappy.example/santa/x");
 	});
 
 	it('shows only the date when there is no budget', async () => {

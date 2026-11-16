@@ -4,7 +4,7 @@
 	import Sheet from '#lib/components/ui/Sheet.svelte';
 </script>
 
-<svelte:head><title>{page.status === 404 ? 'Not found' : 'Something went wrong'} — Wishlist</title></svelte:head>
+<svelte:head><title>{page.status === 404 ? 'Not found' : 'Something went wrong'} — Wrappy</title></svelte:head>
 
 <div class="page">
 	<header class="container top"><Logo href={page.data.user ? '/lists' : '/'} /></header>

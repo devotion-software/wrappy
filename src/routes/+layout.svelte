@@ -25,8 +25,8 @@
 </script>
 
 <svelte:head>
-	<title>Wishlist</title>
-	<meta property="og:site_name" content="Wishlist" />
+	<title>Wrappy</title>
+	<meta property="og:site_name" content="Wrappy" />
 	<meta property="og:type" content="website" />
 	<meta property="og:title" content={meta.title} />
 	<meta property="og:description" content={meta.description} />
@@ -34,7 +34,7 @@
 	<meta property="og:image" content={image} />
 	<meta property="og:image:width" content="1200" />
 	<meta property="og:image:height" content="630" />
-	<meta property="og:image:alt" content="A page of lined notebook paper reading: Wishlist. Write a wish list, share it, and keep the surprise." />
+	<meta property="og:image:alt" content="A page of lined notebook paper reading: Wrappy. Write a wish list, share it, and keep the surprise." />
 	<meta name="twitter:card" content="summary_large_image" />
 </svelte:head>
 

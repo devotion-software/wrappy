@@ -20,7 +20,7 @@ export const load: PageServerLoad = async ({ params }) => {
 		profileUserId: u.id,
 		meta: {
 			title: `${u.name}'s wish lists`,
-			description: lists.length ? `${plural(lists.length, 'wish list')} on Wishlist.` : `${u.name} is on Wishlist.`
+			description: lists.length ? `${plural(lists.length, 'wish list')} on Wrappy.` : `${u.name} is on Wrappy.`
 		}
 	};
 };

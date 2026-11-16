@@ -33,7 +33,7 @@ test.describe('platform', () => {
 		page.on('console', (m) => m.type() === 'error' && errors.push(m.text()));
 		const res = await page.goto('/');
 		expect(res?.status()).toBe(200);
-		await expect(page).toHaveTitle(/Wishlist/);
+		await expect(page).toHaveTitle(/Wrappy/);
 		expect(errors).toEqual([]);
 	});
 });

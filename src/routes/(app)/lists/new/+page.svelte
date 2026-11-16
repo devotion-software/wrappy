@@ -6,7 +6,7 @@
 	let { form } = $props();
 </script>
 
-<svelte:head><title>New list — Wishlist</title></svelte:head>
+<svelte:head><title>New list — Wrappy</title></svelte:head>
 
 <main class="container page">
 	<a href="/lists" class="back"><Icon name="arrow-left" size={16} strokeWidth={2} />All lists</a>

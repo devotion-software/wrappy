@@ -1,6 +1,6 @@
-# Wishful — design spec ("Notebook" style)
+# Wrappy — design spec ("Notebook" style)
 
-"Wishful" is a placeholder product name. Anything in [SQUARE BRACKETS] (prices, dates, budgets, share links, places) is placeholder content.
+The product is called Wrappy (wrappy.gift). Anything in [SQUARE BRACKETS] (prices, dates, budgets, share links, places) is placeholder content.
 
 The reference pages in `pages/` are the source of truth for look and layout. This document explains the system behind them and the product rules they illustrate.
 

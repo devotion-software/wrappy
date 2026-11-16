@@ -1,6 +1,6 @@
 <footer>
 	<div class="container inner">
-		<span class="hand brand">wishlist</span>
+		<span class="hand brand">wrappy</span>
 		<span class="meta">v{__APP_VERSION__}</span>
 	</div>
 </footer>

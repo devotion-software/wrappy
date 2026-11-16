@@ -6,7 +6,7 @@
 	const off = $derived(form?.done || !data.on);
 </script>
 
-<svelte:head><title>Email reminders — Wishlist</title></svelte:head>
+<svelte:head><title>Email reminders — Wrappy</title></svelte:head>
 
 <main class="container page">
 	<h1 class="hand">Email reminders</h1>

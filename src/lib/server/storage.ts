@@ -6,7 +6,7 @@ import path from 'node:path';
 const ACCOUNT_ID = process.env.R2_ACCOUNT_ID;
 const ACCESS_KEY_ID = process.env.R2_ACCESS_KEY_ID;
 const SECRET_ACCESS_KEY = process.env.R2_SECRET_ACCESS_KEY;
-const BUCKET = process.env.R2_BUCKET || 'wishlist';
+const BUCKET = process.env.R2_BUCKET || 'wrappy';
 
 /** True when R2 credentials are present; otherwise we fall back to local disk. */
 export const usingR2 = Boolean(ACCOUNT_ID && ACCESS_KEY_ID && SECRET_ACCESS_KEY);

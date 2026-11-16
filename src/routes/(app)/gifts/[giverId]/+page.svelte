@@ -15,7 +15,7 @@
 	let editing = $state(false);
 </script>
 
-<svelte:head><title>From {data.person.name} — Wishlist</title></svelte:head>
+<svelte:head><title>From {data.person.name} — Wrappy</title></svelte:head>
 
 <main class="container page">
 	<a href="/gifts" class="back"><Icon name="arrow-left" size={16} strokeWidth={2} />Presents received</a>
@@ -24,7 +24,7 @@
 		<Avatar name={data.person.name} size={64} onDesk />
 		<div>
 			<h1 class="hand">From {data.person.name}</h1>
-			<p class="meta">{plural(total, 'present')}{data.person.isContact ? ' · not on Wishlist' : ''}</p>
+			<p class="meta">{plural(total, 'present')}{data.person.isContact ? ' · not on Wrappy' : ''}</p>
 		</div>
 		{#if total}<ThankedToggle personId={data.person.id} name={data.person.name} thanked={data.thanked} />{/if}
 	</div>
