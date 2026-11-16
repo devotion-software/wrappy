@@ -64,6 +64,13 @@
       "when": 1794833561386,
       "tag": "0008_list_archive",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "5",
+      "when": 1794833753351,
+      "tag": "0009_user_currency",
+      "breakpoints": true
     }
   ]
 }

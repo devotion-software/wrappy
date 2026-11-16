@@ -236,6 +236,13 @@ describe('addWish', () => {
 		expect(mockMeta).not.toHaveBeenCalled();
 	});
 
+	it("gives a plain-text item the owner's currency", async () => {
+		const owner = { ...(await createUser()), currency: 'EUR' };
+		const l = await createList(owner);
+		await act('addWish', owner, l, { wish: 'Gloves' });
+		expect((await itemsOn(l)).map((r) => r.currency)).toEqual(['EUR']);
+	});
+
 	it('rejects plain text over 200 characters', async () => {
 		const owner = await createUser();
 		const l = await createList(owner);

@@ -25,6 +25,8 @@ export const user = mysqlTable("user", {
     .notNull(),
   theme: text("theme").default("system"),
   username: varchar("username", { length: 30 }).unique(),
+  // Default currency for new items and Secret Santas (each keeps its own after that).
+  currency: varchar("currency", { length: 3 }).default("GBP").notNull(),
 });
 
 export const session = mysqlTable(

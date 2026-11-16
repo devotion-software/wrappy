@@ -11,7 +11,7 @@ import { fetchLinkMeta, looksLikeUrl, normaliseUrl } from '#lib/server/linkFetch
 import { sendListInviteEmail } from '#lib/server/email';
 import { claimActions } from '#lib/server/claims';
 import { FETCH_LIMIT_MESSAGE, takeFetchBudget } from '#lib/server/rateLimit';
-import { formatPrice } from '#lib/format';
+import { formatPrice, toCurrency } from '#lib/format';
 import { listMeta } from '#lib/meta';
 import { isoDay } from '#lib/server/reminders';
 import type { Actions, PageServerLoad, RequestEvent } from './$types';
@@ -122,7 +122,7 @@ export const actions: Actions = {
 				title: meta.title ?? hostOf(url),
 				notes: meta.description,
 				price: meta.price,
-				currency: meta.currency ?? 'GBP',
+				currency: toCurrency(meta.currency, me.currency),
 				mostWanted: false
 			};
 			if (l.santaId) {
@@ -134,7 +134,7 @@ export const actions: Actions = {
 		}
 
 		if (text.length > 200) return fail(400, { addError: 'Keep the item under 200 characters.' });
-		await createItem(me.id, { title: text, notes: null, price: null, currency: 'GBP', mostWanted: false }, { listIds: [l.id] });
+		await createItem(me.id, { title: text, notes: null, price: null, currency: toCurrency(me.currency), mostWanted: false }, { listIds: [l.id] });
 		return { added: true };
 	},
 
@@ -162,7 +162,7 @@ export const actions: Actions = {
 	importList: async (event) => {
 		const { me, l } = await ownerList(event);
 		const text = String((await event.request.formData()).get('list') ?? '');
-		const res = await importPastedList(me.id, text, l.id);
+		const res = await importPastedList(me.id, text, l.id, toCurrency(me.currency));
 		if ('error' in res) return fail(400, { importError: res.error });
 		return { pasted: res };
 	},

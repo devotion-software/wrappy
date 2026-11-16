@@ -23,7 +23,7 @@ describe('root layout', () => {
 		const u = await createUser({ username: `r${uniq()}`, theme: 'dark' });
 		expect(await L(rootLayout, { user: u })).toEqual({
 			kind: 'ok',
-			data: { user: { id: u.id, name: u.name, email: u.email, theme: 'dark', username: u.username } }
+			data: { user: { id: u.id, name: u.name, email: u.email, theme: 'dark', username: u.username, currency: 'GBP' } }
 		});
 		expect(await L(rootLayout, {})).toEqual({ kind: 'ok', data: { user: null } });
 	});
@@ -223,6 +223,17 @@ describe('account', () => {
 			data: { usernameError: 'That username is taken. Try another.' }
 		});
 		expect((await fresh(u.id)).username).toBe(u.username);
+	});
+});
+
+describe('account currency', () => {
+	it('saves a supported currency and keeps the old one otherwise', async () => {
+		const u = await createUser();
+		expect((await fresh(u.id)).currency).toBe('GBP');
+		await L(accountActions.profile, { user: u, form: { name: 'A', currency: 'eur' } });
+		expect((await fresh(u.id)).currency).toBe('EUR');
+		await L(accountActions.profile, { user: { ...u, currency: 'EUR' }, form: { name: 'A', currency: 'XYZ' } });
+		expect((await fresh(u.id)).currency).toBe('EUR');
 	});
 });
 

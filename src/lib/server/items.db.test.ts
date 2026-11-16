@@ -117,6 +117,16 @@ describe('importPastedList', () => {
 		expect(await itemsOf(me.id)).toEqual([]);
 	});
 
+	it("uses the owner's currency for lines without one", async () => {
+		const me = await createUser();
+		await importPastedList(me.id, '- Mug\n- Book 20 EUR', null, 'USD');
+		const rows = await itemsOf(me.id);
+		expect(rows.map((r) => [r.title, r.currency])).toEqual([
+			['Book', 'EUR'],
+			['Mug', 'USD']
+		]);
+	});
+
 	it('adds each wish with its link and price, onto the list', async () => {
 		const me = await createUser();
 		const l = await createList(me);

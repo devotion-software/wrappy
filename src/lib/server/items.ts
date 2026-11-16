@@ -6,7 +6,7 @@ import { newId } from './ids';
 import { addItemToList } from './lists';
 import { deleteAllItemImages, importImageFromUrl } from './images';
 import { normalisePrice } from './linkMeta';
-import { CURRENCIES, formatPrice } from '#lib/format';
+import { DEFAULT_CURRENCY, formatPrice, toCurrency } from '#lib/format';
 import { MAX_PASTED_WISHES, parsePastedList } from '#lib/pasteList';
 import { normaliseUrl } from './linkFetch';
 
@@ -42,8 +42,7 @@ export function parseItemForm(fd: FormData): { error: string } | { input: ItemIn
 	const rawPrice = String(fd.get('price') ?? '').trim();
 	const price = rawPrice ? normalisePrice(rawPrice) : null;
 	if (rawPrice && !price) return { error: 'Enter the price as a number, like 24.99.' };
-	const cur = String(fd.get('currency') ?? 'GBP').toUpperCase();
-	const currency = (CURRENCIES as readonly string[]).includes(cur) ? cur : 'GBP';
+	const currency = toCurrency(fd.get('currency'));
 	return { input: { title, notes, price, currency, mostWanted: fd.get('mostWanted') === 'on' } };
 }
 
@@ -87,7 +86,9 @@ export async function createItem(
 export async function importPastedList(
 	ownerId: string,
 	text: string,
-	listId: string | null
+	listId: string | null,
+	/** For lines with no currency of their own: the owner's default. */
+	currency: string = DEFAULT_CURRENCY
 ): Promise<{ error: string } | { added: number; skipped: string[] }> {
 	if (text.length > 50_000) return { error: "That's too much to paste in one go. Try a shorter list." };
 	const wishes = parsePastedList(text);
@@ -106,7 +107,7 @@ export async function importPastedList(
 			title: w.title,
 			notes: null,
 			price: w.price,
-			currency: w.currency && (CURRENCIES as readonly string[]).includes(w.currency) ? w.currency : 'GBP',
+			currency: toCurrency(w.currency, currency),
 			mostWanted: false
 		};
 		if (listId) {

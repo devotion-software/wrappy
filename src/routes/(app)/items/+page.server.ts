@@ -4,6 +4,7 @@ import { item, itemImage, itemList, list } from '#lib/server/db/schema';
 import { imageUrl } from '#lib/images';
 import { fail } from '@sveltejs/kit';
 import { importPastedList } from '#lib/server/items';
+import { toCurrency } from '#lib/format';
 import type { Actions, PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async ({ locals }) => {
@@ -43,7 +44,7 @@ export const actions: Actions = {
 	/** Paste a list from a note: one wish per line. */
 	importList: async ({ locals, request }) => {
 		const text = String((await request.formData()).get('list') ?? '');
-		const res = await importPastedList(locals.user!.id, text, null);
+		const res = await importPastedList(locals.user!.id, text, null, toCurrency(locals.user!.currency));
 		if ('error' in res) return fail(400, { importError: res.error });
 		return { pasted: res };
 	}

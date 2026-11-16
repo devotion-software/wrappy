@@ -22,7 +22,7 @@
 			<p class="sub">You can add pictures, links and lists next.</p>
 		{/if}
 		<form method="POST" class="stack">
-			<ItemFields values={{ currency: data.target?.currency ?? 'GBP' }} />
+			<ItemFields values={{ currency: data.target?.currency ?? undefined }} />
 			{#if form?.error}<p class="field-error" role="alert">{form.error}</p>{/if}
 			<button class="btn btn-primary btn-lg">Save item</button>
 		</form>

@@ -3,6 +3,7 @@ import { eq } from 'drizzle-orm';
 import { db } from '#lib/server/db';
 import { user } from '#lib/server/db/schema';
 import { setUsername } from '#lib/server/username';
+import { toCurrency } from '#lib/format';
 import { getEmailPrefs, REMINDER_KINDS, REMINDER_LABELS, setEmailPrefs } from '#lib/server/emailPrefs';
 import type { Actions, PageServerLoad } from './$types';
 
@@ -19,7 +20,8 @@ export const actions: Actions = {
 		const username = String(fd.get('username') ?? '').trim();
 		if (!name) return fail(400, { error: 'Add the name your friends know you by.' });
 		if (name.length > 60) return fail(400, { error: 'Keep your name under 60 characters.' });
-		await db.update(user).set({ name }).where(eq(user.id, me.id));
+		const currency = toCurrency(fd.get('currency'), me.currency);
+		await db.update(user).set({ name, currency }).where(eq(user.id, me.id));
 		if (username && username !== me.username) {
 			const problem = await setUsername(me.id, username);
 			if (problem) return fail(400, { usernameError: problem });

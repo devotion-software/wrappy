@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { CURRENCIES, formatDate, formatPrice, plural, tiltFor } from './format';
+import { CURRENCIES, formatDate, formatPrice, plural, tiltFor, toCurrency } from './format';
 
 describe('formatPrice', () => {
 	it('drops pence for whole amounts and keeps two decimals otherwise', () => {
@@ -50,6 +50,20 @@ describe('formatDate', () => {
 
 	it.each([null, undefined, '', 'not-a-date', '2026-13-45'])('returns null for %j', (v) => {
 		expect(formatDate(v as string | null | undefined)).toBeNull();
+	});
+});
+
+describe('toCurrency', () => {
+	it('accepts supported codes in any case', () => {
+		expect(toCurrency('eur')).toBe('EUR');
+		expect(toCurrency('USD', 'GBP')).toBe('USD');
+	});
+	it('falls back for anything else, and to GBP when the fallback is no good either', () => {
+		expect(toCurrency('XYZ', 'EUR')).toBe('EUR');
+		expect(toCurrency(null, 'AUD')).toBe('AUD');
+		expect(toCurrency(undefined)).toBe('GBP');
+		expect(toCurrency('', null)).toBe('GBP');
+		expect(toCurrency('nope', 'also-nope')).toBe('GBP');
 	});
 });
 

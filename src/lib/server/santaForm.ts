@@ -1,4 +1,4 @@
-import { CURRENCIES } from '#lib/format';
+import { toCurrency } from '#lib/format';
 import { normalisePrice } from './linkMeta';
 
 export function parseSantaForm(fd: FormData):
@@ -12,8 +12,7 @@ export function parseSantaForm(fd: FormData):
 	const rawLimit = String(fd.get('priceLimit') ?? '').trim();
 	const priceLimit = rawLimit ? normalisePrice(rawLimit) : null;
 	if (rawLimit && !priceLimit) return { error: 'Enter the budget as a number, like 20.' };
-	const cur = String(fd.get('currency') ?? 'GBP').toUpperCase();
-	const currency = (CURRENCIES as readonly string[]).includes(cur) ? cur : 'GBP';
+	const currency = toCurrency(fd.get('currency'));
 	const exchangeDate = String(fd.get('exchangeDate') ?? '').trim() || null;
 	if (exchangeDate && !/^\d{4}-\d{2}-\d{2}$/.test(exchangeDate)) return { error: 'Pick a valid date.' };
 	return { input: { name, description, priceLimit, currency, exchangeDate } };

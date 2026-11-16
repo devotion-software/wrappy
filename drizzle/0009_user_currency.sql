@@ -1,0 +1,1 @@
+ALTER TABLE `user` ADD `currency` varchar(3) DEFAULT 'GBP' NOT NULL;

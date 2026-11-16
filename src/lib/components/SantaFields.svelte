@@ -1,9 +1,12 @@
 <script lang="ts">
-	import { CURRENCIES } from '#lib/format';
+	import { page } from '$app/state';
+	import { CURRENCIES, DEFAULT_CURRENCY } from '#lib/format';
 	interface Props {
 		values?: { name?: string; description?: string | null; priceLimit?: string | null; currency?: string; exchangeDate?: string | null };
 	}
 	let { values = {} }: Props = $props();
+	// New ones start in the currency set on the account page.
+	const fallbackCurrency = $derived(page.data.user?.currency ?? DEFAULT_CURRENCY);
 </script>
 
 <div class="field">
@@ -24,7 +27,7 @@
 	<div class="field">
 		<label for="currency">Currency</label>
 		<select id="currency" name="currency" class="line-input select">
-			{#each CURRENCIES as c (c)}<option value={c} selected={(values.currency ?? 'GBP') === c}>{c}</option>{/each}
+			{#each CURRENCIES as c (c)}<option value={c} selected={(values.currency ?? fallbackCurrency) === c}>{c}</option>{/each}
 		</select>
 	</div>
 </div>

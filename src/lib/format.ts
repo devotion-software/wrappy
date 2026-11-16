@@ -42,3 +42,12 @@ export function tiltFor(id: string): number {
 }
 
 export const CURRENCIES = ['GBP', 'EUR', 'USD', 'CAD', 'AUD', 'NZD', 'CHF', 'SEK', 'NOK', 'DKK', 'JPY', 'INR'] as const;
+export type Currency = (typeof CURRENCIES)[number];
+export const DEFAULT_CURRENCY: Currency = 'GBP';
+
+/** A supported currency code (case-insensitive), or the fallback. */
+export function toCurrency(value: unknown, fallback: string | null = DEFAULT_CURRENCY): Currency {
+	const c = String(value ?? '').toUpperCase();
+	if ((CURRENCIES as readonly string[]).includes(c)) return c as Currency;
+	return fallback && (CURRENCIES as readonly string[]).includes(fallback) ? (fallback as Currency) : DEFAULT_CURRENCY;
+}

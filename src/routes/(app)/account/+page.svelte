@@ -4,6 +4,7 @@
 	import { authClient } from '#lib/auth-client';
 	import Sheet from '#lib/components/ui/Sheet.svelte';
 	import Icon from '#lib/components/ui/Icon.svelte';
+	import { CURRENCIES } from '#lib/format';
 
 	let { data, form } = $props();
 	let passkeys = $state<{ id: string; name?: string | null; createdAt?: Date | string | null }[]>([]);
@@ -47,6 +48,13 @@
 				<p class="meta">
 					{#if data.user?.username}Your profile: <a href="/u/{data.user.username}">/u/{data.user.username}</a>{:else}Pick one so friends can find your public lists.{/if}
 				</p>
+			</div>
+			<div class="field">
+				<label for="currency">Currency</label>
+				<select id="currency" name="currency" class="line-input select">
+					{#each CURRENCIES as c (c)}<option value={c} selected={(data.user?.currency ?? 'GBP') === c}>{c}</option>{/each}
+				</select>
+				<p class="meta">New items and Secret Santas start in this currency. You can still change it on each one.</p>
 			</div>
 			<div class="field">
 				<span class="label">Email</span>

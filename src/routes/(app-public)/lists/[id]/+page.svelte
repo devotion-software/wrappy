@@ -284,7 +284,7 @@
 							<div class="field">
 								<label for="m-cur">Currency</label>
 								<select id="m-cur" name="currency" class="line-input select">
-									{#each CURRENCIES as c (c)}<option value={c}>{c}</option>{/each}
+									{#each CURRENCIES as c (c)}<option value={c} selected={c === (data.user?.currency ?? 'GBP')}>{c}</option>{/each}
 								</select>
 							</div>
 						</div>

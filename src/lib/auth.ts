@@ -41,6 +41,13 @@ export const auth = betterAuth({
 				type: 'string',
 				required: false,
 				input: false
+			},
+			// Default currency for new items and Secret Santas. Set on the account page.
+			currency: {
+				type: 'string',
+				required: false,
+				defaultValue: 'GBP',
+				input: false
 			}
 		}
 	},
