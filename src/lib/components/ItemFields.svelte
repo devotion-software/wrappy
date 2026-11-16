@@ -3,12 +3,24 @@
 	import { CURRENCIES, DEFAULT_CURRENCY } from '#lib/format';
 
 	interface Props {
-		values?: { title?: string; notes?: string | null; price?: string | null; currency?: string; mostWanted?: boolean };
+		values?: {
+			title?: string;
+			notes?: string | null;
+			price?: string | null;
+			currency?: string;
+			mostWanted?: boolean;
+			quantity?: number | null;
+		};
 		priceRequired?: boolean;
 	}
 	let { values = {}, priceRequired = false }: Props = $props();
 	// New ones start in the currency set on the account page.
 	const fallbackCurrency = $derived(page.data.user?.currency ?? DEFAULT_CURRENCY);
+	// null = any number is fine; undefined (a new item) = just one.
+	let anyNumber = $state(false);
+	$effect.pre(() => {
+		anyNumber = values.quantity === null;
+	});
 </script>
 
 <div class="field">
@@ -41,6 +53,27 @@
 		</select>
 	</div>
 </div>
+<div class="qty-row">
+	<div class="field">
+		<label for="quantity">How many?</label>
+		<input
+			id="quantity"
+			name="quantity"
+			class="line-input qty"
+			type="number"
+			inputmode="numeric"
+			min="1"
+			max="99"
+			value={values.quantity ?? 1}
+			disabled={anyNumber}
+		/>
+	</div>
+	<label class="check-row">
+		<input type="checkbox" name="anyQuantity" bind:checked={anyNumber} />
+		<span>Any number is fine</span>
+	</label>
+</div>
+<p class="hint">Asking for more than one lets several people each get one.</p>
 <label class="star-row">
 	<input type="checkbox" name="mostWanted" checked={values.mostWanted ?? false} />
 	<span>Most wanted</span>
@@ -74,6 +107,38 @@
 		font-family: var(--font-ui);
 		font-size: 16px;
 		min-width: 90px;
+	}
+	.qty-row {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: flex-end;
+		gap: 8px 24px;
+	}
+	.qty {
+		width: 90px;
+	}
+	.qty:disabled {
+		opacity: 0.4;
+	}
+	.check-row {
+		display: flex;
+		align-items: center;
+		gap: 10px;
+		min-height: 44px;
+		font-size: 15px;
+		cursor: pointer;
+	}
+	.check-row input,
+	.star-row input {
+		width: 18px;
+		height: 18px;
+		margin: 0;
+		accent-color: var(--gold);
+	}
+	.hint {
+		margin: -14px 0 0;
+		font-size: 13px;
+		color: var(--ink2);
 	}
 	.star-row {
 		display: flex;

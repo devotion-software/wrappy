@@ -49,7 +49,18 @@ describe('/gifts load', () => {
 		const data = await ok<any>(() => load(ev(me)));
 		expect(data.revealed).toEqual([ann.id]);
 		expect(data.fromLists).toEqual([
-			{ kind: 'list', itemId: scarf.id, title: 'Scarf', price: null, currency: 'GBP', cover: null, giverId: ann.id, reassigned: false }
+			{
+				kind: 'list',
+				id: `${scarf.id}:${ann.id}`,
+				itemId: scarf.id,
+				claimerId: ann.id,
+				title: 'Scarf',
+				price: null,
+				currency: 'GBP',
+				cover: null,
+				giverId: ann.id,
+				reassigned: false
+			}
 		]);
 	});
 });

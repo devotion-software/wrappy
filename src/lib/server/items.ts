@@ -30,7 +30,11 @@ export interface ItemInput {
 	price: string | null;
 	currency: string;
 	mostWanted: boolean;
+	/** How many are wanted (each claimer takes one); null = any number. Defaults to 1. */
+	quantity?: number | null;
 }
+
+export const MAX_QUANTITY = 99;
 
 /** Validate item fields from a form. Returns an error message or the clean input. */
 export function parseItemForm(fd: FormData): { error: string } | { input: ItemInput } {
@@ -43,7 +47,15 @@ export function parseItemForm(fd: FormData): { error: string } | { input: ItemIn
 	const price = rawPrice ? normalisePrice(rawPrice) : null;
 	if (rawPrice && !price) return { error: 'Enter the price as a number, like 24.99.' };
 	const currency = toCurrency(fd.get('currency'));
-	return { input: { title, notes, price, currency, mostWanted: fd.get('mostWanted') === 'on' } };
+	let quantity: number | null = 1;
+	if (fd.get('anyQuantity') === 'on') quantity = null;
+	else if (String(fd.get('quantity') ?? '').trim()) {
+		quantity = Number(String(fd.get('quantity')).trim());
+		if (!Number.isInteger(quantity) || quantity < 1 || quantity > MAX_QUANTITY) {
+			return { error: `Enter how many you'd like, from 1 to ${MAX_QUANTITY}.` };
+		}
+	}
+	return { input: { title, notes, price, currency, mostWanted: fd.get('mostWanted') === 'on', quantity } };
 }
 
 /**

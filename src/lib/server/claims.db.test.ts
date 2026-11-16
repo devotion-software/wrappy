@@ -115,3 +115,47 @@ describe('claimActions', () => {
 		expect(await act('claim', priya, other.id, it.id)).toMatchObject({ kind: 'fail', status: 409 });
 	});
 });
+
+describe('items wanted more than once', () => {
+	const claimsOf = (itemId: string) => db.select().from(itemClaim).where(eq(itemClaim.itemId, itemId));
+
+	it('lets one person each claim until all are taken', async () => {
+		const { owner, sam, priya, l } = await setup();
+		const it = await createItem(owner, { quantity: 2 }, { lists: [l] });
+		const third = await createUser();
+		expect(await act('claim', sam, l.id, it.id)).toEqual({ kind: 'ok', data: { claimed: it.id } });
+		expect(await act('bought', priya, l.id, it.id)).toEqual({ kind: 'ok', data: { claimed: it.id } });
+		expect(await act('claim', third, l.id, it.id)).toEqual({
+			kind: 'fail',
+			status: 409,
+			data: { claimError: { itemId: it.id, message: 'Someone else got there first.' } }
+		});
+		// Someone already holding one can still change it to bought.
+		expect(await act('bought', sam, l.id, it.id)).toEqual({ kind: 'ok', data: { claimed: it.id } });
+		expect((await claimsOf(it.id)).map((c) => [c.userId, c.status]).sort()).toEqual(
+			[
+				[sam.id, 'bought'],
+				[priya.id, 'bought']
+			].sort()
+		);
+		// Giving one back frees it up.
+		await act('unclaim', priya, l.id, it.id);
+		expect(await act('claim', third, l.id, it.id)).toEqual({ kind: 'ok', data: { claimed: it.id } });
+	});
+
+	it('takes any number of claimers when the owner says any number is fine', async () => {
+		const { owner, l } = await setup();
+		const it = await createItem(owner, { quantity: null }, { lists: [l] });
+		for (let i = 0; i < 4; i++) expect(await act('claim', await createUser(), l.id, it.id)).toMatchObject({ kind: 'ok' });
+		expect(await claimsOf(it.id)).toHaveLength(4);
+	});
+
+	it('never lets more claim than wanted, even all at once', async () => {
+		const { owner, l } = await setup();
+		const it = await createItem(owner, { quantity: 2 }, { lists: [l] });
+		const people = await Promise.all(Array.from({ length: 6 }, () => createUser()));
+		const results = await Promise.all(people.map((p) => act('claim', p, l.id, it.id)));
+		expect(results.filter((r) => r.kind === 'ok')).toHaveLength(2);
+		expect(await claimsOf(it.id)).toHaveLength(2);
+	});
+});

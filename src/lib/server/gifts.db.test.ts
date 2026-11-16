@@ -58,7 +58,9 @@ describe('allReceived', () => {
 		expect(fromLists).toEqual([
 			{
 				kind: 'list',
+				id: `${scarf.id}:${sam.id}`,
 				itemId: scarf.id,
+				claimerId: sam.id,
 				title: 'Scarf',
 				price: '20.00',
 				currency: 'GBP',
@@ -74,10 +76,31 @@ describe('allReceived', () => {
 		const it = await createItem(owner, { title: 'Lamp' }, { lists: [l] });
 		await claim(it, sam, 'bought');
 		const c = await createContact(owner, 'Granny');
-		await db.insert(giftAttribution).values({ itemId: it.id, ownerId: owner.id, contactId: c.id });
+		await db.insert(giftAttribution).values({ itemId: it.id, claimerId: sam.id, ownerId: owner.id, contactId: c.id });
 		expect((await allReceived(owner.id)).fromLists).toEqual([
 			expect.objectContaining({ itemId: it.id, giverId: c.id, reassigned: true, cover: null })
 		]);
+	});
+
+	it('lists each buyer of an item wanted more than once, and corrects them separately', async () => {
+		const { owner, sam, priya, l } = await setup();
+		const it = await createItem(owner, { title: 'Candle', quantity: 2 }, { lists: [l] });
+		await claim(it, sam, 'bought');
+		await claim(it, priya, 'bought');
+		await markReceived(owner, sam);
+		await markReceived(owner, priya);
+		const before = (await allReceived(owner.id)).fromLists;
+		expect(before.map((g) => [g.id, g.giverId]).sort()).toEqual(
+			[
+				[`${it.id}:${sam.id}`, sam.id],
+				[`${it.id}:${priya.id}`, priya.id]
+			].sort()
+		);
+		const c = await createContact(owner, 'Aunt May');
+		await giftNoteActions.reassign(fakeEvent({ user: owner, form: { kind: 'list', id: `${it.id}:${priya.id}`, to: c.id } }) as any);
+		const after = (await allReceived(owner.id)).fromLists;
+		expect(after.find((g) => g.claimerId === priya.id)).toMatchObject({ giverId: c.id, reassigned: true });
+		expect(after.find((g) => g.claimerId === sam.id)).toMatchObject({ giverId: sam.id, reassigned: false });
 	});
 
 	it('includes presents the owner noted, in the order they were noted', async () => {
@@ -85,6 +108,11 @@ describe('allReceived', () => {
 		const c = await createContact(owner);
 		await act('addGift', owner, { giverId: sam.id, title: 'Socks' });
 		await act('addGift', owner, { contactId: c.id, title: 'Jam' });
+		// Both can land in the same millisecond; make the order unambiguous.
+		await db
+			.update(receivedGift)
+			.set({ createdAt: new Date(Date.now() - 60_000) })
+			.where(and(eq(receivedGift.ownerId, owner.id), eq(receivedGift.title, 'Socks')));
 		const { noted } = await allReceived(owner.id);
 		expect(noted.map((n) => [n.title, n.giverId, n.kind])).toEqual([
 			['Socks', sam.id, 'noted'],
@@ -221,12 +249,13 @@ describe('giftNoteActions.reassign', () => {
 		const it = await createItem(s.owner, { title: 'Scarf' }, { lists: [s.l] });
 		await claim(it, s.sam, 'bought');
 		await markReceived(s.owner, s.sam);
-		return { ...s, it };
+		// List presents are identified by item and buyer.
+		return { ...s, it, gid: `${it.id}:${s.sam.id}` };
 	}
 
 	it('moves a bought wish to another account without touching the claim', async () => {
-		const { owner, sam, priya, it } = await boughtBySam();
-		expect(await act('reassign', owner, { kind: 'list', id: it.id, to: priya.id })).toEqual({ kind: 'ok', data: { reassigned: it.id } });
+		const { owner, sam, priya, it, gid } = await boughtBySam();
+		expect(await act('reassign', owner, { kind: 'list', id: gid, to: priya.id })).toEqual({ kind: 'ok', data: { reassigned: gid } });
 		expect(await attributionOf(it.id)).toMatchObject({ ownerId: owner.id, giverId: priya.id, contactId: null });
 		const [g] = (await allReceived(owner.id)).fromLists;
 		expect(g).toMatchObject({ giverId: priya.id, reassigned: true });
@@ -235,25 +264,25 @@ describe('giftNoteActions.reassign', () => {
 	});
 
 	it('moves a bought wish to a contact, and to a brand new contact', async () => {
-		const { owner, it } = await boughtBySam();
+		const { owner, it, gid } = await boughtBySam();
 		const c = await createContact(owner, 'Granny');
-		await act('reassign', owner, { kind: 'list', id: it.id, to: c.id });
+		await act('reassign', owner, { kind: 'list', id: gid, to: c.id });
 		expect(await attributionOf(it.id)).toMatchObject({ giverId: null, contactId: c.id });
 
-		await act('reassign', owner, { kind: 'list', id: it.id, to: 'new', newName: 'Uncle Bob' });
+		await act('reassign', owner, { kind: 'list', id: gid, to: 'new', newName: 'Uncle Bob' });
 		const bob = (await contactsOf(owner.id)).find((x) => x.name === 'Uncle Bob')!;
 		expect(await attributionOf(it.id)).toMatchObject({ giverId: null, contactId: bob.id });
 
 		// 'new' with an existing name reuses that contact.
-		await act('reassign', owner, { kind: 'list', id: it.id, to: 'new', newName: 'granny' });
+		await act('reassign', owner, { kind: 'list', id: gid, to: 'new', newName: 'granny' });
 		expect(await attributionOf(it.id)).toMatchObject({ contactId: c.id });
 		expect(await contactsOf(owner.id)).toHaveLength(2);
 	});
 
 	it('moving it back to the person who claimed it removes the correction', async () => {
-		const { owner, sam, priya, it } = await boughtBySam();
-		await act('reassign', owner, { kind: 'list', id: it.id, to: priya.id });
-		await act('reassign', owner, { kind: 'list', id: it.id, to: sam.id });
+		const { owner, sam, priya, it, gid } = await boughtBySam();
+		await act('reassign', owner, { kind: 'list', id: gid, to: priya.id });
+		await act('reassign', owner, { kind: 'list', id: gid, to: sam.id });
 		expect(await attributionOf(it.id)).toBeNull();
 		expect((await allReceived(owner.id)).fromLists[0]).toMatchObject({ giverId: sam.id, reassigned: false });
 	});
@@ -262,25 +291,25 @@ describe('giftNoteActions.reassign', () => {
 		const { owner, priya, l } = await setup();
 		const it = await createItem(owner, {}, { lists: [l] });
 		await claim(it, priya, 'bought');
-		expect(await act('reassign', owner, { kind: 'list', id: it.id, to: priya.id })).toMatchObject({ kind: 'error', status: 404 });
+		expect(await act('reassign', owner, { kind: 'list', id: `${it.id}:${priya.id}`, to: priya.id })).toMatchObject({ kind: 'error', status: 404 });
 		expect(await attributionOf(it.id)).toBeNull();
 	});
 
 	it('rejects an unknown kind, an unknown target, and a missing new name', async () => {
-		const { owner, priya, it } = await boughtBySam();
+		const { owner, priya, it, gid } = await boughtBySam();
 		expect(await act('reassign', owner, { kind: 'other', id: it.id, to: priya.id })).toMatchObject({ kind: 'error', status: 400 });
 		const stranger = await createUser();
-		expect(await act('reassign', owner, { kind: 'list', id: it.id, to: stranger.id })).toEqual({
+		expect(await act('reassign', owner, { kind: 'list', id: gid, to: stranger.id })).toEqual({
 			kind: 'fail',
 			status: 400,
-			data: { reassignError: { id: it.id, message: 'Pick who it was from.' } }
+			data: { reassignError: { id: gid, message: 'Pick who it was from.' } }
 		});
 		const theirContact = await createContact(stranger);
-		expect(await act('reassign', owner, { kind: 'list', id: it.id, to: theirContact.id })).toMatchObject({ kind: 'fail' });
-		expect(await act('reassign', owner, { kind: 'list', id: it.id, to: 'new', newName: ' ' })).toMatchObject({
+		expect(await act('reassign', owner, { kind: 'list', id: gid, to: theirContact.id })).toMatchObject({ kind: 'fail' });
+		expect(await act('reassign', owner, { kind: 'list', id: gid, to: 'new', newName: ' ' })).toMatchObject({
 			data: { reassignError: { message: 'Add their name.' } }
 		});
-		expect(await act('reassign', owner, { kind: 'list', id: it.id, to: 'new', newName: 'x'.repeat(81) })).toMatchObject({
+		expect(await act('reassign', owner, { kind: 'list', id: gid, to: 'new', newName: 'x'.repeat(81) })).toMatchObject({
 			data: { reassignError: { message: 'Keep the name under 80 characters.' } }
 		});
 		expect(await attributionOf(it.id)).toBeNull();

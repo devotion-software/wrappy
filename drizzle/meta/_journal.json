@@ -71,6 +71,13 @@
       "when": 1794833753351,
       "tag": "0009_user_currency",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "5",
+      "when": 1794834099654,
+      "tag": "0010_item_quantity",
+      "breakpoints": true
     }
   ]
 }

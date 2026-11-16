@@ -14,7 +14,7 @@ import {
 	user
 } from './db/schema';
 import { santaGiftClaims, usersWhoCanSee, type ListRow } from './access';
-import { viewClaim, type ClaimView } from './claimView';
+import { summariseClaims, type ItemClaims } from './claimView';
 import { imageUrl } from '#lib/images';
 
 export interface ListItemView {
@@ -28,7 +28,7 @@ export interface ListItemView {
 	imageCount: number;
 	link: { url: string; host: string } | null;
 	linkCount: number;
-	claim: ClaimView;
+	claims: ItemClaims;
 	suggestion: { name: string; forViewer: boolean } | null;
 }
 
@@ -89,13 +89,12 @@ export async function loadListItems(l: ListRow, viewerId: string | null): Promis
 
 	const imgBy = group(images, (i) => i.itemId);
 	const linkBy = group(links, (i) => i.itemId);
-	const claimBy = new Map(claims.map((c) => [c.itemId, c]));
+	const claimBy = group(claims, (c) => c.itemId);
 	const suggBy = new Map(suggestions.map((s) => [s.itemId, s]));
 
 	return rows.map(({ item: it }) => {
 		const imgs = imgBy.get(it.id) ?? [];
 		const lks = linkBy.get(it.id) ?? [];
-		const c = claimBy.get(it.id);
 		const s = suggBy.get(it.id);
 		return {
 			id: it.id,
@@ -108,12 +107,12 @@ export async function loadListItems(l: ListRow, viewerId: string | null): Promis
 			imageCount: imgs.length,
 			link: lks[0] ? { url: lks[0].url, host: hostOf(lks[0].url) } : null,
 			linkCount: lks.length,
-			claim: viewClaim(c, {
+			claims: summariseClaims(claimBy.get(it.id) ?? [], it.quantity, (c) => ({
 				viewerId,
 				ownerId: l.ownerId,
 				revealedGiverIds: revealedSet,
-				claimerCanSeeList: c ? canSee.has(c.userId) && !santaGifts.has(`${c.itemId}:${c.userId}`) : false
-			}),
+				claimerCanSeeList: canSee.has(c.userId) && !santaGifts.has(`${it.id}:${c.userId}`)
+			})),
 			suggestion: s ? { name: s.name, forViewer: s.userId === viewerId } : null
 		};
 	});

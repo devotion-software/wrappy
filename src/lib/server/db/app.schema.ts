@@ -62,6 +62,8 @@ export const item = mysqlTable(
 		price: decimal('price', { precision: 10, scale: 2 }),
 		currency: char('currency', { length: 3 }).default('GBP').notNull(),
 		mostWanted: boolean('most_wanted').default(false).notNull(),
+		// How many the owner would like. Each claimer takes one; null means any number is fine.
+		quantity: int('quantity').default(1),
 		createdAt: created(),
 		updatedAt: timestamp('updated_at', { fsp: 3 })
 			.defaultNow()
@@ -164,11 +166,12 @@ export const listViewer = mysqlTable(
 // ── Gifting ──────────────────────────────────────────────────────────────────
 
 /** One claimer per item. Applies on every list the item is on. Never shown to the owner unless revealed. */
+/** One row per person getting an item. Most items allow one claimer; see item.quantity. */
 export const itemClaim = mysqlTable(
 	'item_claim',
 	{
 		itemId: id('item_id')
-			.primaryKey()
+			.notNull()
 			.references(() => item.id, { onDelete: 'cascade' }),
 		userId: userRef('user_id')
 			.notNull()
@@ -179,7 +182,7 @@ export const itemClaim = mysqlTable(
 			.$onUpdate(() => new Date())
 			.notNull()
 	},
-	(t) => [index('item_claim_user_idx').on(t.userId)]
+	(t) => [primaryKey({ columns: [t.itemId, t.userId] }), index('item_claim_user_idx').on(t.userId)]
 );
 
 /** "This would be good for X to get for me." */
@@ -253,17 +256,25 @@ export const receivedGift = mysqlTable(
  * ("Mum ticked off the scarf, but Granny bought it"). The claim itself is untouched,
  * so the person who claimed it never sees this. Points at an account or a contact.
  */
-export const giftAttribution = mysqlTable('gift_attribution', {
-	itemId: id('item_id')
-		.primaryKey()
-		.references(() => item.id, { onDelete: 'cascade' }),
-	ownerId: userRef('owner_id')
-		.notNull()
-		.references(() => user.id, { onDelete: 'cascade' }),
-	giverId: userRef('giver_id').references(() => user.id, { onDelete: 'cascade' }),
-	contactId: id('contact_id').references(() => giftContact.id, { onDelete: 'cascade' }),
-	createdAt: created()
-});
+export const giftAttribution = mysqlTable(
+	'gift_attribution',
+	{
+		itemId: id('item_id')
+			.notNull()
+			.references(() => item.id, { onDelete: 'cascade' }),
+		// Whose "bought" this corrects: items wanted more than once can have several buyers.
+		claimerId: userRef('claimer_id')
+			.notNull()
+			.references(() => user.id, { onDelete: 'cascade' }),
+		ownerId: userRef('owner_id')
+			.notNull()
+			.references(() => user.id, { onDelete: 'cascade' }),
+		giverId: userRef('giver_id').references(() => user.id, { onDelete: 'cascade' }),
+		contactId: id('contact_id').references(() => giftContact.id, { onDelete: 'cascade' }),
+		createdAt: created()
+	},
+	(t) => [primaryKey({ columns: [t.itemId, t.claimerId] })]
+);
 
 /**
  * Who the owner has said thank you to. `personId` is an account's user id or a contact's id

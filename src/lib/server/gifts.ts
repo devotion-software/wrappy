@@ -12,7 +12,11 @@ import { imageUrl } from '#lib/images';
  */
 export interface GiftFromList {
 	kind: 'list';
+	/** `itemId:claimerId`: an item wanted more than once can be bought by several people. */
+	id: string;
 	itemId: string;
+	/** Who marked it bought (before any correction by the owner). */
+	claimerId: string;
 	title: string;
 	price: string | null;
 	currency: string;
@@ -52,7 +56,12 @@ export async function allReceived(ownerId: string): Promise<{ fromLists: GiftFro
 			.where(and(eq(item.ownerId, ownerId), eq(itemClaim.status, 'bought')))
 			.orderBy(asc(item.title)),
 		db
-			.select({ itemId: giftAttribution.itemId, giverId: giftAttribution.giverId, contactId: giftAttribution.contactId })
+			.select({
+				itemId: giftAttribution.itemId,
+				claimerId: giftAttribution.claimerId,
+				giverId: giftAttribution.giverId,
+				contactId: giftAttribution.contactId
+			})
 			.from(giftAttribution)
 			.where(eq(giftAttribution.ownerId, ownerId)),
 		db
@@ -63,8 +72,9 @@ export async function allReceived(ownerId: string): Promise<{ fromLists: GiftFro
 	]);
 
 	const revealedSet = new Set(revealed);
-	const attrBy = new Map(attributions.map((a) => [a.itemId, (a.giverId ?? a.contactId)!]));
-	const visible = bought.filter((b) => revealedSet.has(b.claimerId) || attrBy.has(b.itemId));
+	const key = (g: { itemId: string; claimerId: string }) => `${g.itemId}:${g.claimerId}`;
+	const attrBy = new Map(attributions.map((a) => [key(a), (a.giverId ?? a.contactId)!]));
+	const visible = bought.filter((b) => revealedSet.has(b.claimerId) || attrBy.has(key(b)));
 
 	const ids = visible.map((g) => g.itemId);
 	const covers = ids.length
@@ -79,10 +89,12 @@ export async function allReceived(ownerId: string): Promise<{ fromLists: GiftFro
 
 	return {
 		fromLists: visible.map((b) => {
-			const shownAs = attrBy.get(b.itemId) ?? b.claimerId;
+			const shownAs = attrBy.get(key(b)) ?? b.claimerId;
 			return {
 				kind: 'list',
+				id: key(b),
 				itemId: b.itemId,
+				claimerId: b.claimerId,
 				title: b.title,
 				price: b.price,
 				currency: b.currency,
@@ -197,7 +209,7 @@ export const giftNoteActions = {
 	},
 
 	/**
-	 * Change who a present was from. `kind` is 'list' (a bought wish, by itemId) or 'noted'
+	 * Change who a present was from. `kind` is 'list' (a bought item, by `itemId:claimerId`) or 'noted'
 	 * (by giftId). `to` is a person id, or 'new' with `newName` to add a contact on the fly.
 	 * For bought wishes only the owner's private record changes — the claim is untouched.
 	 */
@@ -243,16 +255,18 @@ export const giftNoteActions = {
 
 		if (kind !== 'list') error(400, 'Unknown present');
 		// Only presents the owner can already see may be reassigned.
-		const visible = (await allReceived(me.id)).fromLists.some((g) => g.itemId === id);
-		if (!visible) error(404, 'Present not found');
-		const [claim] = await db.select({ userId: itemClaim.userId }).from(itemClaim).where(eq(itemClaim.itemId, id)).limit(1);
-		if (target.giverId && target.giverId === claim?.userId) {
+		const gift = (await allReceived(me.id)).fromLists.find((g) => g.id === id);
+		if (!gift) error(404, 'Present not found');
+		const { itemId, claimerId } = gift;
+		if (target.giverId && target.giverId === claimerId) {
 			// Back to the person who marked it bought: no correction needed.
-			await db.delete(giftAttribution).where(and(eq(giftAttribution.itemId, id), eq(giftAttribution.ownerId, me.id)));
+			await db
+				.delete(giftAttribution)
+				.where(and(eq(giftAttribution.itemId, itemId), eq(giftAttribution.claimerId, claimerId), eq(giftAttribution.ownerId, me.id)));
 		} else {
 			await db
 				.insert(giftAttribution)
-				.values({ itemId: id, ownerId: me.id, ...target })
+				.values({ itemId, claimerId, ownerId: me.id, ...target })
 				.onDuplicateKeyUpdate({ set: target });
 		}
 		return { reassigned: id };

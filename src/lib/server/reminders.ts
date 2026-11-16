@@ -101,10 +101,20 @@ async function listReminders(baseUrl: string, now: Date, links: Links): Promise<
 		// The tightest window it's in, so a list made 2 days out only gets the final reminder.
 		const window = [...LIST_WINDOWS].reverse().find((w) => daysLeft <= w.days)!;
 
-		const itemIds = (await db.select({ id: itemList.itemId }).from(itemList).where(eq(itemList.listId, l.id))).map((r) => r.id);
-		if (!itemIds.length) continue;
-		const claimers = await db.select({ userId: itemClaim.userId }).from(itemClaim).where(inArray(itemClaim.itemId, itemIds));
-		const unclaimed = itemIds.length - claimers.length;
+		const onList = await db
+			.select({ id: itemList.itemId, quantity: item.quantity })
+			.from(itemList)
+			.innerJoin(item, eq(item.id, itemList.itemId))
+			.where(eq(itemList.listId, l.id));
+		if (!onList.length) continue;
+		const claimers = await db
+			.select({ itemId: itemClaim.itemId, userId: itemClaim.userId })
+			.from(itemClaim)
+			.where(inArray(itemClaim.itemId, onList.map((i) => i.id)));
+		// Items still open: unclaimed, or wanted more times than they've been claimed (or any number of times).
+		const taken = new Map<string, number>();
+		for (const c of claimers) taken.set(c.itemId, (taken.get(c.itemId) ?? 0) + 1);
+		const unclaimed = onList.filter((i) => i.quantity === null || (taken.get(i.id) ?? 0) < i.quantity).length;
 		if (unclaimed <= 0) continue;
 
 		// People who've opened it or been invited, who can still see it and haven't claimed anything on it.

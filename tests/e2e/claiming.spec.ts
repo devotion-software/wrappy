@@ -43,7 +43,7 @@ test.describe('claiming gifts without spoiling the surprise', () => {
 		await expect(owner.page.getByText(/reserved|bought by|you're getting this/)).toHaveCount(0);
 		// Nor does the data sent to their browser (they can still see that Sam opened the list).
 		const html = await (await owner.ctx.request.get(`/lists/${owner.id}`)).text();
-		expect(html).toMatch(/title:"Teapot"[^}]*claim:null/);
+		expect(html).toMatch(/title:"Teapot".*?claims:\{mine:null,others:\[\],quantity:1,full:false\}/);
 		expect(html).not.toMatch(/status:"(buying|bought)"/);
 
 		// Another guest who came through the same link sees it's taken, and by whom.
@@ -96,4 +96,36 @@ test.describe('claiming gifts without spoiling the surprise', () => {
 		await anon.close();
 		await owner.ctx.close();
 	});
+
+	test('an item wanted twice can be got by two people, then no one else', async ({ browser }) => {
+		const owner = await listWithLink(browser, ['Candles']);
+		// Set how many from the item page.
+		await row(owner.page, 'Candles').getByRole('link', { name: 'Edit Candles' }).click();
+		await owner.page.getByLabel('How many?').fill('2');
+		await owner.page.getByRole('button', { name: 'Save details' }).click();
+		await expect(owner.page.getByText('Saved.')).toBeVisible();
+		await owner.page.goto(`/lists/${owner.id}`);
+		await expect(row(owner.page, 'Candles').getByText('wants 2')).toBeVisible();
+
+		const people = [await guest(browser, 'Sam Giver'), await guest(browser, 'Priya Giver'), await guest(browser, 'Tom Late')];
+		for (const p of people) await p.page.goto(owner.link);
+		const [sam, priya, tom] = people;
+		await row(sam.page, 'Candles').getByRole('button', { name: "I'll get it" }).click();
+		await expect(row(sam.page, 'Candles').getByText("you're getting this")).toBeVisible();
+
+		await priya.page.reload();
+		await expect(row(priya.page, 'Candles').getByText('1 of 2 taken')).toBeVisible();
+		await row(priya.page, 'Candles').getByRole('button', { name: "I'll get it" }).click();
+		await expect(row(priya.page, 'Candles').getByText("you're getting this")).toBeVisible();
+
+		await tom.page.reload();
+		await expect(row(tom.page, 'Candles').getByText('2 of 2 taken')).toBeVisible();
+		await expect(row(tom.page, 'Candles').getByRole('button', { name: "I'll get it" })).toHaveCount(0);
+
+		// The owner still can't tell.
+		await owner.page.reload();
+		await expect(row(owner.page, 'Candles').getByText(/taken|reserved|getting/)).toHaveCount(0);
+		for (const c of [owner, ...people]) await c.ctx.close();
+	});
 });
+

@@ -39,7 +39,7 @@
 
 		{#if data.fromLists.length}
 			<h2 class="label">From your lists</h2>
-			{#each data.fromLists as g (g.itemId)}
+			{#each data.fromLists as g (g.id)}
 				<div class="row">
 					<Checkbox checked tilt={tiltFor(g.itemId)} />
 					{#if g.cover}<img src={g.cover} alt="" class="thumb" loading="lazy" />{/if}
@@ -50,10 +50,10 @@
 					<span class="meta">{formatPrice(g.price, g.currency) ?? ''}</span>
 					<ReassignGift
 						kind="list"
-						id={g.itemId}
+						id={g.id}
 						title={g.title}
 						others={data.others}
-						error={form?.reassignError?.id === g.itemId ? form.reassignError.message : null}
+						error={form?.reassignError?.id === g.id ? form.reassignError.message : null}
 					/>
 				</div>
 			{/each}

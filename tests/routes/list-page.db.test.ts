@@ -132,16 +132,16 @@ describe('load', () => {
 
 		const guest = await createUser();
 		const asGuest = await ok<any>(() => (load as any)(fakeEvent({ user: guest, params: { id: l.id } })));
-		expect(asGuest.items.find((i: any) => i.id === a.id).claim).toEqual({ status: 'bought', mine: false, byName: buyer.name });
+		expect(asGuest.items.find((i: any) => i.id === a.id).claims).toMatchObject({ others: [{ status: 'bought', byName: buyer.name }], full: true });
 
 		const asOwner = await ok<any>(() => (load as any)(fakeEvent({ user: owner, params: { id: l.id } })));
-		expect(asOwner.items.every((i: any) => i.claim === null)).toBe(true);
+		expect(asOwner.items.every((i: any) => i.claims.mine === null && i.claims.others.length === 0 && !i.claims.full)).toBe(true);
 		expect(JSON.stringify(asOwner)).not.toContain(buyer.name);
 
 		await markReceived(owner, buyer);
 		const revealed = await ok<any>(() => (load as any)(fakeEvent({ user: owner, params: { id: l.id } })));
-		expect(revealed.items.find((i: any) => i.id === a.id).claim).toEqual({ status: 'bought', mine: false, byName: buyer.name });
-		expect(revealed.items.find((i: any) => i.id === b.id).claim).toBeNull();
+		expect(revealed.items.find((i: any) => i.id === a.id).claims.others).toEqual([{ status: 'bought', byName: buyer.name }]);
+		expect(revealed.items.find((i: any) => i.id === b.id).claims.others).toEqual([]);
 	});
 
 	it('gives the owner shares, viewers, library and username status', async () => {

@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { and, eq } from 'drizzle-orm';
 import { db } from './db';
 import { itemList, list } from './db/schema';
-import { addItemToList, friendsLists, hostOf, knownPeople, loadListItems, myLists, publicListsOf } from './lists';
+import { addItemToList, friendsLists, hostOf, knownPeople, loadListItems, myLists, publicListsOf, type ListItemView } from './lists';
 import { newToken } from './ids';
 import {
 	addImageRow,
@@ -29,6 +29,14 @@ describe('hostOf', () => {
 	])('%s → %s', (url, host) => expect(hostOf(url)).toBe(host));
 });
 
+/** The single claim a viewer sees on a one-of item, in the shape the rules talk about. */
+const claimOf = (v: ListItemView) =>
+	v.claims.mine
+		? { status: v.claims.mine.status, mine: true, byName: null }
+		: v.claims.others[0]
+			? { ...v.claims.others[0], mine: false }
+			: null;
+
 describe('loadListItems', () => {
 	it('returns nothing for an empty list', async () => {
 		const owner = await createUser();
@@ -50,7 +58,7 @@ describe('loadListItems', () => {
 		const items = await loadListItems(l, owner.id);
 		expect(items.map((i) => i.title)).toEqual(['B', 'A']);
 		const [vb, va] = items;
-		expect(vb).toMatchObject({ cover: null, imageCount: 0, link: null, linkCount: 0, claim: null, suggestion: null });
+		expect(vb).toMatchObject({ cover: null, imageCount: 0, link: null, linkCount: 0, claims: { mine: null, others: [], quantity: 1, full: false }, suggestion: null });
 		expect(va).toMatchObject({
 			id: a.id,
 			notes: 'n',
@@ -75,7 +83,7 @@ describe('loadListItems', () => {
 		const { owner, sam, l, it } = await setup();
 		await claim(it, sam, 'bought');
 		const [v] = await loadListItems(l, owner.id);
-		expect(v.claim).toBeNull();
+		expect(claimOf(v)).toBeNull();
 	});
 
 	it('reveals a bought claim to the owner after received-from, never a buying one', async () => {
@@ -86,22 +94,22 @@ describe('loadListItems', () => {
 		await markReceived(owner, sam);
 		await markReceived(owner, priya);
 		const items = await loadListItems(l, owner.id);
-		expect(items.find((i) => i.id === it.id)!.claim).toEqual({ status: 'bought', mine: false, byName: 'Sam' });
-		expect(items.find((i) => i.id === it2.id)!.claim).toBeNull();
+		expect(claimOf(items.find((i) => i.id === it.id)!)).toEqual({ status: 'bought', mine: false, byName: 'Sam' });
+		expect(claimOf(items.find((i) => i.id === it2.id)!)).toBeNull();
 	});
 
 	it('shows the claimer their own claim', async () => {
 		const { sam, l, it } = await setup();
 		await claim(it, sam, 'buying');
 		const [v] = await loadListItems(l, sam.id);
-		expect(v.claim).toEqual({ status: 'buying', mine: true, byName: null });
+		expect(claimOf(v)).toEqual({ status: 'buying', mine: true, byName: null });
 	});
 
 	it('names the claimer to other guests of a public list, and to anonymous visitors', async () => {
 		const { sam, priya, l, it } = await setup();
 		await claim(it, sam, 'bought');
-		expect((await loadListItems(l, priya.id))[0].claim).toEqual({ status: 'bought', mine: false, byName: 'Sam' });
-		expect((await loadListItems(l, null))[0].claim).toEqual({ status: 'bought', mine: false, byName: 'Sam' });
+		expect(claimOf((await loadListItems(l, priya.id))[0])).toEqual({ status: 'bought', mine: false, byName: 'Sam' });
+		expect(claimOf((await loadListItems(l, null))[0])).toEqual({ status: 'bought', mine: false, byName: 'Sam' });
 	});
 
 	it('hides the claimer name when they cannot see this private list', async () => {
@@ -110,10 +118,10 @@ describe('loadListItems', () => {
 		await addToList(other, it);
 		await share(other, priya);
 		await claim(it, sam, 'buying');
-		expect((await loadListItems(other, priya.id))[0].claim).toEqual({ status: 'buying', mine: false, byName: null });
+		expect(claimOf((await loadListItems(other, priya.id))[0])).toEqual({ status: 'buying', mine: false, byName: null });
 		// Once Sam is invited too, the name shows.
 		await share(other, sam);
-		expect((await loadListItems(other, priya.id))[0].claim).toEqual({ status: 'buying', mine: false, byName: 'Sam' });
+		expect(claimOf((await loadListItems(other, priya.id))[0])).toEqual({ status: 'buying', mine: false, byName: 'Sam' });
 	});
 
 	it("anonymises a Santa's claim on the owner's other lists", async () => {
@@ -136,9 +144,9 @@ describe('loadListItems', () => {
 			[c, b]
 		]);
 		await claim(it, b, 'buying');
-		expect((await loadListItems(pub, friend.id))[0].claim).toEqual({ status: 'buying', mine: false, byName: null });
+		expect(claimOf((await loadListItems(pub, friend.id))[0])).toEqual({ status: 'buying', mine: false, byName: null });
 		// On the Santa list itself, only the Santa looks; nothing to hide from them.
-		expect((await loadListItems(la, b.id))[0].claim).toEqual({ status: 'buying', mine: true, byName: null });
+		expect(claimOf((await loadListItems(la, b.id))[0])).toEqual({ status: 'buying', mine: true, byName: null });
 	});
 
 	it('shows a buyer suggestion, flagged for the suggested person', async () => {
@@ -154,7 +162,8 @@ describe('myLists', () => {
 	it('counts items, previews up to three titles and counts who it is shared with', async () => {
 		const owner = await createUser();
 		const l = await createList(owner, { shareToken: newToken() });
-		for (const t of ['One', 'Two', 'Three', 'Four']) await createItem(owner, { title: t }, { lists: [l] });
+		// Explicit sort orders: fixtures added in the same millisecond would otherwise tie.
+		for (const [i, t] of ['One', 'Two', 'Three', 'Four'].entries()) await addToList(l, await createItem(owner, { title: t }), i + 1);
 		const [g1, g2, g3] = await Promise.all([createUser(), createUser(), createUser()]);
 		await share(l, g1);
 		await share(l, { email: 'pending@example.test' });

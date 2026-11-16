@@ -25,17 +25,27 @@ async function guestItem(event: RequestEvent, fd: FormData) {
 }
 
 /**
- * Reserve ("buying") or mark bought. One claimer per item: the insert is a no-op if
- * someone else already holds it, and we then report the conflict.
+ * Reserve ("buying") or mark bought. Each claimer takes one of the item's `quantity` (one by
+ * default; null means any number). The item row is locked while we count, so two people can't
+ * both take the last one.
  */
 async function setClaim(event: RequestEvent, status: 'buying' | 'bought') {
 	const { me, itemId } = await guestItem(event, await event.request.formData());
-	await db.insert(itemClaim).values({ itemId, userId: me.id, status }).onDuplicateKeyUpdate({ set: { itemId } });
-	const [c] = await db.select().from(itemClaim).where(eq(itemClaim.itemId, itemId));
-	if (c.userId !== me.id) return fail(409, { claimError: { itemId, message: 'Someone else got there first.' } });
-	if (c.status !== status) {
-		await db.update(itemClaim).set({ status }).where(and(eq(itemClaim.itemId, itemId), eq(itemClaim.userId, me.id)));
-	}
+	const outcome = await db.transaction(async (tx) => {
+		const [it] = await tx.select({ quantity: item.quantity }).from(item).where(eq(item.id, itemId)).for('update');
+		const claims = await tx.select().from(itemClaim).where(eq(itemClaim.itemId, itemId));
+		const mine = claims.find((c) => c.userId === me.id);
+		if (mine) {
+			if (mine.status !== status) {
+				await tx.update(itemClaim).set({ status }).where(and(eq(itemClaim.itemId, itemId), eq(itemClaim.userId, me.id)));
+			}
+			return 'ok';
+		}
+		if (it.quantity !== null && claims.length >= it.quantity) return 'full';
+		await tx.insert(itemClaim).values({ itemId, userId: me.id, status });
+		return 'ok';
+	});
+	if (outcome === 'full') return fail(409, { claimError: { itemId, message: 'Someone else got there first.' } });
 	return { claimed: itemId };
 }
 

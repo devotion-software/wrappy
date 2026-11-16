@@ -87,6 +87,16 @@ describe('list reminders', () => {
 		for (const u of [s.owner, s.claimer, s.quiet]) expect(sentTo(listMail, u.email)).toEqual([]);
 	});
 
+	it('counts an item wanted more than once as open until every one is claimed', async () => {
+		const s = await scene(10);
+		const candles = await createItem(s.owner, { title: 'Candles', quantity: 2 }, { lists: [s.l] });
+		await claim(candles, s.claimer, 'buying');
+		const any = await createItem(s.owner, { title: 'Books', quantity: null }, { lists: [s.l] });
+		await claim(any, s.claimer, 'buying');
+		await runReminders(BASE, NOW);
+		expect(sentTo(listMail, s.viewer.email)[0]).toMatchObject({ unclaimed: 4 });
+	});
+
 	it('sends each window once, then the final one closer to the date', async () => {
 		const s = await scene(10);
 		await runReminders(BASE, NOW);

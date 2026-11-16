@@ -2,7 +2,7 @@
 	import { enhance } from '$app/forms';
 	import Checkbox from '#lib/components/ui/Checkbox.svelte';
 	import Icon from '#lib/components/ui/Icon.svelte';
-	import { formatPrice, tiltFor } from '#lib/format';
+	import { formatPrice, plural, tiltFor } from '#lib/format';
 	import type { ListItemView } from '#lib/server/lists';
 	import { writeIn, reducedMotion } from '#lib/motion';
 
@@ -19,15 +19,30 @@
 	}
 	let { item, listId, mode, signedIn, ownerName, claimError = null, dragHandle }: Props = $props();
 
-	const claim = $derived(item.claim);
-	const struck = $derived(!!claim && !claim.mine);
+	const claims = $derived(item.claims);
+	const mine = $derived(claims.mine);
+	const others = $derived(claims.others);
+	const single = $derived(claims.quantity === 1);
+	/** The box is ticked once it's taken: by you, or (for the owner) by someone they've revealed. */
+	const ticked = $derived(!!mine || claims.full || (mode === 'owner' && others.length > 0 && single));
+	const struck = $derived(!mine && (claims.full || (mode === 'owner' && single && others.length > 0)));
 	const price = $derived(formatPrice(item.price, item.currency));
-	const meta = $derived([item.notes, item.link?.host, price].filter(Boolean) as string[]);
+	const wanted = $derived(
+		claims.quantity === null ? 'more than one is fine' : claims.quantity > 1 ? `wants ${claims.quantity}` : null
+	);
+	const meta = $derived([item.notes, item.link?.host, price, wanted].filter(Boolean) as string[]);
 	const detailHref = $derived(mode === 'owner' ? `/items/${item.id}?list=${listId}` : `/lists/${listId}/items/${item.id}`);
 	const takenNote = $derived.by(() => {
-		if (!claim || claim.mine) return '';
-		const verb = claim.status === 'bought' ? 'bought' : 'reserved';
-		return claim.byName ? `${verb} by ${claim.byName}` : verb;
+		if (!others.length) return '';
+		if (single || mode === 'owner') {
+			// One claimer, or the owner's revealed (bought) ones: say who where we can.
+			const named = others.filter((c) => c.byName).map((c) => c.byName);
+			const verb = others[0].status === 'bought' ? 'bought' : 'reserved';
+			if (single) return named.length ? `${verb} by ${named[0]}` : verb;
+			return `bought by ${named.join(', ')}`;
+		}
+		const taken = others.length + (mine ? 1 : 0);
+		return claims.quantity === null ? `${plural(taken, 'person', 'people')} getting this` : `${taken} of ${claims.quantity} taken`;
 	});
 	let pending = $state(false);
 	/** Bumped on a successful claim / mark-as-bought to replay the celebration burst. */
@@ -46,8 +61,8 @@
 <div class="row" class:has-handle={!!dragHandle}>
 	{#if dragHandle}{@render dragHandle()}{/if}
 	<!-- On your own list the box only means "someone's claimed this", so leave it out until then. -->
-	<span class="check" class:unclaimed={mode === 'owner' && !claim}>
-		<Checkbox checked={!!claim} tilt={tiltFor(item.id)} />
+	<span class="check" class:unclaimed={mode === 'owner' && !others.length}>
+		<Checkbox checked={ticked} tilt={tiltFor(item.id)} />
 		{#key burst}
 			{#if burst}
 				<span class="burst" aria-hidden="true">
@@ -79,14 +94,15 @@
 
 	<div class="actions">
 		{#if mode === 'owner'}
-			{#if claim}<span class="note" in:writeIn>{takenNote}</span>{/if}
+			{#if takenNote}<span class="note" in:writeIn>{takenNote}</span>{/if}
 			{#if item.link}
 				<a href={item.link.url} target="_blank" rel="noopener noreferrer" class="btn btn-icon" aria-label="Open in shop"
 					><Icon name="link" /></a
 				>
 			{/if}
 			<a href={detailHref} class="btn btn-icon" aria-label="Edit {item.title}"><Icon name="edit" /></a>
-		{:else if !claim}
+		{:else if !mine && !claims.full}
+			{#if takenNote}<span class="note" in:writeIn>{takenNote}</span>{/if}
 			{#if signedIn}
 				<form method="POST" action="?/claim" use:enhance={submit}>
 					<input type="hidden" name="itemId" value={item.id} />
@@ -95,7 +111,7 @@
 			{:else}
 				<a class="btn btn-outline" href="/signin?next={encodeURIComponent(`/lists/${listId}`)}">I'll get it</a>
 			{/if}
-		{:else if claim.mine && claim.status === 'buying'}
+		{:else if mine?.status === 'buying'}
 			<span class="note" in:writeIn>you're getting this</span>
 			<form method="POST" action="?/bought" use:enhance={submit}>
 				<input type="hidden" name="itemId" value={item.id} />
@@ -105,7 +121,7 @@
 				<input type="hidden" name="itemId" value={item.id} />
 				<button class="btn btn-text" disabled={pending}>Undo</button>
 			</form>
-		{:else if claim.mine}
+		{:else if mine}
 			<span class="note" in:writeIn>bought by you</span>
 			<form method="POST" action="?/unclaim" use:enhance={submit}>
 				<input type="hidden" name="itemId" value={item.id} />
