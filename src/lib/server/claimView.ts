@@ -19,6 +19,33 @@ export interface RawClaim {
 	status: ClaimStatus;
 	/** Claimer's display name. */
 	name: string;
+	/** Group gifts: how much they're chipping in. */
+	amount?: string | null;
+}
+
+/** What decides whether an item can take more claims. */
+export interface ClaimTarget {
+	quantity: number | null;
+	groupGift: boolean;
+	price: string | null;
+}
+
+/** Money as whole pence/cents, so sums don't drift. */
+export const toCents = (v: string | null | undefined) => Math.round(Number(v ?? 0) * 100);
+export const fromCents = (c: number) => (c / 100).toFixed(2);
+
+/** Total chipped in towards a group gift, in cents. */
+export function pledgedCents(claims: { amount?: string | null }[]): number {
+	return claims.reduce((n, c) => n + toCents(c.amount), 0);
+}
+
+/**
+ * No one else can claim it: every one wanted is claimed, or a group gift's price is covered.
+ * A group gift with no price is never full.
+ */
+export function isFull(target: ClaimTarget, claims: { amount?: string | null }[]): boolean {
+	if (target.groupGift) return target.price !== null && pledgedCents(claims) >= toCents(target.price);
+	return target.quantity !== null && claims.length >= target.quantity;
 }
 
 export interface ClaimContext {
@@ -54,10 +81,10 @@ export function viewClaim(claim: RawClaim | null | undefined, ctx: ClaimContext)
 
 /** Everything a viewer may know about who's getting an item (it can be wanted more than once). */
 export interface ItemClaims {
-	/** The viewer's own claim. */
-	mine: { status: ClaimStatus } | null;
+	/** The viewer's own claim (with what they're chipping in, for a group gift). */
+	mine: { status: ClaimStatus; amount?: string | null } | null;
 	/** Other people's claims the viewer is allowed to know about (each passed through viewClaim). */
-	others: { status: ClaimStatus; byName: string | null }[];
+	others: { status: ClaimStatus; byName: string | null; amount?: string | null }[];
 	/** How many the owner wants; null means any number. */
 	quantity: number | null;
 	/**
@@ -65,6 +92,11 @@ export interface ItemClaims {
 	 * that it has been claimed.
 	 */
 	full: boolean;
+	/**
+	 * Group gifts: the price to reach and (for guests only) how much is chipped in so far.
+	 * The owner gets `pledged: null` and never sees anyone's amount.
+	 */
+	group: { target: string; pledged: string | null } | null;
 }
 
 /**
@@ -73,19 +105,26 @@ export interface ItemClaims {
  */
 export function summariseClaims(
 	claims: RawClaim[],
-	quantity: number | null,
+	target: ClaimTarget,
+	isOwner: boolean,
 	contextFor: (claim: RawClaim) => ClaimContext
 ): ItemClaims {
 	let mine: ItemClaims['mine'] = null;
 	const others: ItemClaims['others'] = [];
-	let isOwner = false;
+	const group = target.groupGift && target.price !== null;
 	for (const c of claims) {
-		const ctx = contextFor(c);
-		isOwner = ctx.viewerId === ctx.ownerId;
-		const v = viewClaim(c, ctx);
+		const v = viewClaim(c, contextFor(c));
 		if (!v) continue;
-		if (v.mine) mine = { status: v.status };
-		else others.push({ status: v.status, byName: v.byName });
+		// Amounts are for fellow givers only, never the owner.
+		const amount = group && !isOwner ? (c.amount ?? null) : undefined;
+		if (v.mine) mine = { status: v.status, ...(amount !== undefined ? { amount } : {}) };
+		else others.push({ status: v.status, byName: v.byName, ...(amount !== undefined ? { amount } : {}) });
 	}
-	return { mine, others, quantity, full: !isOwner && quantity !== null && claims.length >= quantity };
+	return {
+		mine,
+		others,
+		quantity: target.quantity,
+		full: !isOwner && isFull(target, claims),
+		group: group ? { target: target.price!, pledged: isOwner ? null : fromCents(pledgedCents(claims)) } : null
+	};
 }

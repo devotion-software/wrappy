@@ -58,7 +58,7 @@ describe('loadListItems', () => {
 		const items = await loadListItems(l, owner.id);
 		expect(items.map((i) => i.title)).toEqual(['B', 'A']);
 		const [vb, va] = items;
-		expect(vb).toMatchObject({ cover: null, imageCount: 0, link: null, linkCount: 0, claims: { mine: null, others: [], quantity: 1, full: false }, suggestion: null });
+		expect(vb).toMatchObject({ cover: null, imageCount: 0, link: null, linkCount: 0, claims: { mine: null, others: [], quantity: 1, full: false, group: null }, suggestion: null });
 		expect(va).toMatchObject({
 			id: a.id,
 			notes: 'n',

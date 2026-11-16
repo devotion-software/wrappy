@@ -64,6 +64,8 @@ export const item = mysqlTable(
 		mostWanted: boolean('most_wanted').default(false).notNull(),
 		// How many the owner would like. Each claimer takes one; null means any number is fine.
 		quantity: int('quantity').default(1),
+		// Group gift: people chip in amounts (item_claim.amount) towards the price instead of claiming it.
+		groupGift: boolean('group_gift').default(false).notNull(),
 		createdAt: created(),
 		updatedAt: timestamp('updated_at', { fsp: 3 })
 			.defaultNow()
@@ -196,6 +198,8 @@ export const itemClaim = mysqlTable(
 			.notNull()
 			.references(() => user.id, { onDelete: 'cascade' }),
 		status: mysqlEnum('status', ['buying', 'bought']).notNull(),
+		// For group gifts: how much this person is putting in, in the item's currency.
+		amount: decimal('amount', { precision: 10, scale: 2 }),
 		updatedAt: timestamp('updated_at', { fsp: 3 })
 			.defaultNow()
 			.$onUpdate(() => new Date())

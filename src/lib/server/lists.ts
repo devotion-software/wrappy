@@ -63,7 +63,7 @@ export async function loadListItems(l: ListRow, viewerId: string | null): Promis
 			.where(inArray(itemLink.itemId, ids))
 			.orderBy(asc(itemLink.sortOrder), asc(itemLink.createdAt)),
 		db
-			.select({ itemId: itemClaim.itemId, userId: itemClaim.userId, status: itemClaim.status, name: user.name })
+			.select({ itemId: itemClaim.itemId, userId: itemClaim.userId, status: itemClaim.status, amount: itemClaim.amount, name: user.name })
 			.from(itemClaim)
 			.innerJoin(user, eq(user.id, itemClaim.userId))
 			.where(inArray(itemClaim.itemId, ids)),
@@ -107,7 +107,7 @@ export async function loadListItems(l: ListRow, viewerId: string | null): Promis
 			imageCount: imgs.length,
 			link: lks[0] ? { url: lks[0].url, host: hostOf(lks[0].url) } : null,
 			linkCount: lks.length,
-			claims: summariseClaims(claimBy.get(it.id) ?? [], it.quantity, (c) => ({
+			claims: summariseClaims(claimBy.get(it.id) ?? [], it, isOwner, (c) => ({
 				viewerId,
 				ownerId: l.ownerId,
 				revealedGiverIds: revealedSet,

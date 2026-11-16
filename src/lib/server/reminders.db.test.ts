@@ -93,8 +93,10 @@ describe('list reminders', () => {
 		await claim(candles, s.claimer, 'buying');
 		const any = await createItem(s.owner, { title: 'Books', quantity: null }, { lists: [s.l] });
 		await claim(any, s.claimer, 'buying');
+		const bike = await createItem(s.owner, { title: 'Bike', price: '80.00', groupGift: true }, { lists: [s.l] });
+		await db.insert(itemClaim).values({ itemId: bike.id, userId: s.claimer.id, status: 'buying', amount: '20.00' });
 		await runReminders(BASE, NOW);
-		expect(sentTo(listMail, s.viewer.email)[0]).toMatchObject({ unclaimed: 4 });
+		expect(sentTo(listMail, s.viewer.email)[0]).toMatchObject({ unclaimed: 5 });
 	});
 
 	it('sends each window once, then the final one closer to the date', async () => {

@@ -10,6 +10,7 @@
 			currency?: string;
 			mostWanted?: boolean;
 			quantity?: number | null;
+			groupGift?: boolean;
 		};
 		priceRequired?: boolean;
 	}
@@ -18,8 +19,10 @@
 	const fallbackCurrency = $derived(page.data.user?.currency ?? DEFAULT_CURRENCY);
 	// null = any number is fine; undefined (a new item) = just one.
 	let anyNumber = $state(false);
+	let groupGift = $state(false);
 	$effect.pre(() => {
 		anyNumber = values.quantity === null;
+		groupGift = values.groupGift ?? false;
 	});
 </script>
 
@@ -53,6 +56,13 @@
 		</select>
 	</div>
 </div>
+<label class="check-row">
+	<input type="checkbox" name="groupGift" bind:checked={groupGift} />
+	<span>Group gift: let people chip in towards it</span>
+</label>
+{#if groupGift}
+	<p class="hint">Friends each put in what they like until the price is covered. You won't see who or how much.</p>
+{:else}
 <div class="qty-row">
 	<div class="field">
 		<label for="quantity">How many?</label>
@@ -74,6 +84,7 @@
 	</label>
 </div>
 <p class="hint">Asking for more than one lets several people each get one.</p>
+{/if}
 <label class="star-row">
 	<input type="checkbox" name="mostWanted" checked={values.mostWanted ?? false} />
 	<span>Most wanted</span>

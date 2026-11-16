@@ -6,8 +6,8 @@ import { claimActions } from './claims';
 import { addToList, claim, createItem, createList, createUser, share, type TestUser } from '../../../tests/helpers/fixtures';
 import { fakeEvent, outcome } from '../../../tests/helpers/event';
 
-const act = (name: keyof typeof claimActions, user: TestUser | null, listId: string, itemId: string) =>
-	outcome(() => claimActions[name](fakeEvent({ user, params: { id: listId }, form: { itemId } })));
+const act = (name: keyof typeof claimActions, user: TestUser | null, listId: string, itemId: string, extra: Record<string, string> = {}) =>
+	outcome(() => claimActions[name](fakeEvent({ user, params: { id: listId }, form: { itemId, ...extra } })));
 
 const claimOf = async (itemId: string) => (await db.select().from(itemClaim).where(eq(itemClaim.itemId, itemId)))[0] ?? null;
 
@@ -159,3 +159,63 @@ describe('items wanted more than once', () => {
 		expect(await claimsOf(it.id)).toHaveLength(2);
 	});
 });
+
+describe('group gifts', () => {
+	const rows = (itemId: string) => db.select().from(itemClaim).where(eq(itemClaim.itemId, itemId));
+	async function gift() {
+		const s = await setup();
+		const it = await createItem(s.owner, { title: 'Bike', price: '80.00', groupGift: true }, { lists: [s.l] });
+		return { ...s, it };
+	}
+	const chip = (u: TestUser, s: { l: { id: string } }, itemId: string, amount: string) => act('chipIn', u, s.l.id, itemId, { amount });
+
+	it('takes amounts until the price is covered, and no more', async () => {
+		const s = await gift();
+		expect(await chip(s.sam, s, s.it.id, '£20')).toEqual({ kind: 'ok', data: { claimed: s.it.id } });
+		expect(await chip(s.priya, s, s.it.id, '70')).toEqual({
+			kind: 'fail',
+			status: 400,
+			data: { claimError: { itemId: s.it.id, message: 'Only £60 is left to chip in.' } }
+		});
+		expect(await chip(s.priya, s, s.it.id, '60')).toMatchObject({ kind: 'ok' });
+		expect(await chip(await createUser(), s, s.it.id, '5')).toMatchObject({ kind: 'fail', status: 409 });
+		expect((await rows(s.it.id)).map((r) => [r.userId, r.amount, r.status]).sort()).toEqual(
+			[
+				[s.sam.id, '20.00', 'buying'],
+				[s.priya.id, '60.00', 'buying']
+			].sort()
+		);
+	});
+
+	it('lets you change your amount, mark your part bought, or drop out', async () => {
+		const s = await gift();
+		await chip(s.sam, s, s.it.id, '20');
+		await chip(s.sam, s, s.it.id, '30');
+		expect(await act('bought', s.sam, s.l.id, s.it.id)).toMatchObject({ kind: 'ok' });
+		expect(await rows(s.it.id)).toEqual([expect.objectContaining({ amount: '30.00', status: 'bought' })]);
+		await act('unclaim', s.sam, s.l.id, s.it.id);
+		expect(await rows(s.it.id)).toEqual([]);
+	});
+
+	it('asks for an amount rather than a plain claim, and rejects bad amounts', async () => {
+		const s = await gift();
+		expect(await act('claim', s.sam, s.l.id, s.it.id)).toEqual({
+			kind: 'fail',
+			status: 400,
+			data: { claimError: { itemId: s.it.id, message: "Say how much you'd like to chip in." } }
+		});
+		for (const bad of ['', '0', 'lots']) expect(await chip(s.sam, s, s.it.id, bad)).toMatchObject({ kind: 'fail', status: 400 });
+		const plain = await createItem(s.owner, { price: '10.00' }, { lists: [s.l] });
+		expect(await chip(s.sam, s, plain.id, '5')).toMatchObject({ kind: 'fail', status: 400 });
+		expect(await act('chipIn', s.owner, s.l.id, s.it.id, { amount: '5' })).toMatchObject({ kind: 'error', status: 403 });
+	});
+
+	it('never lets the total go over the price, even all at once', async () => {
+		const s = await gift();
+		const people = await Promise.all(Array.from({ length: 6 }, () => createUser()));
+		await Promise.all(people.map((p) => chip(p, s, s.it.id, '20')));
+		const total = (await rows(s.it.id)).reduce((n, r) => n + Number(r.amount), 0);
+		expect(total).toBe(80);
+	});
+});
+

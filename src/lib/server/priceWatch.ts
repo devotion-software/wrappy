@@ -12,6 +12,7 @@ import { and, asc, eq, gte, inArray, isNull, lt, or } from 'drizzle-orm';
 import { db } from './db';
 import { item, itemClaim, itemLink, itemList, list, listShare, listViewer, priceHistory, user } from './db/schema';
 import { usersWhoCanSee } from './access';
+import { isFull } from './claimView';
 import { fetchLinkMeta } from './linkFetch';
 import { hostOf } from './lists';
 import { newId } from './ids';
@@ -74,10 +75,8 @@ export async function runPriceChecks(baseUrl: string, now = new Date(), limit = 
 	]);
 	const claimsBy = new Map<string, (typeof claims)[number][]>();
 	for (const c of claims) claimsBy.set(c.itemId, [...(claimsBy.get(c.itemId) ?? []), c]);
-	const allBought = (it: typeof item.$inferSelect) => {
-		const bought = (claimsBy.get(it.id) ?? []).filter((c) => c.status === 'bought').length;
-		return it.quantity !== null && bought >= it.quantity;
-	};
+	const allBought = (it: typeof item.$inferSelect) =>
+		isFull(it, (claimsBy.get(it.id) ?? []).filter((c) => c.status === 'bought'));
 
 	// One link per shop per run, so no shop sees more than a trickle of requests from us.
 	const hosts = new Set<string>();
@@ -128,7 +127,7 @@ async function alert(
 ): Promise<number> {
 	const buying = claims.filter((c) => c.status === 'buying').map((c) => c.userId);
 	const bought = new Set(claims.filter((c) => c.status === 'bought').map((c) => c.userId));
-	const open = it.quantity === null || claims.length < it.quantity;
+	const open = !isFull(it, claims);
 
 	// Everyone who might get it: reservers, plus (while it's open) people who've opened or been invited to a list it's on.
 	let watchers = [...buying];

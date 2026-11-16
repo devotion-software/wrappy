@@ -30,7 +30,7 @@ describe('guest item page', () => {
 		const data = await ok<any>(() => (load as any)(fakeEvent({ user: guest, params: { id: l.id, itemId: it.id } })));
 		expect(data.list).toEqual({ id: l.id, title: l.title });
 		expect(data.ownerName).toBe(owner.name);
-		expect(data.item).toMatchObject({ id: it.id, title: 'Scarf', notes: 'Grey', claims: { mine: null, others: [{ status: 'buying', byName: buyer.name }], quantity: 1, full: true } });
+		expect(data.item).toMatchObject({ id: it.id, title: 'Scarf', notes: 'Grey', claims: { mine: null, others: [{ status: 'buying', byName: buyer.name }], quantity: 1, full: true, group: null } });
 		expect(data.links).toEqual([
 			{ id: l1, url: 'https://shop.example.com/a', label: null },
 			{ id: l2, url: 'https://shop.example.com/b', label: null }
@@ -64,7 +64,7 @@ describe('guest item page', () => {
 	});
 
 	it('offers the claim actions', async () => {
-		expect(Object.keys(actions).sort()).toEqual(['bought', 'claim', 'unclaim']);
+		expect(Object.keys(actions).sort()).toEqual(['bought', 'chipIn', 'claim', 'unclaim']);
 		const owner = await createUser();
 		const l = await createList(owner, { visibility: 'public' });
 		const it = await createItem(owner, {}, { lists: [l] });

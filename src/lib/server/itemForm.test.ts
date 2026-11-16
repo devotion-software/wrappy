@@ -10,13 +10,13 @@ const fd = (fields: Record<string, string>) => {
 describe('parseItemForm', () => {
 	it('parses a full form', () => {
 		expect(parseItemForm(fd({ title: ' Scarf ', notes: ' grey ', price: '£24.99', currency: 'usd', mostWanted: 'on' }))).toEqual({
-			input: { title: 'Scarf', notes: 'grey', price: '24.99', currency: 'USD', mostWanted: true, quantity: 1 }
+			input: { title: 'Scarf', notes: 'grey', price: '24.99', currency: 'USD', mostWanted: true, quantity: 1, groupGift: false }
 		});
 	});
 
 	it('defaults optional fields', () => {
 		expect(parseItemForm(fd({ title: 'Book' }))).toEqual({
-			input: { title: 'Book', notes: null, price: null, currency: 'GBP', mostWanted: false, quantity: 1 }
+			input: { title: 'Book', notes: null, price: null, currency: 'GBP', mostWanted: false, quantity: 1, groupGift: false }
 		});
 	});
 
@@ -29,6 +29,14 @@ describe('parseItemForm', () => {
 		expect(q({ quantity: ' ' })).toBe(1);
 		expect(q({ quantity: '3', anyQuantity: 'on' })).toBeNull();
 		for (const bad of ['0', '100', '2.5', 'lots']) expect(q({ quantity: bad })).toBe("Enter how many you'd like, from 1 to 99.");
+	});
+
+	it('makes a group gift only with a price, and ignores the quantity for it', () => {
+		expect(parseItemForm(fd({ title: 'Bike', groupGift: 'on' }))).toEqual({
+			error: 'A group gift needs a price, so people know what to chip in towards.'
+		});
+		const r = parseItemForm(fd({ title: 'Bike', price: '300', groupGift: 'on', quantity: '4' }));
+		expect('input' in r && r.input).toMatchObject({ groupGift: true, quantity: 1, price: '300.00' });
 	});
 
 	it('only treats the checkbox value "on" as most wanted', () => {

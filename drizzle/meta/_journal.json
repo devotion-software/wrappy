@@ -92,6 +92,13 @@
       "when": 1794834944151,
       "tag": "0012_price_watch",
       "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "5",
+      "when": 1794837164251,
+      "tag": "0013_group_gifts",
+      "breakpoints": true
     }
   ]
 }

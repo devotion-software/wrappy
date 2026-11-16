@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { summariseClaims, viewClaim, type ClaimContext, type RawClaim } from './claimView';
+import { isFull, summariseClaims, viewClaim, type ClaimContext, type RawClaim } from './claimView';
 
 const owner = 'owner';
 const sam = 'sam';
@@ -67,10 +67,10 @@ describe('viewClaim — guests', () => {
 describe('summariseClaims', () => {
 	const ann: RawClaim = { userId: 'ann', status: 'bought', name: 'Ann' };
 	const sum = (claims: RawClaim[], quantity: number | null, over: Partial<ClaimContext> = {}) =>
-		summariseClaims(claims, quantity, () => ctx(over));
+		summariseClaims(claims, { quantity, groupGift: false, price: null }, over.viewerId === owner, () => ctx(over));
 
 	it('is empty and open with no claims', () => {
-		expect(sum([], 1)).toEqual({ mine: null, others: [], quantity: 1, full: false });
+		expect(sum([], 1)).toEqual({ mine: null, others: [], quantity: 1, full: false, group: null });
 	});
 
 	it('is full for guests once every one wanted is claimed, counting their own', () => {
@@ -82,7 +82,8 @@ describe('summariseClaims', () => {
 				{ status: 'bought', byName: 'Ann' }
 			],
 			quantity: 2,
-			full: true
+			full: true,
+			group: null
 		});
 		expect(sum([buying, ann], 2, { viewerId: sam })).toMatchObject({ mine: { status: 'buying' }, others: [{ byName: 'Ann' }], full: true });
 	});
@@ -93,7 +94,41 @@ describe('summariseClaims', () => {
 
 	it('never tells the owner it is full, and only shows them revealed bought claims', () => {
 		const v = sum([buying, ann], 2, { viewerId: owner, revealedGiverIds: new Set(['ann', sam]) });
-		expect(v).toEqual({ mine: null, others: [{ status: 'bought', byName: 'Ann' }], quantity: 2, full: false });
-		expect(sum([bought], 1, { viewerId: owner })).toEqual({ mine: null, others: [], quantity: 1, full: false });
+		expect(v).toEqual({ mine: null, others: [{ status: 'bought', byName: 'Ann' }], quantity: 2, full: false, group: null });
+		expect(sum([bought], 1, { viewerId: owner })).toEqual({ mine: null, others: [], quantity: 1, full: false, group: null });
+	});
+});
+
+describe('group gifts', () => {
+	const gift = { quantity: 1, groupGift: true, price: '80.00' };
+	const sam20: RawClaim = { userId: sam, status: 'buying', name: 'Sam', amount: '20.00' };
+	const ann60: RawClaim = { userId: 'ann', status: 'bought', name: 'Ann', amount: '60.00' };
+
+	it('is full once the amounts cover the price, however many people', () => {
+		expect(isFull(gift, [sam20])).toBe(false);
+		expect(isFull(gift, [sam20, ann60])).toBe(true);
+		expect(isFull({ ...gift, price: null }, [sam20, ann60])).toBe(false);
+		expect(isFull({ quantity: 2, groupGift: false, price: null }, [sam20, ann60])).toBe(true);
+	});
+
+	it('shows guests the total and each amount', () => {
+		expect(summariseClaims([sam20], gift, false, () => ctx())).toEqual({
+			mine: null,
+			others: [{ status: 'buying', byName: 'Sam', amount: '20.00' }],
+			quantity: 1,
+			full: false,
+			group: { target: '80.00', pledged: '20.00' }
+		});
+		expect(summariseClaims([sam20, ann60], gift, false, () => ctx({ viewerId: sam }))).toMatchObject({
+			mine: { status: 'buying', amount: '20.00' },
+			full: true,
+			group: { pledged: '80.00' }
+		});
+	});
+
+	it('never shows the owner amounts or the total, only revealed bought names', () => {
+		const v = summariseClaims([sam20, ann60], gift, true, () => ctx({ viewerId: owner, revealedGiverIds: new Set([sam, 'ann']) }));
+		expect(v).toEqual({ mine: null, others: [{ status: 'bought', byName: 'Ann' }], quantity: 1, full: false, group: { target: '80.00', pledged: null } });
+		expect(JSON.stringify(v)).not.toContain('60');
 	});
 });

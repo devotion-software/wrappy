@@ -22,17 +22,32 @@
 	const claims = $derived(item.claims);
 	const mine = $derived(claims.mine);
 	const others = $derived(claims.others);
-	const single = $derived(claims.quantity === 1);
+	const group = $derived(claims.group);
+	const single = $derived(claims.quantity === 1 && !group);
+	const money = (v: string | null | undefined) => formatPrice(v ?? '0', item.currency) ?? '';
+	/** Group gift progress for guests: "£30 of £80 chipped in". */
+	const progress = $derived(group && group.pledged !== null ? `${money(group.pledged)} of ${money(group.target)} chipped in` : '');
+	const left = $derived(group?.pledged != null ? Math.max(0, Number(group.target) - Number(group.pledged)) : 0);
+	const chippers = $derived(
+		group && mode === 'guest'
+			? others.map((c) => `${c.byName ?? 'someone'} ${money(c.amount)}`).join(' · ')
+			: ''
+	);
+	let amount = $state('');
 	/** The box is ticked once it's taken: by you, or (for the owner) by someone they've revealed. */
-	const ticked = $derived(!!mine || claims.full || (mode === 'owner' && others.length > 0 && single));
+	const ticked = $derived(!!mine || claims.full || (mode === 'owner' && others.length > 0 && (single || !!group)));
 	const struck = $derived(!mine && (claims.full || (mode === 'owner' && single && others.length > 0)));
 	const price = $derived(formatPrice(item.price, item.currency));
 	const wanted = $derived(
-		claims.quantity === null ? 'more than one is fine' : claims.quantity > 1 ? `wants ${claims.quantity}` : null
+		group ? 'group gift' : claims.quantity === null ? 'more than one is fine' : claims.quantity > 1 ? `wants ${claims.quantity}` : null
 	);
 	const meta = $derived([item.notes, item.link?.host, price, wanted].filter(Boolean) as string[]);
 	const detailHref = $derived(mode === 'owner' ? `/items/${item.id}?list=${listId}` : `/lists/${listId}/items/${item.id}`);
 	const takenNote = $derived.by(() => {
+		if (group) {
+			if (mode === 'owner') return others.length ? `from ${others.map((c) => c.byName).join(', ')}` : '';
+			return claims.full ? 'all chipped in' : progress;
+		}
 		if (!others.length) return '';
 		if (single || mode === 'owner') {
 			// One claimer, or the owner's revealed (bought) ones: say who where we can.
@@ -52,7 +67,8 @@
 		return async ({ result, update }: { result: { type: string }; update: () => Promise<void> }) => {
 			await update();
 			pending = false;
-			if (result.type === 'success' && /[?&]\/(claim|bought)\b/.test(action.search) && !reducedMotion()) burst++;
+			if (result.type === 'success' && /[?&]\/(claim|bought|chipIn)\b/.test(action.search) && !reducedMotion()) burst++;
+			if (result.type === 'success') amount = '';
 		};
 	};
 	const sparks = Array.from({ length: 8 }, (_, i) => i * 45);
@@ -83,6 +99,7 @@
 			{#if item.mostWanted}<Icon name="star" label="Most wanted" />{/if}
 		</div>
 		{#if meta.length}<p class="meta line">{meta.join(' · ')}</p>{/if}
+		{#if chippers}<p class="meta line chippers">{chippers}</p>{/if}
 		{#if item.suggestion}
 			<p class="suggest" class:for-me={item.suggestion.forViewer}>
 				{item.suggestion.forViewer
@@ -101,6 +118,26 @@
 				>
 			{/if}
 			<a href={detailHref} class="btn btn-icon" aria-label="Edit {item.title}"><Icon name="edit" /></a>
+		{:else if group && !mine && !claims.full}
+			{#if takenNote}<span class="note" in:writeIn>{takenNote}</span>{/if}
+			{#if signedIn}
+				<form method="POST" action="?/chipIn" class="chip" use:enhance={submit}>
+					<input type="hidden" name="itemId" value={item.id} />
+					<label for="chip-{item.id}" class="sr-only">How much will you chip in towards {item.title}?</label>
+					<input
+						id="chip-{item.id}"
+						name="amount"
+						class="line-input amount"
+						inputmode="decimal"
+						placeholder={left ? String(left) : '20'}
+						bind:value={amount}
+						autocomplete="off"
+					/>
+					<button class="btn btn-outline" disabled={pending || !amount.trim()}>Chip in</button>
+				</form>
+			{:else}
+				<a class="btn btn-outline" href="/signin?next={encodeURIComponent(`/lists/${listId}`)}">Chip in</a>
+			{/if}
 		{:else if !mine && !claims.full}
 			{#if takenNote}<span class="note" in:writeIn>{takenNote}</span>{/if}
 			{#if signedIn}
@@ -112,7 +149,7 @@
 				<a class="btn btn-outline" href="/signin?next={encodeURIComponent(`/lists/${listId}`)}">I'll get it</a>
 			{/if}
 		{:else if mine?.status === 'buying'}
-			<span class="note" in:writeIn>you're getting this</span>
+			<span class="note" in:writeIn>{group ? `you're chipping in ${money(mine.amount)}` : "you're getting this"}</span>
 			<form method="POST" action="?/bought" use:enhance={submit}>
 				<input type="hidden" name="itemId" value={item.id} />
 				<button class="btn btn-primary" disabled={pending}>Mark as bought</button>
@@ -122,7 +159,7 @@
 				<button class="btn btn-text" disabled={pending}>Undo</button>
 			</form>
 		{:else if mine}
-			<span class="note" in:writeIn>bought by you</span>
+			<span class="note" in:writeIn>{group ? `you put in ${money(mine.amount)}` : 'bought by you'}</span>
 			<form method="POST" action="?/unclaim" use:enhance={submit}>
 				<input type="hidden" name="itemId" value={item.id} />
 				<button class="btn btn-text" disabled={pending}>Undo</button>
@@ -135,6 +172,16 @@
 </div>
 
 <style>
+	.chip {
+		display: flex;
+		align-items: center;
+		gap: 8px;
+	}
+	.amount {
+		width: 72px;
+		height: 40px;
+		font-size: 18px;
+	}
 	.row {
 		display: flex;
 		flex-wrap: wrap;

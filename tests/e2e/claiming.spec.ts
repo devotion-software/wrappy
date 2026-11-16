@@ -43,7 +43,7 @@ test.describe('claiming gifts without spoiling the surprise', () => {
 		await expect(owner.page.getByText(/reserved|bought by|you're getting this/)).toHaveCount(0);
 		// Nor does the data sent to their browser (they can still see that Sam opened the list).
 		const html = await (await owner.ctx.request.get(`/lists/${owner.id}`)).text();
-		expect(html).toMatch(/title:"Teapot".*?claims:\{mine:null,others:\[\],quantity:1,full:false\}/);
+		expect(html).toMatch(/title:"Teapot".*?claims:\{mine:null,others:\[\],quantity:1,full:false,group:null\}/);
 		expect(html).not.toMatch(/status:"(buying|bought)"/);
 
 		// Another guest who came through the same link sees it's taken, and by whom.
@@ -126,6 +126,40 @@ test.describe('claiming gifts without spoiling the surprise', () => {
 		await owner.page.reload();
 		await expect(row(owner.page, 'Candles').getByText(/taken|reserved|getting/)).toHaveCount(0);
 		for (const c of [owner, ...people]) await c.ctx.close();
+	});
+
+	test('friends chip in towards a group gift until it is covered', async ({ browser }) => {
+		const owner = await listWithLink(browser, ['Bike']);
+		await row(owner.page, 'Bike').getByRole('link', { name: 'Edit Bike' }).click();
+		await owner.page.getByLabel('Price').fill('80');
+		await owner.page.getByLabel('Group gift: let people chip in towards it').check();
+		await owner.page.getByRole('button', { name: 'Save details' }).click();
+		await expect(owner.page.getByText('Saved.')).toBeVisible();
+
+		const [sam, priya, tom] = [await guest(browser, 'Sam Giver'), await guest(browser, 'Priya Giver'), await guest(browser, 'Tom Late')];
+		for (const p of [sam, priya, tom]) await p.page.goto(owner.link);
+		const chip = async (p: { page: import('@playwright/test').Page }, amount: string) => {
+			await p.page.reload();
+			await row(p.page, 'Bike').getByLabel(/How much will you chip in/).fill(amount);
+			await row(p.page, 'Bike').getByRole('button', { name: 'Chip in' }).click();
+		};
+		await chip(sam, '30');
+		await expect(row(sam.page, 'Bike').getByText("you're chipping in £30")).toBeVisible();
+		await chip(priya, '60');
+		await expect(row(priya.page, 'Bike').getByText('Only £50 is left to chip in.')).toBeVisible();
+		await chip(priya, '50');
+		await expect(row(priya.page, 'Bike').getByText("you're chipping in £50")).toBeVisible();
+		await expect(row(priya.page, 'Bike').getByText('Sam Giver £30')).toBeVisible();
+
+		await tom.page.reload();
+		await expect(row(tom.page, 'Bike').getByText('all chipped in')).toBeVisible();
+		await expect(row(tom.page, 'Bike').getByRole('button', { name: 'Chip in' })).toHaveCount(0);
+
+		// The owner sees it's a group gift, but nothing about who or how much.
+		await owner.page.goto(`/lists/${owner.id}`);
+		await expect(row(owner.page, 'Bike').getByText('group gift')).toBeVisible();
+		await expect(row(owner.page, 'Bike').getByText(/chipped|£30|£50|Sam|Priya/)).toHaveCount(0);
+		for (const c of [owner, sam, priya, tom]) await c.ctx.close();
 	});
 });
 

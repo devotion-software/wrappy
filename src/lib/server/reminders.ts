@@ -15,6 +15,7 @@ import type { Pool } from 'mysql2/promise';
 import { db } from './db';
 import { emailPref, item, itemClaim, itemList, list, listShare, listViewer, reminderSent, santa, santaMember, user } from './db/schema';
 import { usersWhoCanSee } from './access';
+import { isFull } from './claimView';
 import { sendBuyingReminderEmail, sendListReminderEmail, sendSantaReminderEmail } from './email';
 import { unsubscribeToken, type ReminderKind } from './emailPrefs';
 import { formatDate, formatPrice } from '#lib/format';
@@ -107,19 +108,17 @@ async function listReminders(baseUrl: string, now: Date, links: Links): Promise<
 		const window = [...LIST_WINDOWS].reverse().find((w) => daysLeft <= w.days)!;
 
 		const onList = await db
-			.select({ id: itemList.itemId, quantity: item.quantity })
+			.select({ id: itemList.itemId, quantity: item.quantity, groupGift: item.groupGift, price: item.price })
 			.from(itemList)
 			.innerJoin(item, eq(item.id, itemList.itemId))
 			.where(eq(itemList.listId, l.id));
 		if (!onList.length) continue;
 		const claimers = await db
-			.select({ itemId: itemClaim.itemId, userId: itemClaim.userId })
+			.select({ itemId: itemClaim.itemId, userId: itemClaim.userId, amount: itemClaim.amount })
 			.from(itemClaim)
 			.where(inArray(itemClaim.itemId, onList.map((i) => i.id)));
-		// Items still open: unclaimed, or wanted more times than they've been claimed (or any number of times).
-		const taken = new Map<string, number>();
-		for (const c of claimers) taken.set(c.itemId, (taken.get(c.itemId) ?? 0) + 1);
-		const unclaimed = onList.filter((i) => i.quantity === null || (taken.get(i.id) ?? 0) < i.quantity).length;
+		// Items still open: not every one wanted is claimed, or a group gift isn't covered yet.
+		const unclaimed = onList.filter((i) => !isFull(i, claimers.filter((c) => c.itemId === i.id))).length;
 		if (unclaimed <= 0) continue;
 
 		// People who've opened it or been invited, who can still see it and haven't claimed anything on it.

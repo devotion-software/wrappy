@@ -32,6 +32,8 @@ export interface ItemInput {
 	mostWanted: boolean;
 	/** How many are wanted (each claimer takes one); null = any number. Defaults to 1. */
 	quantity?: number | null;
+	/** People chip in towards the price instead of claiming it. Needs a price. */
+	groupGift?: boolean;
 }
 
 export const MAX_QUANTITY = 99;
@@ -55,7 +57,9 @@ export function parseItemForm(fd: FormData): { error: string } | { input: ItemIn
 			return { error: `Enter how many you'd like, from 1 to ${MAX_QUANTITY}.` };
 		}
 	}
-	return { input: { title, notes, price, currency, mostWanted: fd.get('mostWanted') === 'on', quantity } };
+	const groupGift = fd.get('groupGift') === 'on';
+	if (groupGift && !price) return { error: 'A group gift needs a price, so people know what to chip in towards.' };
+	return { input: { title, notes, price, currency, mostWanted: fd.get('mostWanted') === 'on', quantity: groupGift ? 1 : quantity, groupGift } };
 }
 
 /**
