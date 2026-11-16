@@ -9,6 +9,37 @@ export function looksLikeUrl(s: string): boolean {
 	return /^(www\.)?[a-z0-9-]+(\.[a-z0-9-]+)+(\/\S*)?$/i.test(t);
 }
 
+/**
+ * What was shared to Wrappy (bookmarklet or the phone's share sheet): the link, plus a title.
+ * Share sheets often put the link inside `text` ("Look at this https://…"), so look there too.
+ * Returns null when there's nothing to add.
+ */
+export function readShared(params: { url?: string | null; title?: string | null; text?: string | null }): {
+	url: string | null;
+	title: string | null;
+} | null {
+	const clean = (v: string | null | undefined) => (v ?? '').replace(/\s+/g, ' ').trim();
+	const text = clean(params.text);
+	let title = clean(params.title) || null;
+	let url = clean(params.url) || null;
+	if (!url) {
+		const m = /https?:\/\/[^\s<>"]+/i.exec(text);
+		if (m) url = m[0].replace(/[).,!?'"]+$/, '');
+		else if (looksLikeUrl(text)) url = text;
+	}
+	if (url) {
+		try {
+			url = normaliseUrl(url);
+		} catch {
+			url = null;
+		}
+	}
+	// Plain text with no link (e.g. a note shared from another app) becomes the item's name.
+	if (!title && !url && text) title = text;
+	if (title && title.length > 200) title = `${title.slice(0, 199)}…`;
+	return url || title ? { url, title } : null;
+}
+
 export function normaliseUrl(s: string): string {
 	const t = s.trim();
 	// Only add https:// when there's no scheme at all; other schemes (ftp://…) go to validateUrl and are rejected.

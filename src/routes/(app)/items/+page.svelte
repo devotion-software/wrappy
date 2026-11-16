@@ -22,7 +22,10 @@
 		<a href="/items/new" class="btn btn-primary btn-md"><Icon name="plus" strokeWidth={2.2} />New item</a>
 	</div>
 
-	<PasteList />
+	<div class="tools">
+		<PasteList />
+		<a href="/add" class="btn btn-text add-anywhere"><Icon name="link" />Add from any shop</a>
+	</div>
 
 	<Sheet margin={50} padding="14px 28px 20px 72px" class="sheet">
 		{#if data.items.length > 6}
@@ -56,6 +59,19 @@
 </main>
 
 <style>
+	.tools {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: flex-start;
+		gap: 4px 16px;
+	}
+	.tools :global(details[open]) {
+		flex-basis: 100%;
+	}
+	.add-anywhere {
+		gap: 6px;
+		padding-left: 0;
+	}
 	.page {
 		padding-top: 40px;
 		padding-bottom: 80px;

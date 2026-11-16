@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 const safeFetch = vi.hoisted(() => vi.fn());
 vi.mock('./safeFetch', async (importActual) => ({ ...(await importActual<typeof import('./safeFetch')>()), safeFetch }));
 
-import { fetchLinkMeta, looksLikeUrl, normaliseUrl } from './linkFetch';
+import { fetchLinkMeta, looksLikeUrl, normaliseUrl, readShared } from './linkFetch';
 import { FetchBlockedError } from './safeFetch';
 
 const page = (html: string, contentType = 'text/html; charset=utf-8', url = 'https://shop.example.com/p') => ({
@@ -42,6 +42,27 @@ describe('normaliseUrl', () => {
 	it.each(['ftp://example.com/file', 'FILE:///etc/passwd', 'http://127.0.0.1/', 'localhost:8080', 'http://user:pw@example.com/', '10.0.0.1/admin'])('rejects %j', (s) =>
 		expect(() => normaliseUrl(s)).toThrow(FetchBlockedError)
 	);
+});
+
+describe('readShared', () => {
+	it('takes the url and title as given', () => {
+		expect(readShared({ url: 'https://shop.example.com/a', title: ' Socks ' })).toEqual({ url: 'https://shop.example.com/a', title: 'Socks' });
+	});
+	it('finds a link inside shared text, trimming trailing punctuation', () => {
+		expect(readShared({ text: 'Look at this! https://shop.example.com/a?b=1).' })).toEqual({ url: 'https://shop.example.com/a?b=1', title: null });
+		expect(readShared({ text: 'shop.example.com/scarf' })).toEqual({ url: 'https://shop.example.com/scarf', title: null });
+	});
+	it('turns plain text with no link into the title', () => {
+		expect(readShared({ text: '  Cosy\n socks ' })).toEqual({ url: null, title: 'Cosy socks' });
+	});
+	it('drops links that are not allowed and returns null for nothing at all', () => {
+		expect(readShared({ url: 'javascript:alert(1)', title: 'x' })).toEqual({ url: null, title: 'x' });
+		expect(readShared({ url: 'ftp://example.com/a' })).toBeNull();
+		expect(readShared({})).toBeNull();
+	});
+	it('shortens very long titles', () => {
+		expect(readShared({ title: 'a'.repeat(300) })!.title).toHaveLength(200);
+	});
 });
 
 describe('fetchLinkMeta', () => {

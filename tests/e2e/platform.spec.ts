@@ -41,7 +41,7 @@ test.describe('platform', () => {
 		await page.goto('/');
 		const href = await page.locator('link[rel="manifest"]').getAttribute('href');
 		const manifest = await (await request.get(href!)).json();
-		expect(manifest).toMatchObject({ name: 'Wrappy', display: 'standalone', start_url: '/lists' });
+		expect(manifest).toMatchObject({ name: 'Wrappy', display: 'standalone', start_url: '/lists', share_target: { action: '/add', method: 'GET' } });
 		for (const icon of manifest.icons) {
 			const res = await request.get(icon.src);
 			expect(res.status(), icon.src).toBe(200);
