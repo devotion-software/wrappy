@@ -186,6 +186,13 @@
 <SiteFooter />
 
 <style>
+	/* The header links jump to sections on this page; glide there rather than jump. */
+	@media (prefers-reduced-motion: no-preference) {
+		:global(html:has(#how)) {
+			scroll-behavior: smooth;
+		}
+	}
+
 	.top {
 		padding-top: 24px;
 		padding-bottom: 24px;
