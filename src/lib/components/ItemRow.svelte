@@ -45,7 +45,8 @@
 
 <div class="row" class:has-handle={!!dragHandle}>
 	{#if dragHandle}{@render dragHandle()}{/if}
-	<span class="check">
+	<!-- On your own list the box only means "someone's claimed this", so leave it out until then. -->
+	<span class="check" class:unclaimed={mode === 'owner' && !claim}>
 		<Checkbox checked={!!claim} tilt={tiltFor(item.id)} />
 		{#key burst}
 			{#if burst}
@@ -204,6 +205,9 @@
 		position: relative;
 		display: inline-flex;
 		flex: none;
+	}
+	.check.unclaimed {
+		display: none;
 	}
 	/* Eight gold sparks fly out from the checkbox, then fade. */
 	.burst {

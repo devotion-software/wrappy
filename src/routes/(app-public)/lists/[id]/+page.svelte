@@ -426,7 +426,7 @@
 	}
 	.handle {
 		position: absolute;
-		left: -46px;
+		left: -63px; /* centred in the 50px margin: 25 − 72 padding − 16 half-width */
 		top: 50%;
 		transform: translateY(-50%);
 		width: 32px;
@@ -443,6 +443,19 @@
 	.handle:hover,
 	.handle:focus-visible {
 		color: var(--ink2);
+	}
+	/* Only show the handle when its row is hovered (or it has keyboard focus / is mid-drag).
+	   Touch screens can't hover, so they always show it. */
+	@media (hover: hover) {
+		.handle {
+			opacity: 0;
+			transition: opacity 0.15s;
+		}
+		.drag-wrap:hover .handle,
+		.drag-wrap.dragging .handle,
+		.handle:focus-visible {
+			opacity: 1;
+		}
 	}
 	.add-line {
 		display: flex;
@@ -651,7 +664,7 @@
 			left: 24px !important;
 		}
 		.handle {
-			left: -38px;
+			left: -42px; /* centred in the 24px margin: 12 − 40 padding − 14 half-width */
 			width: 28px;
 		}
 	}
