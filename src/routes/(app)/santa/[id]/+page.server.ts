@@ -7,6 +7,8 @@ import { parseSantaForm } from '#lib/server/santaForm';
 import { addItemToList } from '#lib/server/lists';
 import { santaPriceProblem } from '#lib/server/items';
 import { formatPrice } from '#lib/format';
+import { myThreads, sendMessage } from '#lib/server/santaMessages';
+import { takeMessageBudget } from '#lib/server/rateLimit';
 import type { Actions, PageServerLoad, RequestEvent } from './$types';
 
 async function context(event: RequestEvent | Parameters<PageServerLoad>[0]) {
@@ -47,6 +49,7 @@ export const load: PageServerLoad = async (event) => {
 	}
 
 	const recipient = mine?.assignedToId ? members.find((m) => m.userId === mine.assignedToId) : null;
+	const threads = mine ? await myThreads(s, me.id) : { toRecipient: null, toSanta: null };
 	const byId = new Map(members.map((m) => [m.userId, m.name]));
 
 	return {
@@ -68,6 +71,7 @@ export const load: PageServerLoad = async (event) => {
 		me: mine ? { listId: mine.listId } : null,
 		recipient: recipient ? { name: recipient.name, listId: recipient.listId } : null,
 		wishes,
+		threads,
 		organiser: isOrganiser
 			? {
 					joinToken: s.joinToken,
@@ -91,6 +95,21 @@ function requireOpen(s: SantaRow) {
 }
 
 export const actions: Actions = {
+	// ── Anonymous messages (once names are drawn) ─────────────────────────────
+	message: async (event) => {
+		const { me, s, mine } = await context(event);
+		if (!mine) error(403, 'Only people taking part can send messages.');
+		const fd = await event.request.formData();
+		const to = String(fd.get('to') ?? '');
+		if (to !== 'recipient' && to !== 'santa') error(400, 'Unknown conversation');
+		if (!(await takeMessageBudget(me.id))) {
+			return fail(429, { messageError: { to, message: "You've sent a lot of messages. Try again in a while." } });
+		}
+		const res = await sendMessage(s, me, to === 'recipient' ? 'toRecipient' : 'toSanta', String(fd.get('body') ?? ''), event.url.origin);
+		if ('error' in res) return fail(400, { messageError: { to, message: res.error } });
+		return { messageSent: to };
+	},
+
 	// ── Organiser ─────────────────────────────────────────────────────────────
 	update: async (event) => {
 		const { s, isOrganiser } = await context(event);

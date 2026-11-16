@@ -56,3 +56,10 @@ export const FETCH_LIMIT_MESSAGE = "You've added a lot of links in a short time.
 export function takeFetchBudget(userId: string, cost = 1): Promise<boolean> {
 	return outbound.take(userId, cost);
 }
+
+/** Secret Santa messages a user may send: 40 an hour. */
+const santaMessages = createLimiter('santa-msg', { limit: 40, windowMs: 60 * 60 * 1000 });
+
+export function takeMessageBudget(userId: string): Promise<boolean> {
+	return santaMessages.take(userId);
+}

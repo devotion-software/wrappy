@@ -350,6 +350,31 @@ export const santaExclusion = mysqlTable(
 	(t) => [primaryKey({ columns: [t.santaId, t.userA, t.userB] })]
 );
 
+/**
+ * Anonymous notes between a Santa (giver) and the person they drew. One thread per exchange and
+ * giver. The recipient only ever reaches it as "my Santa", so the giver's id never goes to them.
+ */
+export const santaMessage = mysqlTable(
+	'santa_message',
+	{
+		id: id().primaryKey(),
+		santaId: id('santa_id')
+			.notNull()
+			.references(() => santa.id, { onDelete: 'cascade' }),
+		giverId: userRef('giver_id')
+			.notNull()
+			.references(() => user.id, { onDelete: 'cascade' }),
+		recipientId: userRef('recipient_id')
+			.notNull()
+			.references(() => user.id, { onDelete: 'cascade' }),
+		// true = written by the giver (shown to the recipient as "your Secret Santa").
+		fromGiver: boolean('from_giver').notNull(),
+		body: text('body').notNull(),
+		createdAt: created()
+	},
+	(t) => [index('santa_message_giver_idx').on(t.santaId, t.giverId), index('santa_message_recipient_idx').on(t.santaId, t.recipientId)]
+);
+
 // ── Rate limits ──────────────────────────────────────────────────────────────
 
 /** Fixed-window usage counters for our own limits (see server/rateLimit.ts). Shared by every app instance. */

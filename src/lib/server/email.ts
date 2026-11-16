@@ -139,6 +139,26 @@ export async function sendBuyingReminderEmail(r: ReminderBase & { ownerName: str
 	);
 }
 
+/** A new anonymous Secret Santa message. `from` is "Your Secret Santa" or the recipient's name. */
+export async function sendSantaMessageEmail(r: ReminderBase & { santaName: string; from: string; preview: string }) {
+	const preview = r.preview.length > 280 ? `${r.preview.slice(0, 279)}…` : r.preview;
+	await deliver(
+		{
+			to: r.email,
+			subject: `${r.santaName}: a message from ${r.from === 'Your Secret Santa' ? 'your Secret Santa' : r.from}`,
+			html: renderLayout(
+				`<strong>${escapeHtml(r.from)}</strong> sent you a message in <strong>${escapeHtml(r.santaName)}</strong>:` +
+					`<div style="margin:16px 0 4px;padding:14px 18px;background:#F4EEDD;font-size:16px;line-height:1.5;color:#1C1C1C;white-space:pre-wrap;">${escapeHtml(preview)}</div>`,
+				button(r.url, 'Reply'),
+				reminderFootnote(r)
+			),
+			text: `${r.from} sent you a message in ${r.santaName}:\n\n${preview}\n\nReply: ${r.url}${reminderTextFooter(r)}`,
+			headers: { 'List-Unsubscribe': `<${r.unsubscribeUrl}>` }
+		},
+		`santa message (${r.from}) → ${r.url}`
+	);
+}
+
 /** The Secret Santa swap is coming up. */
 export async function sendSantaReminderEmail(
 	r: ReminderBase & { santaName: string; recipientName: string; when: string; daysLeft: number; budget: string | null }

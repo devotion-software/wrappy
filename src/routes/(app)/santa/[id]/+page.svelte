@@ -6,6 +6,7 @@
 	import Checkbox from '#lib/components/ui/Checkbox.svelte';
 	import Icon from '#lib/components/ui/Icon.svelte';
 	import SantaFields from '#lib/components/SantaFields.svelte';
+	import SantaThread from '#lib/components/SantaThread.svelte';
 	import { formatDate, formatPrice, plural, tiltFor } from '#lib/format';
 	import { pop } from '#lib/motion';
 
@@ -171,6 +172,37 @@
 		</Sheet>
 
 		<aside>
+			{#if data.threads.toRecipient || data.threads.toSanta}
+				<Sheet margin={false} padding="24px">
+					<h2 class="hand h2" id="messages">Messages</h2>
+					<p class="copy">Ask a question or drop a hint. Your Santa's name is never shown.</p>
+					<div class="threads">
+						{#if data.threads.toRecipient && data.recipient}
+							<SantaThread
+								title="To {data.recipient.name}"
+								intro="Not sure of a size or colour? Ask {data.recipient.name}. They'll see it's from their Secret Santa, not from you."
+								themLabel={data.recipient.name}
+								messages={data.threads.toRecipient}
+								to="recipient"
+								placeholder="What size are you?"
+								error={form?.messageError?.to === 'recipient' ? form.messageError.message : null}
+							/>
+						{/if}
+						{#if data.threads.toSanta}
+							<SantaThread
+								title="Your Secret Santa"
+								intro="Whoever drew you can message you here, and you can reply or drop a hint. You won't find out who they are."
+								themLabel="Your Santa"
+								messages={data.threads.toSanta}
+								to="santa"
+								placeholder="A hint for your Santa…"
+								error={form?.messageError?.to === 'santa' ? form.messageError.message : null}
+							/>
+						{/if}
+					</div>
+				</Sheet>
+			{/if}
+
 			{#if data.organiser && !drawn}
 				<Sheet margin={false} padding="24px">
 					<h2 class="hand h2">Invite people</h2>
@@ -260,6 +292,12 @@
 </main>
 
 <style>
+	.threads {
+		display: flex;
+		flex-direction: column;
+		gap: 28px;
+		margin-top: 16px;
+	}
 	.page {
 		padding-top: 24px;
 		padding-bottom: 96px;

@@ -12,7 +12,7 @@ export type EmailPrefs = Record<ReminderKind, boolean>;
 export const REMINDER_LABELS: Record<ReminderKind, string> = {
 	list: 'Reminders before a friend’s list date',
 	buying: 'Nudges about presents you said you’d get',
-	santa: 'Secret Santa reminders before the swap'
+	santa: 'Secret Santa reminders and messages'
 };
 
 const COLUMN = { list: 'listReminders', buying: 'buyingReminders', santa: 'santaReminders' } as const;

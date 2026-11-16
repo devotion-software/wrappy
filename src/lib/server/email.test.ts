@@ -151,6 +151,23 @@ describe('message content', () => {
 		expect(b.text).toContain('Open it: https://wrappy.example/lists/abc');
 	});
 
+	it('escapes a Secret Santa message', async () => {
+		const base = { email: 'b@example.test', santaName: 'Office', url: 'https://wrappy.example/santa/x#messages', unsubscribeUrl: 'https://wrappy.example/u/t', settingsUrl: 'https://wrappy.example/account#emails' };
+		const b = await capture((m) => m.sendSantaMessageEmail({ ...base, from: 'Your Secret Santa', preview: '<img src=x onerror=alert(1)> size?' }));
+		expect(b.subject).toBe('Office: a message from your Secret Santa');
+		expect(b.html).not.toContain('<img src=x');
+		expect(b.html).toContain('&lt;img src=x onerror=alert(1)&gt; size?');
+		expect(b.text).toContain('Reply: https://wrappy.example/santa/x#messages');
+	});
+
+	it("names the recipient when they reply, and shortens long messages", async () => {
+		const base = { email: 'a@example.test', santaName: 'Office', url: 'https://wrappy.example/santa/x#messages', unsubscribeUrl: 'https://wrappy.example/u/t', settingsUrl: 'https://wrappy.example/account#emails' };
+		const long = await capture((m) => m.sendSantaMessageEmail({ ...base, from: 'Bob', preview: 'y'.repeat(400) }));
+		expect(long.subject).toBe('Office: a message from Bob');
+		expect(long.text).toContain(`${'y'.repeat(279)}…`);
+		expect(long.text).not.toContain('y'.repeat(280));
+	});
+
 	it('escapes Secret Santa names and includes budget and date', async () => {
 		const b = await capture((m) =>
 			m.sendSantaAssignmentEmail({
