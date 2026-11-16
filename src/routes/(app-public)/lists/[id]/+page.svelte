@@ -78,6 +78,18 @@
 	});
 	let settingsOpen = $state(false);
 
+	// SvelteKit moves focus to the page after a successful action; keep it in the add input
+	// so the owner can type the next item straight away.
+	let addInput = $state<HTMLInputElement>();
+	const addEnhance = () => {
+		busy = true;
+		return async ({ update }: { update: (o?: { reset?: boolean }) => Promise<void> }) => {
+			await update();
+			busy = false;
+			addInput?.focus();
+		};
+	};
+
 	// Pasting several lines into the add input opens the paste-a-list preview instead.
 	let pasteOpen = $state(false);
 	let pasteText = $state('');
@@ -260,11 +272,12 @@
 					</form>
 				{/if}
 
-				<form method="POST" action="?/addWish" class="add-line" use:enhance={busyEnhance}>
+				<form method="POST" action="?/addWish" class="add-line" use:enhance={addEnhance}>
 						<Icon name="plus" size={24} strokeWidth={2} />
 						<label for="newwish" class="sr-only">Add an item</label>
 						<input
 							id="newwish"
+							bind:this={addInput}
 							name="wish"
 							class="line-input dashed add-input"
 							placeholder="Paste a shop link, write an item, or paste a whole list…"

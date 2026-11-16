@@ -9,6 +9,14 @@ test.describe('wish lists', () => {
 		await addWishViaUi(page, 'Hand-knitted scarf');
 		await addWishViaUi(page, 'Film camera');
 		await expect(page.getByText('2 items')).toBeVisible();
+		// Enter adds it and leaves you in the input, ready for the next one.
+		await waitForApp(page);
+		const input = page.getByLabel('Add an item');
+		await input.fill('Woolly hat');
+		await input.press('Enter');
+		await expect(page.getByText('Woolly hat', { exact: true })).toBeVisible();
+		await expect(input).toHaveValue('');
+		await expect(input).toBeFocused();
 
 		await page.goto('/lists');
 		await expect(page.getByText(title)).toBeVisible();
