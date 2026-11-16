@@ -111,9 +111,9 @@ describe('importPastedList', () => {
 		expect(await importPastedList(me.id, 'x'.repeat(50_001), null)).toEqual({
 			error: "That's too much to paste in one go. Try a shorter list."
 		});
-		expect(await importPastedList(me.id, '  \n\n# Heading\n---', null)).toEqual({ error: 'Paste a list with one wish per line.' });
+		expect(await importPastedList(me.id, '  \n\n# Heading\n---', null)).toEqual({ error: 'Paste a list with one item per line.' });
 		const many = Array.from({ length: 101 }, (_, i) => `Wish number ${i}`).join('\n');
-		expect(await importPastedList(me.id, many, null)).toEqual({ error: 'You can add up to 100 wishes at a time.' });
+		expect(await importPastedList(me.id, many, null)).toEqual({ error: 'You can add up to 100 items at a time.' });
 		expect(await itemsOf(me.id)).toEqual([]);
 	});
 

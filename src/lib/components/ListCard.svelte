@@ -38,7 +38,7 @@
 	<p class="hand title">{card.title}</p>
 	<p class="meta sub">
 		{#if card.ownerName}{card.ownerName} ·
-		{/if}{plural(card.count, 'wish', 'wishes')} · {formatDate(card.eventDate) ?? 'no date'}
+		{/if}{plural(card.count, 'item')} · {formatDate(card.eventDate) ?? 'no date'}
 	</p>
 	{#each card.preview as p, i (i)}
 		<p class="write line">{p}</p>

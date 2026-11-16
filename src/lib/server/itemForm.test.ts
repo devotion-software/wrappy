@@ -26,7 +26,7 @@ describe('parseItemForm', () => {
 	});
 
 	it('requires a title of at most 200 characters', () => {
-		expect(parseItemForm(fd({ title: '  ' }))).toEqual({ error: 'Give the wish a name.' });
+		expect(parseItemForm(fd({ title: '  ' }))).toEqual({ error: 'Give the item a name.' });
 		expect(parseItemForm(fd({ title: 't'.repeat(201) }))).toEqual({ error: 'Keep the name under 200 characters.' });
 		expect('input' in parseItemForm(fd({ title: 't'.repeat(200) }))).toBe(true);
 	});

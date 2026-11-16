@@ -44,7 +44,7 @@ describe('/items importList', () => {
 	it('rejects an empty paste', async () => {
 		const me = await createUser();
 		const o = await outcome(() => actions.importList(fakeEvent({ user: me, form: { list: '  \n ' } })));
-		expect(o).toEqual({ kind: 'fail', status: 400, data: { importError: 'Paste a list with one wish per line.' } });
+		expect(o).toEqual({ kind: 'fail', status: 400, data: { importError: 'Paste a list with one item per line.' } });
 	});
 
 	it('rejects a paste that is too long', async () => {
@@ -57,7 +57,7 @@ describe('/items importList', () => {
 		const me = await createUser();
 		const text = Array.from({ length: 101 }, (_, i) => `Wish number ${i}`).join('\n');
 		const o = await outcome(() => actions.importList(fakeEvent({ user: me, form: { list: text } })));
-		expect(o).toEqual({ kind: 'fail', status: 400, data: { importError: 'You can add up to 100 wishes at a time.' } });
+		expect(o).toEqual({ kind: 'fail', status: 400, data: { importError: 'You can add up to 100 items at a time.' } });
 	});
 
 	it('adds every wish to my library, not to any list, with links and prices', async () => {

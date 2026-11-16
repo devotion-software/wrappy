@@ -101,7 +101,7 @@ export const actions: Actions = {
 	addWish: async (event) => {
 		const { me, l } = await ownerList(event);
 		const text = String((await event.request.formData()).get('wish') ?? '').trim();
-		if (!text) return fail(400, { addError: 'Write a wish or paste a shop link.' });
+		if (!text) return fail(400, { addError: 'Write an item or paste a shop link.' });
 
 		if (looksLikeUrl(text)) {
 			let url: string;
@@ -129,7 +129,7 @@ export const actions: Actions = {
 			return { found: { itemId, linkId, title: input.title, price: formatPrice(input.price, input.currency), images: meta.images } };
 		}
 
-		if (text.length > 200) return fail(400, { addError: 'Keep the wish under 200 characters.' });
+		if (text.length > 200) return fail(400, { addError: 'Keep the item under 200 characters.' });
 		await createItem(me.id, { title: text, notes: null, price: null, currency: 'GBP', mostWanted: false }, { listIds: [l.id] });
 		return { added: true };
 	},

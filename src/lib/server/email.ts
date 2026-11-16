@@ -104,7 +104,7 @@ export async function sendListReminderEmail(
 	r: ReminderBase & { ownerName: string; listTitle: string; when: string; daysLeft: number; unclaimed: number }
 ) {
 	const soon = r.daysLeft <= 0 ? 'today' : r.daysLeft === 1 ? 'tomorrow' : `in ${r.daysLeft} days`;
-	const left = r.unclaimed === 1 ? '1 wish is' : `${r.unclaimed} wishes are`;
+	const left = r.unclaimed === 1 ? '1 item is' : `${r.unclaimed} items are`;
 	await deliver(
 		{
 			to: r.email,
@@ -129,7 +129,7 @@ export async function sendBuyingReminderEmail(r: ReminderBase & { ownerName: str
 			subject: `Did you get ${r.itemTitle} for ${r.ownerName}?`,
 			html: renderLayout(
 				`${r.weeks} weeks ago you said you'd get <strong>${escapeHtml(r.itemTitle)}</strong> for ${escapeHtml(r.ownerName)}. If you've bought it, mark it as bought. If not, it's still reserved for you, or you can let it go so someone else can get it.`,
-				button(r.url, 'Open the wish'),
+				button(r.url, 'Open the item'),
 				reminderFootnote(r)
 			),
 			text: `${r.weeks} weeks ago you said you'd get "${r.itemTitle}" for ${r.ownerName}. If you've bought it, mark it as bought. If not, it's still reserved for you, or you can let it go so someone else can get it.\n\nOpen it: ${r.url}${reminderTextFooter(r)}`,

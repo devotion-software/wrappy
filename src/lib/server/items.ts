@@ -35,7 +35,7 @@ export interface ItemInput {
 /** Validate item fields from a form. Returns an error message or the clean input. */
 export function parseItemForm(fd: FormData): { error: string } | { input: ItemInput } {
 	const title = String(fd.get('title') ?? '').trim();
-	if (!title) return { error: 'Give the wish a name.' };
+	if (!title) return { error: 'Give the item a name.' };
 	if (title.length > 200) return { error: 'Keep the name under 200 characters.' };
 	const notes = String(fd.get('notes') ?? '').trim() || null;
 	if (notes && notes.length > 2000) return { error: 'Keep notes under 2,000 characters.' };
@@ -91,8 +91,8 @@ export async function importPastedList(
 ): Promise<{ error: string } | { added: number; skipped: string[] }> {
 	if (text.length > 50_000) return { error: "That's too much to paste in one go. Try a shorter list." };
 	const wishes = parsePastedList(text);
-	if (!wishes.length) return { error: 'Paste a list with one wish per line.' };
-	if (wishes.length > MAX_PASTED_WISHES) return { error: `You can add up to ${MAX_PASTED_WISHES} wishes at a time.` };
+	if (!wishes.length) return { error: 'Paste a list with one item per line.' };
+	if (wishes.length > MAX_PASTED_WISHES) return { error: `You can add up to ${MAX_PASTED_WISHES} items at a time.` };
 	const skipped: string[] = [];
 	let added = 0;
 	for (const w of wishes) {

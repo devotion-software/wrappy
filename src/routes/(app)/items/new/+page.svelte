@@ -6,14 +6,14 @@
 	let { data, form } = $props();
 </script>
 
-<svelte:head><title>New wish — Wrappy</title></svelte:head>
+<svelte:head><title>New item — Wrappy</title></svelte:head>
 
 <main class="container page">
 	<a href={data.target ? `/lists/${data.target.id}` : '/items'} class="back"
-		><Icon name="arrow-left" size={16} strokeWidth={2} />{data.target?.title ?? 'All my wishes'}</a
+		><Icon name="arrow-left" size={16} strokeWidth={2} />{data.target?.title ?? 'All my items'}</a
 	>
 	<Sheet tape margin={50} padding="40px 36px 32px 72px" class="sheet">
-		<h1 class="hand">New wish</h1>
+		<h1 class="hand">New item</h1>
 		{#if data.target?.santaLimit}
 			<p class="sub">For your Secret Santa list. If you add a price, keep it to {data.target.santaLimit} or less.</p>
 		{:else if data.target}
@@ -24,7 +24,7 @@
 		<form method="POST" class="stack">
 			<ItemFields values={{ currency: data.target?.currency ?? 'GBP' }} />
 			{#if form?.error}<p class="field-error" role="alert">{form.error}</p>{/if}
-			<button class="btn btn-primary btn-lg">Save wish</button>
+			<button class="btn btn-primary btn-lg">Save item</button>
 		</form>
 	</Sheet>
 </main>

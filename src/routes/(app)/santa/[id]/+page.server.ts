@@ -185,7 +185,7 @@ export const actions: Actions = {
 			.from(item)
 			.where(and(eq(item.id, itemId), eq(item.ownerId, me.id)))
 			.limit(1);
-		if (!it) error(404, 'Wish not found');
+		if (!it) error(404, 'Item not found');
 		if (fd.get('on') === '1') {
 			const problem = await santaPriceProblem(mine.listId, it);
 			if (problem) return fail(400, { wishError: { itemId, message: problem } });

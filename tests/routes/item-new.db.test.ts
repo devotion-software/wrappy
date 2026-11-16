@@ -43,7 +43,7 @@ describe('/items/new action', () => {
 		expect(await outcome(() => actions.default(fakeEvent({ user: me, path: '/items/new', form: { title: ' ' } })))).toEqual({
 			kind: 'fail',
 			status: 400,
-			data: { error: 'Give the wish a name.' }
+			data: { error: 'Give the item a name.' }
 		});
 		expect(
 			await outcome(() => actions.default(fakeEvent({ user: me, path: '/items/new', form: { title: 'Hat', price: 'lots' } })))

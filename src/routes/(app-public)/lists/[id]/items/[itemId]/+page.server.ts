@@ -15,7 +15,7 @@ export const load: PageServerLoad = async ({ params, locals, cookies }) => {
 	if (access.isOwner) redirect(303, `/items/${params.itemId}?list=${params.id}`);
 
 	const view = (await loadListItems(access.list, viewer?.id ?? null)).find((i) => i.id === params.itemId);
-	if (!view) error(404, 'This wish is no longer on the list.');
+	if (!view) error(404, 'This item is no longer on the list.');
 	const [{ links, images }, [owner]] = await Promise.all([
 		itemDetail(view.id),
 		db.select({ name: user.name }).from(user).where(eq(user.id, access.list.ownerId))

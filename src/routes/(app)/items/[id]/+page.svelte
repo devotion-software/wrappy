@@ -13,7 +13,7 @@
 	// Keep ?list= on every form post so the back link still points at the list after saving.
 	const listQuery = $derived(data.back ? `&list=${data.back}` : '');
 	const backHref = $derived(data.back ? `/lists/${data.back}` : '/items');
-	const backLabel = $derived(data.back ? (data.allLists.find((l) => l.id === data.back)?.title ?? 'Back') : 'All my wishes');
+	const backLabel = $derived(data.back ? (data.allLists.find((l) => l.id === data.back)?.title ?? 'Back') : 'All my items');
 	const host = (u: string) => {
 		try {
 			return new URL(u).hostname.replace(/^www\./, '');
@@ -43,7 +43,7 @@
 		uploadErrors = [];
 		if (!list.length) return;
 		if (list.length > remaining) {
-			uploadErrors = [`You can add ${plural(remaining, 'more picture')} to this wish.`];
+			uploadErrors = [`You can add ${plural(remaining, 'more picture')} to this item.`];
 			list.splice(remaining);
 		}
 		uploading = { done: 0, total: list.length };
@@ -106,7 +106,7 @@
 
 <main class="container page">
 	<a href={backHref} class="back"><Icon name="arrow-left" size={16} strokeWidth={2} />{backLabel}</a>
-	<h1 class="hand">Edit wish</h1>
+	<h1 class="hand">Edit item</h1>
 
 	<div class="with-aside">
 		<div class="main-col stack-lg">
@@ -337,10 +337,10 @@
 				action="?/delete{listQuery}"
 				onsubmit={(e) => {
 					const n = data.onLists.length;
-					if (!confirm(n ? `Delete this wish from ${plural(n, 'list')} and everywhere else?` : 'Delete this wish?')) e.preventDefault();
+					if (!confirm(n ? `Delete this item from ${plural(n, 'list')} and everywhere else?` : 'Delete this item?')) e.preventDefault();
 				}}
 			>
-				<button class="btn btn-text danger"><Icon name="trash" size={16} />Delete this wish everywhere</button>
+				<button class="btn btn-text danger"><Icon name="trash" size={16} />Delete this item everywhere</button>
 			</form>
 		</aside>
 	</div>

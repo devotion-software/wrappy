@@ -75,7 +75,7 @@ export async function createListViaUi(page: Page, title: string, visibility: 'pr
 }
 
 export async function addWishViaUi(page: Page, wish: string) {
-	const input = page.getByLabel('Add a wish');
+	const input = page.getByLabel('Add an item');
 	await input.fill(wish);
 	await page.getByRole('button', { name: 'Add', exact: true }).click();
 	await expect(page.getByText(wish, { exact: true }).first()).toBeVisible();

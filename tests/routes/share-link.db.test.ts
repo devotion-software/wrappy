@@ -50,7 +50,7 @@ describe('/s/[token]', () => {
 		const headers = { 'user-agent': 'WhatsApp/2.23.20.0 A' };
 		expect(await outcome(() => (load as any)(fakeEvent({ params: { token }, cookies, headers })))).toEqual({
 			kind: 'ok',
-			data: { title: 'Birthday', meta: { title: 'Birthday', description: "Meg's wish list · 2 wishes" } }
+			data: { title: 'Birthday', meta: { title: 'Birthday', description: "Meg's wish list · 2 items" } }
 		});
 		expect(cookies.jar.size).toBe(0);
 	});

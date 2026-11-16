@@ -11,15 +11,15 @@
 	);
 </script>
 
-<svelte:head><title>All my wishes — Wrappy</title></svelte:head>
+<svelte:head><title>All my items — Wrappy</title></svelte:head>
 
 <main class="container page">
 	<div class="title-row">
 		<div>
-			<h1 class="hand">All my wishes</h1>
-			<p class="sub">Every wish you've written, and the lists it's on. Edit it once and it changes everywhere.</p>
+			<h1 class="hand">All my items</h1>
+			<p class="sub">Every item you've written, and the lists it's on. Edit it once and it changes everywhere.</p>
 		</div>
-		<a href="/items/new" class="btn btn-primary btn-md"><Icon name="plus" strokeWidth={2.2} />New wish</a>
+		<a href="/items/new" class="btn btn-primary btn-md"><Icon name="plus" strokeWidth={2.2} />New item</a>
 	</div>
 
 	<PasteList />
@@ -27,7 +27,7 @@
 	<Sheet margin={50} padding="14px 28px 20px 72px" class="sheet">
 		{#if data.items.length > 6}
 			<div class="search">
-				<label for="q" class="sr-only">Search your wishes</label>
+				<label for="q" class="sr-only">Search your items</label>
 				<input id="q" class="line-input dashed" placeholder="Search…" bind:value={q} />
 			</div>
 		{/if}
@@ -48,11 +48,11 @@
 			</a>
 		{:else}
 			<p class="empty-copy">
-				{data.items.length ? 'Nothing matches that search.' : 'No wishes yet. Add one here, paste a list, or add them from any of your lists.'}
+				{data.items.length ? 'Nothing matches that search.' : 'No items yet. Add one here, paste a list, or add them from any of your lists.'}
 			</p>
 		{/each}
 	</Sheet>
-	<p class="meta">{plural(data.items.length, 'wish', 'wishes')}</p>
+	<p class="meta">{plural(data.items.length, 'item')}</p>
 </main>
 
 <style>

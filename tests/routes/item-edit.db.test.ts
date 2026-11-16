@@ -129,7 +129,7 @@ describe('save', () => {
 		expect(await outcome(() => actions.save(ev(me, it.id, { title: '' })))).toEqual({
 			kind: 'fail',
 			status: 400,
-			data: { saveError: 'Give the wish a name.' }
+			data: { saveError: 'Give the item a name.' }
 		});
 		expect(await ok(() => actions.save(ev(me, it.id, { title: 'New', price: '12', currency: 'EUR', notes: 'n' })))).toEqual({
 			saved: true

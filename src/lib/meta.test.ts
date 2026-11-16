@@ -23,8 +23,8 @@ describe('listMeta', () => {
 	it('names the owner, counts wishes and adds the date', () => {
 		expect(listMeta({ title: 'Birthday', eventDate: '2020-03-04' }, 'Meg', 3)).toEqual({
 			title: 'Birthday',
-			description: "Meg's wish list · 3 wishes · 4 Mar 2020"
+			description: "Meg's wish list · 3 items · 4 Mar 2020"
 		});
-		expect(listMeta({ title: 'Xmas', eventDate: null }, 'Meg', 1).description).toBe("Meg's wish list · 1 wish");
+		expect(listMeta({ title: 'Xmas', eventDate: null }, 'Meg', 1).description).toBe("Meg's wish list · 1 item");
 	});
 });

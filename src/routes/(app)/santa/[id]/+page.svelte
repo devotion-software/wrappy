@@ -78,7 +78,7 @@
 							{#if !data.wishes.length}
 								You can add items to your wish list below
 							{:else}
-								Tick the wishes your Santa should see{s.budget ? ` — up to ${s.budget} each` : ''}. {drawn
+								Tick the items your Santa should see{s.budget ? ` — up to ${s.budget} each` : ''}. {drawn
 									? 'Your Santa can see this list now.'
 									: "You'll find out who you're buying for when names are drawn."}
 							{/if}
@@ -103,7 +103,7 @@
 						</div>
 						<div class="note-actions">
 							{#if data.me.listId}
-								<a href="/items/new?list={data.me.listId}" class="btn btn-dark"><Icon name="plus" />New wish</a>
+								<a href="/items/new?list={data.me.listId}" class="btn btn-dark"><Icon name="plus" />New item</a>
 								<a href="/lists/{data.me.listId}" class="btn btn-text">Open my Santa list ({onCount})</a>
 							{/if}
 							{#if !drawn}
@@ -161,7 +161,7 @@
 						method="POST"
 						action="?/deleteSanta"
 						onsubmit={(e) => {
-							if (!confirm(`Delete "${s.name}" for everyone? Their wishes stay in their own lists.`)) e.preventDefault();
+							if (!confirm(`Delete "${s.name}" for everyone? Their items stay in their own lists.`)) e.preventDefault();
 						}}
 					>
 						<button class="btn btn-text">Delete this Secret Santa</button>

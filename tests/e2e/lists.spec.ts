@@ -8,7 +8,7 @@ test.describe('wish lists', () => {
 		await createListViaUi(page, title);
 		await addWishViaUi(page, 'Hand-knitted scarf');
 		await addWishViaUi(page, 'Film camera');
-		await expect(page.getByText('2 wishes')).toBeVisible();
+		await expect(page.getByText('2 items')).toBeVisible();
 
 		await page.goto('/lists');
 		await expect(page.getByText(title)).toBeVisible();

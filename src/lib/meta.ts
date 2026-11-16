@@ -17,9 +17,9 @@ export const SITE_META: PageMeta = {
 	description: 'Write a wish list, share it, and keep the surprise.'
 };
 
-/** "Meg's wish list · 12 wishes · 24 Dec" */
-export function listMeta(l: { title: string; eventDate: string | null }, ownerName: string, wishCount: number): PageMeta {
-	const parts = [`${ownerName}'s wish list`, plural(wishCount, 'wish', 'wishes')];
+/** "Meg's wish list · 12 items · 24 Dec" */
+export function listMeta(l: { title: string; eventDate: string | null }, ownerName: string, itemCount: number): PageMeta {
+	const parts = [`${ownerName}'s wish list`, plural(itemCount, 'item')];
 	const when = formatDate(l.eventDate);
 	if (when) parts.push(when);
 	return { title: l.title, description: parts.join(' · ') };

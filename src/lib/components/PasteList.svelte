@@ -43,7 +43,7 @@
 	<form method="POST" action="?/importList" class="panel" use:enhance={submit}>
 		<p class="hand panel-title">Paste a list</p>
 		<p class="copy">
-			Copy a list from your notes or a message and paste it here, one wish per line. Bullets, numbers and checkboxes are
+			Copy a list from your notes or a message and paste it here, one item per line. Bullets, numbers and checkboxes are
 			tidied away, and links and prices are kept.
 		</p>
 		<label for="{id}-list" class="sr-only">Your list</label>
@@ -59,7 +59,7 @@
 
 		{#if wishes.length}
 			<div class="preview">
-				<p class="label">{plural(wishes.length, 'wish', 'wishes')} found</p>
+				<p class="label">{plural(wishes.length, 'item')} found</p>
 				<ol>
 					{#each wishes.slice(0, MAX_PASTED_WISHES) as w, i (i)}
 						<li>
@@ -76,18 +76,18 @@
 			</div>
 		{/if}
 
-		{#if tooMany}<p class="field-error" role="alert">You can add up to {MAX_PASTED_WISHES} wishes at a time.</p>{/if}
+		{#if tooMany}<p class="field-error" role="alert">You can add up to {MAX_PASTED_WISHES} items at a time.</p>{/if}
 		{#if error}<p class="field-error" role="alert">{error}</p>{/if}
 		{#if done}
 			<p class="meta ok" role="status">
-				{done.added ? `Added ${plural(done.added, 'wish', 'wishes')}${target ? ` to ${target}` : ''}.` : 'Nothing was added.'}
+				{done.added ? `Added ${plural(done.added, 'item')}${target ? ` to ${target}` : ''}.` : 'Nothing was added.'}
 				{#if done.skipped.length}Left out: {done.skipped.join(' ')}{/if}
 			</p>
 		{/if}
 
 		<div class="actions">
 			<button class="btn btn-dark" disabled={busy || !wishes.length || tooMany}
-				>{busy ? 'Adding…' : wishes.length ? `Add ${plural(wishes.length, 'wish', 'wishes')}` : 'Add wishes'}</button
+				>{busy ? 'Adding…' : wishes.length ? `Add ${plural(wishes.length, 'item')}` : 'Add items'}</button
 			>
 			<button type="button" class="btn btn-text" onclick={() => (open = false)}>Close</button>
 		</div>

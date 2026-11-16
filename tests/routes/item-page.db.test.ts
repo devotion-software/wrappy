@@ -52,7 +52,7 @@ describe('guest item page', () => {
 		const l = await createList(owner, { visibility: 'public' });
 		const other = await createList(owner, { visibility: 'public' });
 		const it = await createItem(owner, {}, { lists: [other] });
-		expect(await run(await createUser(), l.id, it.id)).toEqual({ kind: 'error', status: 404, message: 'This wish is no longer on the list.' });
+		expect(await run(await createUser(), l.id, it.id)).toEqual({ kind: 'error', status: 404, message: 'This item is no longer on the list.' });
 	});
 
 	it('404s when the viewer cannot see the list', async () => {

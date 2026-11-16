@@ -218,7 +218,7 @@ describe('addWish', () => {
 		expect(await act('addWish', owner, l, { wish: '   ' })).toEqual({
 			kind: 'fail',
 			status: 400,
-			data: { addError: 'Write a wish or paste a shop link.' }
+			data: { addError: 'Write an item or paste a shop link.' }
 		});
 	});
 
@@ -238,7 +238,7 @@ describe('addWish', () => {
 		expect(await act('addWish', owner, l, { wish: 'a '.repeat(150) })).toMatchObject({
 			kind: 'fail',
 			status: 400,
-			data: { addError: 'Keep the wish under 200 characters.' }
+			data: { addError: 'Keep the item under 200 characters.' }
 		});
 		expect(await itemsOn(l)).toEqual([]);
 	});
@@ -346,7 +346,7 @@ describe('addManual', () => {
 		expect(await act('addManual', owner, l, { title: '', url: 'https://shop.example.com/a' })).toEqual({
 			kind: 'fail',
 			status: 400,
-			data: { manualUrl: 'https://shop.example.com/a', manualError: 'Give the wish a name.' }
+			data: { manualUrl: 'https://shop.example.com/a', manualError: 'Give the item a name.' }
 		});
 		expect(await act('addManual', owner, l, { title: 'X', price: 'lots' })).toMatchObject({
 			kind: 'fail',
@@ -383,7 +383,7 @@ describe('importList', () => {
 		expect(await act('importList', owner, l, { list: '  \n ' })).toEqual({
 			kind: 'fail',
 			status: 400,
-			data: { importError: 'Paste a list with one wish per line.' }
+			data: { importError: 'Paste a list with one item per line.' }
 		});
 	});
 
@@ -716,6 +716,6 @@ describe('/lists/[id] link preview', () => {
 		const l = await createList(owner, { title: 'Christmas', visibility: 'public', eventDate: '2020-12-25' });
 		await createItem(owner, { title: 'Scarf' }, { lists: [l] });
 		const data = await ok<any>(() => (load as any)(fakeEvent({ params: { id: l.id }, path: `/lists/${l.id}` })));
-		expect(data.meta).toEqual({ title: 'Christmas', description: "Meg's wish list · 1 wish · 25 Dec 2020" });
+		expect(data.meta).toEqual({ title: 'Christmas', description: "Meg's wish list · 1 item · 25 Dec 2020" });
 	});
 });

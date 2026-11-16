@@ -9,7 +9,7 @@
 </script>
 
 <div class="field">
-	<label for="title">Wish</label>
+	<label for="title">Item</label>
 	<input id="title" name="title" class="line-input" required maxlength="200" placeholder="Wool scarf, charcoal" value={values.title ?? ''} />
 </div>
 <div class="field">

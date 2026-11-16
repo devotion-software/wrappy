@@ -98,7 +98,7 @@
 				{[
 					data.isOwner ? 'Your list' : `${data.owner.name}'s list`,
 					formatDate(data.list.eventDate),
-					plural(data.items.length, 'wish', 'wishes'),
+					plural(data.items.length, 'item'),
 					data.santa ? `Secret Santa${data.santa.limit ? `, up to ${data.santa.limit}` : ''}` : null
 				]
 					.filter(Boolean)
@@ -174,9 +174,9 @@
 				{:else}
 					<p class="empty">
 						{#if data.isOwner}
-							Nothing here yet. Paste a shop link or write a wish below.
+							Nothing here yet. Paste a shop link or write an item below.
 						{:else}
-							{firstName} hasn't added any wishes yet.
+							{firstName} hasn't added any items yet.
 						{/if}
 					</p>
 				{/each}
@@ -244,18 +244,18 @@
 							</div>
 						</div>
 						{#if form.manualError}<p class="field-error" role="alert">{form.manualError}</p>{/if}
-						<div class="panel-actions"><button class="btn btn-dark" disabled={busy}>Add wish</button></div>
+						<div class="panel-actions"><button class="btn btn-dark" disabled={busy}>Add item</button></div>
 					</form>
 				{/if}
 
 				<form method="POST" action="?/addWish" class="add-line" use:enhance={busyEnhance}>
 						<Icon name="plus" size={24} strokeWidth={2} />
-						<label for="newwish" class="sr-only">Add a wish</label>
+						<label for="newwish" class="sr-only">Add an item</label>
 						<input
 							id="newwish"
 							name="wish"
 							class="line-input dashed add-input"
-							placeholder="Paste a shop link or write a wish…"
+							placeholder="Paste a shop link or write an item…"
 							autocomplete="off"
 							maxlength="2048"
 						/>
@@ -267,7 +267,7 @@
 
 				{#if data.owned?.library.length}
 					<details class="existing">
-						<summary class="btn btn-text">Add from your other wishes ({data.owned.library.length})</summary>
+						<summary class="btn btn-text">Add from your other items ({data.owned.library.length})</summary>
 						<form method="POST" action="?/addExisting" use:enhance={busyEnhance}>
 							<div class="lib">
 								{#each data.owned.library as it (it.id)}
@@ -299,7 +299,7 @@
 				{:else}
 					<Sheet margin={false} padding="24px">
 						<h2 class="hand h2">Secret Santa list</h2>
-						<p class="copy">Only whoever draws your name will see this list.{data.santa?.limit ? ` Wishes with a price need to be ${data.santa.limit} or less.` : ''}</p>
+						<p class="copy">Only whoever draws your name will see this list.{data.santa?.limit ? ` Items with a price need to be ${data.santa.limit} or less.` : ''}</p>
 					</Sheet>
 				{/if}
 
@@ -311,7 +311,7 @@
 						>
 					</div>
 					<div class="setting">
-						<span>Most wanted</span><strong class="star"><Icon name="star" size={14} />{plural(mostWanted, 'wish', 'wishes')}</strong>
+						<span>Most wanted</span><strong class="star"><Icon name="star" size={14} />{plural(mostWanted, 'item')}</strong>
 					</div>
 					<div class="setting last">
 						<button class="btn btn-text edit-btn" onclick={() => (settingsOpen = !settingsOpen)} aria-expanded={settingsOpen}
@@ -331,7 +331,7 @@
 								action="?/deleteList"
 								class="danger"
 								onsubmit={(e) => {
-									if (!confirm(`Delete "${data.list.title}"? Your wishes stay in All my wishes.`)) e.preventDefault();
+									if (!confirm(`Delete "${data.list.title}"? Your items stay in All my items.`)) e.preventDefault();
 								}}
 							>
 								<button class="btn btn-text">Delete this list</button>

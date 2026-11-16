@@ -8,7 +8,7 @@
 
 	let { data } = $props();
 	const firstName = $derived(data.user?.name.split(' ')[0] ?? '');
-	const totalWishes = $derived(data.mine.reduce((n, l) => n + l.count, 0));
+	const totalItems = $derived(data.mine.reduce((n, l) => n + l.count, 0));
 </script>
 
 <svelte:head><title>My lists — Wrappy</title></svelte:head>
@@ -19,7 +19,7 @@
 			<h1 class="hand">Hi {firstName}</h1>
 			<p class="greeting">
 				{#if data.mine.length}
-					You have {plural(totalWishes, 'wish', 'wishes')} across {plural(data.mine.length, 'list')}.
+					You have {plural(totalItems, 'item')} across {plural(data.mine.length, 'list')}.
 				{:else}
 					Start a list, then share it with the people who buy you presents.
 				{/if}
@@ -29,7 +29,7 @@
 		<section class="block">
 			<div class="head">
 				<h2 class="section-title">Your lists</h2>
-				<a href="/items" class="meta all-items">All my wishes</a>
+				<a href="/items" class="meta all-items">All my items</a>
 			</div>
 			<div class="grid">
 				{#each data.mine as card, i (card.id)}
@@ -51,7 +51,7 @@
 						<div class="who">
 							<p class="write">{f.ownerName} · {f.title}</p>
 							<p class="meta">
-								{plural(f.count, 'wish', 'wishes')}{f.eventDate ? ` · ${formatDate(f.eventDate)}` : ''}
+								{plural(f.count, 'item')}{f.eventDate ? ` · ${formatDate(f.eventDate)}` : ''}
 							</p>
 						</div>
 						<a href="/lists/{f.id}" class="btn btn-outline">Open</a>
