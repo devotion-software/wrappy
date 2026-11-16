@@ -48,7 +48,7 @@
 
 	<div class="hero-art">
 		<Sheet tape tilt={-1.5} margin={46} padding="30px 28px 22px 68px" class="hero-sheet">
-			<p class="hand sheet-title">Meg's 30th</p>
+			<p class="hand sheet-title">Meg's birthday</p>
 			{#each heroItems as it (it.name)}
 				<button
 					type="button"
