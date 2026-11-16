@@ -159,6 +159,26 @@ export async function sendSantaMessageEmail(r: ReminderBase & { santaName: strin
 	);
 }
 
+/** A shop has dropped its price on something the person could get. */
+export async function sendPriceDropEmail(
+	r: ReminderBase & { ownerName: string; itemTitle: string; shop: string; was: string; now: string }
+) {
+	await deliver(
+		{
+			to: r.email,
+			subject: `Price drop: ${r.itemTitle} is now ${r.now}`,
+			html: renderLayout(
+				`<strong>${escapeHtml(r.itemTitle)}</strong> from ${escapeHtml(r.ownerName)}'s list is now <strong>${escapeHtml(r.now)}</strong> at ${escapeHtml(r.shop)} (it was ${escapeHtml(r.was)}).`,
+				button(r.url, 'Have a look'),
+				reminderFootnote(r)
+			),
+			text: `${r.itemTitle} from ${r.ownerName}'s list is now ${r.now} at ${r.shop} (it was ${r.was}).\n\nHave a look: ${r.url}${reminderTextFooter(r)}`,
+			headers: { 'List-Unsubscribe': `<${r.unsubscribeUrl}>` }
+		},
+		`price drop: ${r.itemTitle} ${r.was} → ${r.now} → ${r.url}`
+	);
+}
+
 /** The Secret Santa swap is coming up. */
 export async function sendSantaReminderEmail(
 	r: ReminderBase & { santaName: string; recipientName: string; when: string; daysLeft: number; budget: string | null }

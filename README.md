@@ -57,7 +57,11 @@ Every instance runs `src/lib/server/reminders.ts` hourly (a MariaDB lock lets on
 
 - people who can see a list get a nudge 14 and 3 days before its date, if they haven't claimed anything;
 - anyone who said "I'll get it" two weeks ago and hasn't marked it bought gets one reminder;
-- Secret Santa givers get a reminder a week before the swap.
+- Secret Santa givers get a reminder a week before the swap;
+- price drops: each run re-reads up to 40 shop links (one per shop, each at most daily) for items still
+  wanted on a live list, keeps a price history, and on a drop of 5% or more emails whoever reserved it
+  and, while it's unclaimed, people who can see it (`src/lib/server/priceWatch.ts`, `PRICE_ALERTS=off`
+  turns it off).
 
 Owners never get emails about their own lists. Each email has an unsubscribe link, and people pick
 which reminders they want on their account page. Set `REMINDERS=off` to stop them, or `REMINDERS=on`

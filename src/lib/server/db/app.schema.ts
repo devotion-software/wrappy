@@ -98,9 +98,28 @@ export const itemLink = mysqlTable(
 		url: varchar('url', { length: 2048 }).notNull(),
 		label: varchar('label', { length: 200 }),
 		sortOrder: int('sort_order').default(0).notNull(),
+		// Price watching (server/priceWatch.ts): the shop's price when last checked.
+		lastPrice: decimal('last_price', { precision: 10, scale: 2 }),
+		lastCurrency: char('last_currency', { length: 3 }),
+		checkedAt: timestamp('checked_at', { fsp: 3 }),
 		createdAt: created()
 	},
-	(t) => [index('item_link_item_idx').on(t.itemId)]
+	(t) => [index('item_link_item_idx').on(t.itemId), index('item_link_checked_idx').on(t.checkedAt)]
+);
+
+/** Each price a watched link has shown, recorded when it changes. */
+export const priceHistory = mysqlTable(
+	'price_history',
+	{
+		id: id().primaryKey(),
+		linkId: id('link_id')
+			.notNull()
+			.references(() => itemLink.id, { onDelete: 'cascade' }),
+		price: decimal('price', { precision: 10, scale: 2 }).notNull(),
+		currency: char('currency', { length: 3 }).notNull(),
+		seenAt: created()
+	},
+	(t) => [index('price_history_link_idx').on(t.linkId)]
 );
 
 export const itemImage = mysqlTable(
@@ -393,7 +412,8 @@ export const emailPref = mysqlTable('email_pref', {
 		.references(() => user.id, { onDelete: 'cascade' }),
 	listReminders: boolean('list_reminders').default(true).notNull(),
 	buyingReminders: boolean('buying_reminders').default(true).notNull(),
-	santaReminders: boolean('santa_reminders').default(true).notNull()
+	santaReminders: boolean('santa_reminders').default(true).notNull(),
+	priceAlerts: boolean('price_alerts').default(true).notNull()
 });
 
 /**
@@ -403,7 +423,7 @@ export const emailPref = mysqlTable('email_pref', {
 export const reminderSent = mysqlTable(
 	'reminder_sent',
 	{
-		kind: mysqlEnum('kind', ['list', 'buying', 'santa']).notNull(),
+		kind: mysqlEnum('kind', ['list', 'buying', 'santa', 'price']).notNull(),
 		subjectKey: varchar('subject_key', { length: 80 }).notNull(),
 		userId: userRef('user_id')
 			.notNull()

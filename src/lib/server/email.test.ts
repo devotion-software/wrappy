@@ -151,6 +151,25 @@ describe('message content', () => {
 		expect(b.text).toContain('Open it: https://wrappy.example/lists/abc');
 	});
 
+	it('escapes a price-drop email and says what changed', async () => {
+		const b = await capture((m) =>
+			m.sendPriceDropEmail({
+				email: 'v@example.test',
+				url: 'https://wrappy.example/lists/l/items/i',
+				unsubscribeUrl: 'https://wrappy.example/u/t',
+				settingsUrl: 'https://wrappy.example/account#emails',
+				ownerName: 'Meg <3',
+				itemTitle: 'Lamp & shade',
+				shop: 'shop.example.com',
+				was: '£40',
+				now: '£30'
+			})
+		);
+		expect(b.subject).toBe('Price drop: Lamp & shade is now £30');
+		expect(b.html).toContain(`<strong>Lamp &amp; shade</strong> from Meg &lt;3's list is now <strong>£30</strong> at shop.example.com (it was £40).`);
+		expect(b.text).toContain('Have a look: https://wrappy.example/lists/l/items/i');
+	});
+
 	it('escapes a Secret Santa message', async () => {
 		const base = { email: 'b@example.test', santaName: 'Office', url: 'https://wrappy.example/santa/x#messages', unsubscribeUrl: 'https://wrappy.example/u/t', settingsUrl: 'https://wrappy.example/account#emails' };
 		const b = await capture((m) => m.sendSantaMessageEmail({ ...base, from: 'Your Secret Santa', preview: '<img src=x onerror=alert(1)> size?' }));

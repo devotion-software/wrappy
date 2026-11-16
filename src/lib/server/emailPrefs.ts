@@ -3,7 +3,7 @@ import { eq } from 'drizzle-orm';
 import { db } from './db';
 import { emailPref } from './db/schema';
 
-export const REMINDER_KINDS = ['list', 'buying', 'santa'] as const;
+export const REMINDER_KINDS = ['list', 'buying', 'santa', 'price'] as const;
 export type ReminderKind = (typeof REMINDER_KINDS)[number];
 
 export type EmailPrefs = Record<ReminderKind, boolean>;
@@ -12,17 +12,19 @@ export type EmailPrefs = Record<ReminderKind, boolean>;
 export const REMINDER_LABELS: Record<ReminderKind, string> = {
 	list: 'Reminders before a friend’s list date',
 	buying: 'Nudges about presents you said you’d get',
-	santa: 'Secret Santa reminders and messages'
+	santa: 'Secret Santa reminders and messages',
+	price: 'Price drops on presents you could get'
 };
 
-const COLUMN = { list: 'listReminders', buying: 'buyingReminders', santa: 'santaReminders' } as const;
+const COLUMN = { list: 'listReminders', buying: 'buyingReminders', santa: 'santaReminders', price: 'priceAlerts' } as const;
 
 export async function getEmailPrefs(userId: string): Promise<EmailPrefs> {
 	const [row] = await db.select().from(emailPref).where(eq(emailPref.userId, userId)).limit(1);
 	return {
 		list: row?.listReminders ?? true,
 		buying: row?.buyingReminders ?? true,
-		santa: row?.santaReminders ?? true
+		santa: row?.santaReminders ?? true,
+		price: row?.priceAlerts ?? true
 	};
 }
 

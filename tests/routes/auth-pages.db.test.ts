@@ -241,10 +241,10 @@ describe('account emails', () => {
 	it('shows every reminder on by default and saves the ticked ones', async () => {
 		const u = await createUser();
 		const before = await outcome(() => accountLoad(fakeEvent({ user: u }) as any));
-		expect(before).toMatchObject({ kind: 'ok', data: { emails: [{ kind: 'list', on: true }, { kind: 'buying', on: true }, { kind: 'santa', on: true }] } });
+		expect(before).toMatchObject({ kind: 'ok', data: { emails: [{ kind: 'list', on: true }, { kind: 'buying', on: true }, { kind: 'santa', on: true }, { kind: 'price', on: true }] } });
 		expect(await L(accountActions.emails, { user: u, form: { santa: 'on' } })).toEqual({ kind: 'ok', data: { emailsSaved: true } });
 		const after = await outcome(() => accountLoad(fakeEvent({ user: u }) as any));
-		expect((after as any).data.emails.map((e: any) => e.on)).toEqual([false, false, true]);
+		expect((after as any).data.emails.map((e: any) => e.on)).toEqual([false, false, true, false]);
 	});
 });
 
@@ -255,7 +255,7 @@ describe('/unsubscribe/[token]', () => {
 		expect(await L(unsubLoad, { params: { token } })).toMatchObject({ kind: 'ok', data: { kind: 'buying', on: true } });
 		expect((await getEmailPrefs(u.id)).buying).toBe(true);
 		expect(await L(unsubActions.default, { params: { token }, form: {} })).toEqual({ kind: 'ok', data: { done: true } });
-		expect(await getEmailPrefs(u.id)).toEqual({ list: true, buying: false, santa: true });
+		expect(await getEmailPrefs(u.id)).toEqual({ list: true, buying: false, santa: true, price: true });
 	});
 
 	it('404s for a forged link', async () => {

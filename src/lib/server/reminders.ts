@@ -55,9 +55,14 @@ export async function runReminders(baseUrl: string, now = new Date()): Promise<R
 type Links = (userId: string, kind: ReminderKind) => { unsubscribeUrl: string; settingsUrl: string };
 
 /** Users (of `ids`) who've turned this kind off. */
-async function optedOut(ids: string[], kind: ReminderKind): Promise<Set<string>> {
+export async function optedOut(ids: string[], kind: ReminderKind): Promise<Set<string>> {
 	if (!ids.length) return new Set();
-	const col = { list: emailPref.listReminders, buying: emailPref.buyingReminders, santa: emailPref.santaReminders }[kind];
+	const col = {
+		list: emailPref.listReminders,
+		buying: emailPref.buyingReminders,
+		santa: emailPref.santaReminders,
+		price: emailPref.priceAlerts
+	}[kind];
 	const rows = await db
 		.select({ userId: emailPref.userId })
 		.from(emailPref)
@@ -71,7 +76,7 @@ async function claimSlot(kind: ReminderKind, subjectKey: string, userId: string)
 	return res.affectedRows === 1;
 }
 
-async function sendOnce(kind: ReminderKind, subjectKey: string, userId: string, send: () => Promise<void>): Promise<boolean> {
+export async function sendOnce(kind: ReminderKind, subjectKey: string, userId: string, send: () => Promise<void>): Promise<boolean> {
 	if (!(await claimSlot(kind, subjectKey, userId))) return false;
 	try {
 		await send();
@@ -264,6 +269,12 @@ export function startReminders(baseUrl: string, everyMinutes = 60): void {
 				const counts = await runReminders(baseUrl);
 				const total = counts.list + counts.buying + counts.santa;
 				if (total) console.log(`[reminders] sent ${JSON.stringify(counts)}`);
+				// Price-drop checks share the timer and the lock. Imported here to avoid an import cycle.
+				if (process.env.PRICE_ALERTS !== 'off') {
+					const { runPriceChecks } = await import('./priceWatch');
+					const prices = await runPriceChecks(baseUrl);
+					if (prices.drops) console.log(`[prices] ${JSON.stringify(prices)}`);
+				}
 			} finally {
 				await conn.query('SELECT RELEASE_LOCK(?)', [LOCK]);
 			}
