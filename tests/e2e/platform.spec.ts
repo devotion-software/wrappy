@@ -36,4 +36,18 @@ test.describe('platform', () => {
 		await expect(page).toHaveTitle(/Wrappy/);
 		expect(errors).toEqual([]);
 	});
+
+	test('the site can be installed: manifest, icons and an offline page', async ({ page, request }) => {
+		await page.goto('/');
+		const href = await page.locator('link[rel="manifest"]').getAttribute('href');
+		const manifest = await (await request.get(href!)).json();
+		expect(manifest).toMatchObject({ name: 'Wrappy', display: 'standalone', start_url: '/lists' });
+		for (const icon of manifest.icons) {
+			const res = await request.get(icon.src);
+			expect(res.status(), icon.src).toBe(200);
+			expect(res.headers()['content-type']).toBe('image/png');
+		}
+		expect((await request.get('/icons/apple-touch-icon.png')).status()).toBe(200);
+		expect((await request.get('/offline.html')).status()).toBe(200);
+	});
 });
