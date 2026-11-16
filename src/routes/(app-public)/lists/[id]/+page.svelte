@@ -9,6 +9,7 @@
 	import ListSettingsFields from '#lib/components/ListSettingsFields.svelte';
 	import PasteList from '#lib/components/PasteList.svelte';
 	import { CURRENCIES, formatDate, formatPrice, plural } from '#lib/format';
+	import { parsePastedList } from '#lib/pasteList';
 	import { flip, slide } from '#lib/motion';
 
 	let { data, form } = $props();
@@ -76,6 +77,17 @@
 		picked = form?.found?.images?.slice(0, 1) ?? [];
 	});
 	let settingsOpen = $state(false);
+
+	// Pasting several lines into the add input opens the paste-a-list preview instead.
+	let pasteOpen = $state(false);
+	let pasteText = $state('');
+	function onAddPaste(e: ClipboardEvent) {
+		const text = e.clipboardData?.getData('text/plain') ?? '';
+		if (parsePastedList(text).length < 2) return;
+		e.preventDefault();
+		pasteText = text;
+		pasteOpen = true;
+	}
 </script>
 
 <svelte:head><title>{data.list.title} — Wrappy</title></svelte:head>
@@ -255,15 +267,16 @@
 							id="newwish"
 							name="wish"
 							class="line-input dashed add-input"
-							placeholder="Paste a shop link or write an item…"
+							placeholder="Paste a shop link, write an item, or paste a whole list…"
 							autocomplete="off"
+							onpaste={onAddPaste}
 							maxlength="2048"
 						/>
 						<button class="btn btn-dark btn-md" disabled={busy}>{busy ? 'Adding…' : 'Add'}</button>
 					</form>
 				{#if form?.addError}<p class="field-error" role="alert">{form.addError}</p>{/if}
 
-				<PasteList target={data.list.title} />
+				<PasteList target={data.list.title} trigger={false} bind:open={pasteOpen} bind:text={pasteText} />
 
 				{#if data.owned?.library.length}
 					<details class="existing">

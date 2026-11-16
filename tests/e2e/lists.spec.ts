@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { addWishViaUi, createListViaUi, freshEmail, latestEmail, signInViaApi } from './helpers';
+import { addWishViaUi, createListViaUi, freshEmail, latestEmail, signInViaApi, waitForApp } from './helpers';
 
 test.describe('wish lists', () => {
 	test('the owner builds a list, and it shows on their lists page', async ({ page, context }) => {
@@ -17,6 +17,24 @@ test.describe('wish lists', () => {
 		await page.goto('/items');
 		await expect(page.getByText('Hand-knitted scarf')).toBeVisible();
 		await expect(page.getByText('Film camera')).toBeVisible();
+	});
+
+	test('pasting a whole list into the add input previews it, then adds every item', async ({ page, context }) => {
+		await signInViaApi(context);
+		await createListViaUi(page, `Paste ${Date.now()}`);
+		await expect(page.getByRole('button', { name: 'Paste a list' })).toHaveCount(0);
+
+		await waitForApp(page);
+		const input = page.getByLabel('Add an item');
+		await context.grantPermissions(['clipboard-read', 'clipboard-write']);
+		await page.evaluate(() => navigator.clipboard.writeText('- [ ] Cosy socks\n- [ ] A good book £12\n- [ ] Tea'));
+		await input.focus();
+		await page.keyboard.press('ControlOrMeta+V');
+		await expect(input).toHaveValue('');
+		await expect(page.getByText('3 items found')).toBeVisible();
+		await page.getByRole('button', { name: 'Add 3 items' }).click();
+		await expect(page.getByText(/Added 3 items to Paste/)).toBeVisible();
+		for (const t of ['Cosy socks', 'A good book', 'Tea']) await expect(page.getByText(t, { exact: true }).first()).toBeVisible();
 	});
 
 	test('a private list is invisible to strangers and signed-out visitors', async ({ page, context, browser }) => {

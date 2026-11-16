@@ -1,24 +1,30 @@
 <script lang="ts">
-	/** "Paste a list" panel: paste a note or checklist, preview the wishes, add them all. */
+	/**
+	 * "Paste a list" panel: paste a note or checklist, preview the items, add them all.
+	 * With `trigger` it shows its own "Paste a list" button; without, the parent opens it
+	 * (e.g. when a multi-line list is pasted into another input) by setting `text` and `open`.
+	 */
 	import { enhance } from '$app/forms';
 	import Icon from '#lib/components/ui/Icon.svelte';
 	import { MAX_PASTED_WISHES, parsePastedList } from '#lib/pasteList';
 	import { formatPrice, plural } from '#lib/format';
 
 	interface Props {
-		/** Where the wishes go, used in the copy ("to Christmas"). */
+		/** Where the items go, used in the copy ("to Christmas"). */
 		target?: string | null;
 		open?: boolean;
+		text?: string;
+		/** Show the "Paste a list" button that opens the panel. */
+		trigger?: boolean;
 	}
-	let { target = null, open = $bindable(false) }: Props = $props();
+	let { target = null, open = $bindable(false), text = $bindable(''), trigger = true }: Props = $props();
 
-	let text = $state('');
 	let busy = $state(false);
 	let error = $state<string | null>(null);
 	let done = $state<{ added: number; skipped: string[] } | null>(null);
 
-	const wishes = $derived(parsePastedList(text));
-	const tooMany = $derived(wishes.length > MAX_PASTED_WISHES);
+	const items = $derived(parsePastedList(text));
+	const tooMany = $derived(items.length > MAX_PASTED_WISHES);
 	const id = $props.id();
 
 	const submit = () => {
@@ -29,6 +35,7 @@
 			if (result.type === 'success' && result.data?.pasted) {
 				done = result.data.pasted as { added: number; skipped: string[] };
 				text = '';
+				if (!trigger) open = false;
 			} else if (result.type === 'failure') {
 				error = String(result.data?.importError ?? 'Something went wrong. Try again.');
 			}
@@ -38,8 +45,7 @@
 	};
 </script>
 
-<details class="paste" bind:open>
-	<summary class="btn btn-text"><Icon name="list" />Paste a list</summary>
+{#snippet panel()}
 	<form method="POST" action="?/importList" class="panel" use:enhance={submit}>
 		<p class="hand panel-title">Paste a list</p>
 		<p class="copy">
@@ -57,11 +63,11 @@
 			bind:value={text}
 		></textarea>
 
-		{#if wishes.length}
+		{#if items.length}
 			<div class="preview">
-				<p class="label">{plural(wishes.length, 'item')} found</p>
+				<p class="label">{plural(items.length, 'item')} found</p>
 				<ol>
-					{#each wishes.slice(0, MAX_PASTED_WISHES) as w, i (i)}
+					{#each items.slice(0, MAX_PASTED_WISHES) as w, i (i)}
 						<li>
 							<span class="write">{w.title}</span>
 							{#if w.price || w.url}
@@ -86,13 +92,27 @@
 		{/if}
 
 		<div class="actions">
-			<button class="btn btn-dark" disabled={busy || !wishes.length || tooMany}
-				>{busy ? 'Adding…' : wishes.length ? `Add ${plural(wishes.length, 'item')}` : 'Add items'}</button
+			<button class="btn btn-dark" disabled={busy || !items.length || tooMany}
+				>{busy ? 'Adding…' : items.length ? `Add ${plural(items.length, 'item')}` : 'Add items'}</button
 			>
 			<button type="button" class="btn btn-text" onclick={() => (open = false)}>Close</button>
 		</div>
 	</form>
-</details>
+{/snippet}
+
+{#if trigger}
+	<details class="paste" bind:open>
+		<summary class="btn btn-text"><Icon name="list" />Paste a list</summary>
+		{@render panel()}
+	</details>
+{:else if open || done}
+	<div class="paste">
+		{#if open}{@render panel()}{:else if done}<p class="meta ok" role="status">
+				{done.added ? `Added ${plural(done.added, 'item')}${target ? ` to ${target}` : ''}.` : 'Nothing was added.'}
+				{#if done.skipped.length}Left out: {done.skipped.join(' ')}{/if}
+			</p>{/if}
+	</div>
+{/if}
 
 <style>
 	.paste summary {
