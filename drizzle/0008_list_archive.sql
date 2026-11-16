@@ -1,0 +1,1 @@
+ALTER TABLE `list` ADD `archived_at` timestamp(3);

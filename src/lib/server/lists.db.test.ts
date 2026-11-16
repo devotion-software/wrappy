@@ -179,6 +179,15 @@ describe('myLists', () => {
 	it('returns an empty array for someone with no lists', async () => {
 		expect(await myLists((await createUser()).id)).toEqual([]);
 	});
+
+	it('flags archived lists', async () => {
+		const owner = await createUser();
+		const live = await createList(owner);
+		const old = await createList(owner, { archivedAt: new Date() });
+		const cards = await myLists(owner.id);
+		expect(cards.find((c) => c.id === live.id)?.archived).toBe(false);
+		expect(cards.find((c) => c.id === old.id)?.archived).toBe(true);
+	});
 });
 
 describe('friendsLists', () => {
@@ -215,6 +224,14 @@ describe('friendsLists', () => {
 		expect(await friendsLists(me.id, me.email)).toEqual([]);
 	});
 
+	it('leaves out lists their owner has archived', async () => {
+		const me = await createUser();
+		const owner = await createUser();
+		const l = await createList(owner, { archivedAt: new Date() });
+		await share(l, me);
+		expect(await friendsLists(me.id, me.email)).toEqual([]);
+	});
+
 	it('lists a list once even with several reasons to see it', async () => {
 		const me = await createUser();
 		const owner = await createUser();
@@ -226,10 +243,11 @@ describe('friendsLists', () => {
 });
 
 describe('publicListsOf', () => {
-	it('returns only public, non-Santa lists', async () => {
+	it('returns only public, non-Santa, unarchived lists', async () => {
 		const owner = await createUser();
 		const pub = await createList(owner, { visibility: 'public', title: 'Pub' });
 		await createList(owner);
+		await createList(owner, { visibility: 'public', archivedAt: new Date() });
 		const s = await createSanta(owner);
 		const sl = await addSantaMember(s, owner);
 		await db.update(list).set({ visibility: 'public' }).where(eq(list.id, sl.id));

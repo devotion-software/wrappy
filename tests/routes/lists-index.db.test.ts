@@ -25,6 +25,16 @@ describe('/lists', () => {
 		expect(data.friends.map((l: any) => l.id)).toEqual([theirs.id]);
 		expect(data.friends[0].ownerName).toBe(friend.name);
 		expect(data.santas.map((x: any) => x.id)).toEqual([s.id]);
+		expect(data.archived).toEqual([]);
+	});
+
+	it('moves archived lists into their own section', async () => {
+		const me = await createUser();
+		const live = await createList(me);
+		const old = await createList(me, { archivedAt: new Date() });
+		const data = await ok<any>(() => (load as any)(fakeEvent({ user: me })));
+		expect(data.mine.map((l: any) => l.id)).toEqual([live.id]);
+		expect(data.archived.map((l: any) => l.id)).toEqual([old.id]);
 	});
 });
 

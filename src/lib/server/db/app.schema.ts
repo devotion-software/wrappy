@@ -38,6 +38,8 @@ export const list = mysqlTable(
 		shareToken: varchar('share_token', { length: 40 }).unique(),
 		// Set when this is a member's wish list for a Secret Santa exchange.
 		santaId: id('santa_id'),
+		// Set when the owner archives a past list: it leaves their lists page and profile, items stay.
+		archivedAt: timestamp('archived_at', { fsp: 3 }),
 		createdAt: created(),
 		updatedAt: timestamp('updated_at', { fsp: 3 })
 			.defaultNow()

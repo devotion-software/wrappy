@@ -15,7 +15,7 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 		results = await db
 			.select({ name: user.name, username: sql<string>`${user.username}`, lists: sql<number>`count(${list.id})` })
 			.from(user)
-			.innerJoin(list, and(eq(list.ownerId, user.id), eq(list.visibility, 'public'), isNull(list.santaId)))
+			.innerJoin(list, and(eq(list.ownerId, user.id), eq(list.visibility, 'public'), isNull(list.santaId), isNull(list.archivedAt)))
 			.where(
 				and(
 					ne(user.id, me.id),

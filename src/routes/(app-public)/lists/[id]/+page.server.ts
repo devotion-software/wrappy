@@ -13,6 +13,7 @@ import { claimActions } from '#lib/server/claims';
 import { FETCH_LIMIT_MESSAGE, takeFetchBudget } from '#lib/server/rateLimit';
 import { formatPrice } from '#lib/format';
 import { listMeta } from '#lib/meta';
+import { isoDay } from '#lib/server/reminders';
 import type { Actions, PageServerLoad, RequestEvent } from './$types';
 
 const viewerOf = (locals: App.Locals) => (locals.user ? { id: locals.user.id, email: locals.user.email } : null);
@@ -38,7 +39,10 @@ export const load: PageServerLoad = async ({ params, locals, cookies }) => {
 			description: l.description,
 			eventDate: l.eventDate,
 			visibility: l.visibility,
-			santaId: l.santaId
+			santaId: l.santaId,
+			archived: !!l.archivedAt,
+			// The event date has been and gone (dates are stored as UTC days).
+			isPast: !!l.eventDate && l.eventDate < isoDay(new Date())
 		},
 		owner: { id: owner.id, name: owner.name, username: owner.username },
 		items,
@@ -227,6 +231,20 @@ export const actions: Actions = {
 		const input = l.santaId ? { ...parsed.input, visibility: 'private' as const } : parsed.input;
 		await db.update(list).set(input).where(eq(list.id, l.id));
 		return { saved: true };
+	},
+
+	/** Archived lists leave the owner's lists page, their profile and friends' lists. Items stay. */
+	archive: async (event) => {
+		const { l } = await ownerList(event);
+		if (l.santaId) return fail(400, { settingsError: 'Secret Santa lists are tidied up with their exchange.' });
+		await db.update(list).set({ archivedAt: new Date() }).where(eq(list.id, l.id));
+		return { archived: true };
+	},
+
+	unarchive: async (event) => {
+		const { l } = await ownerList(event);
+		await db.update(list).set({ archivedAt: null }).where(eq(list.id, l.id));
+		return { unarchived: true };
 	},
 
 	deleteList: async (event) => {

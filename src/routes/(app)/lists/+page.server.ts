@@ -7,7 +7,8 @@ export const load: PageServerLoad = async ({ locals }) => {
 	const [mine, friends, santas] = await Promise.all([myLists(me.id), friendsLists(me.id, me.email), mySantas(me.id)]);
 	return {
 		// Secret Santa wish lists are managed from the Secret Santa page.
-		mine: mine.filter((l) => !l.santaId),
+		mine: mine.filter((l) => !l.santaId && !l.archived),
+		archived: mine.filter((l) => !l.santaId && l.archived),
 		friends,
 		santas
 	};

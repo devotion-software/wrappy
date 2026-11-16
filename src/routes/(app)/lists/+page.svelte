@@ -42,6 +42,17 @@
 			</div>
 		</section>
 
+		{#if data.archived.length}
+			<details class="archived">
+				<summary class="btn btn-text">Archived lists ({data.archived.length})</summary>
+				<div class="grid">
+					{#each data.archived as card, i (card.id)}
+						<ListCard {card} showSharing index={i} />
+					{/each}
+				</div>
+			</details>
+		{/if}
+
 		<section class="block" id="friends">
 			<h2 class="section-title">Friends' lists</h2>
 			<Sheet margin={false} padding="4px 24px">
@@ -125,6 +136,22 @@
 		display: grid;
 		grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
 		gap: 24px;
+	}
+	.archived {
+		margin-top: -24px;
+	}
+	.archived summary {
+		list-style: none;
+		padding-left: 0;
+		cursor: pointer;
+		color: var(--ink2);
+	}
+	.archived summary::-webkit-details-marker {
+		display: none;
+	}
+	.archived .grid {
+		margin-top: 16px;
+		opacity: 0.85;
 	}
 	.new-tile {
 		display: flex;

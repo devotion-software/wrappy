@@ -140,6 +140,7 @@ export interface ListCard {
 	preview: string[];
 	sharedWith: number;
 	ownerName?: string;
+	archived?: boolean;
 }
 
 async function cardsFor(lists: { id: string }[]): Promise<Map<string, { count: number; preview: string[] }>> {
@@ -191,11 +192,15 @@ export async function myLists(userId: string): Promise<ListCard[]> {
 		santaId: l.santaId,
 		count: cards.get(l.id)?.count ?? 0,
 		preview: cards.get(l.id)?.preview ?? [],
-		sharedWith: (shareN.get(l.id) ?? 0) + (l.shareToken ? (linkN.get(l.id) ?? 0) : 0)
+		sharedWith: (shareN.get(l.id) ?? 0) + (l.shareToken ? (linkN.get(l.id) ?? 0) : 0),
+		archived: !!l.archivedAt
 	}));
 }
 
-/** Other people's lists I've been invited to or have opened (and can still see). Excludes Secret Santa lists. */
+/**
+ * Other people's lists I've been invited to or have opened (and can still see).
+ * Excludes Secret Santa lists and lists their owner has archived.
+ */
 export async function friendsLists(userId: string, email: string): Promise<ListCard[]> {
 	const rows = await db
 		.selectDistinct({ list, ownerName: user.name })
@@ -207,6 +212,7 @@ export async function friendsLists(userId: string, email: string): Promise<ListC
 			and(
 				ne(list.ownerId, userId),
 				isNull(list.santaId),
+				isNull(list.archivedAt),
 				or(
 					sql`${listShare.id} is not null`,
 					and(sql`${listViewer.userId} is not null`, or(eq(list.visibility, 'public'), and(eq(listViewer.viaLink, true), sql`${list.shareToken} is not null`)))
@@ -232,7 +238,7 @@ export async function publicListsOf(ownerId: string): Promise<ListCard[]> {
 	const lists = await db
 		.select()
 		.from(list)
-		.where(and(eq(list.ownerId, ownerId), eq(list.visibility, 'public'), isNull(list.santaId)))
+		.where(and(eq(list.ownerId, ownerId), eq(list.visibility, 'public'), isNull(list.santaId), isNull(list.archivedAt)))
 		.orderBy(desc(list.updatedAt));
 	const cards = await cardsFor(lists);
 	return lists.map((l) => ({

@@ -111,7 +111,9 @@ describe('load', () => {
 			description: 'Hi',
 			eventDate: '2026-12-25',
 			visibility: 'public',
-			santaId: null
+			santaId: null,
+			archived: false,
+			isPast: false
 		});
 		expect(data.owner).toEqual({ id: owner.id, name: owner.name, username: owner.username });
 		expect(data.items.map((i: any) => i.id)).toEqual([it.id]);
@@ -195,6 +197,8 @@ describe('owner-only actions', () => {
 		'reorder',
 		'settings',
 		'deleteList',
+		'archive',
+		'unarchive',
 		'share',
 		'unshare',
 		'newLink',
@@ -707,6 +711,49 @@ describe('claim actions', () => {
 		const guest = await createUser();
 		expect(await act('claim', guest, l, { itemId: it.id })).toEqual({ kind: 'ok', data: { claimed: it.id } });
 		expect(await act('claim', owner, l, { itemId: it.id })).toMatchObject({ kind: 'error', status: 403 });
+	});
+});
+
+describe('archive and unarchive', () => {
+	it('flags a list whose date has passed, and archives and unarchives it', async () => {
+		const owner = await createUser();
+		const l = await createList(owner, { eventDate: '2020-12-25' });
+		const it = await createItem(owner, {}, { lists: [l] });
+		const loadFor = () => ok<any>(() => (load as any)(fakeEvent({ user: owner, params: { id: l.id }, path: `/lists/${l.id}` })));
+		expect((await loadFor()).list).toMatchObject({ isPast: true, archived: false });
+
+		expect(await act('archive', owner, l)).toEqual({ kind: 'ok', data: { archived: true } });
+		expect((await getList(l.id))?.archivedAt).toBeInstanceOf(Date);
+		expect((await loadFor()).list).toMatchObject({ archived: true });
+		// Items stay put, on the list and in the library.
+		expect(await db.select().from(itemList).where(eq(itemList.itemId, it.id))).toHaveLength(1);
+
+		expect(await act('unarchive', owner, l)).toEqual({ kind: 'ok', data: { unarchived: true } });
+		expect((await getList(l.id))?.archivedAt).toBeNull();
+	});
+
+	it('does not call an upcoming or undated list past', async () => {
+		const owner = await createUser();
+		for (const eventDate of ['2999-01-01', null]) {
+			const l = await createList(owner, { eventDate });
+			const data = await ok<any>(() => (load as any)(fakeEvent({ user: owner, params: { id: l.id }, path: `/lists/${l.id}` })));
+			expect(data.list.isPast).toBe(false);
+		}
+	});
+
+	it('refuses to archive a Santa list', async () => {
+		const { member, l } = await santaSetup();
+		expect(await act('archive', member, l)).toMatchObject({ kind: 'fail', status: 400 });
+		expect((await getList(l.id))?.archivedAt).toBeNull();
+	});
+
+	it('still opens an archived list for people it was shared with', async () => {
+		const owner = await createUser();
+		const guest = await createUser();
+		const l = await createList(owner, { archivedAt: new Date() });
+		await share(l, guest);
+		const data = await ok<any>(() => (load as any)(fakeEvent({ user: guest, params: { id: l.id }, path: `/lists/${l.id}` })));
+		expect(data.list.id).toBe(l.id);
 	});
 });
 

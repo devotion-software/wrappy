@@ -131,6 +131,27 @@
 		</div>
 	</div>
 
+	{#if data.isOwner && !isSanta && (data.list.archived || data.list.isPast)}
+		<form
+			method="POST"
+			action={data.list.archived ? '?/unarchive' : '?/archive'}
+			class="archive-note"
+			use:enhance={busyEnhance}
+			in:slide
+		>
+			<Icon name={data.list.archived ? 'archive' : 'calendar'} size={18} />
+			<p>
+				{#if data.list.archived}
+					This list is archived. It's off your lists page and profile, and friends won't see it in their lists.
+				{:else}
+					{formatDate(data.list.eventDate)} has been and gone. Archive this list to tidy it away — your items stay in All
+					my items.
+				{/if}
+			</p>
+			<button class="btn btn-outline" disabled={busy}>{data.list.archived ? 'Unarchive' : 'Archive list'}</button>
+		</form>
+	{/if}
+
 	<div class="with-aside">
 		<Sheet tape margin={50} padding="18px 28px 20px 72px" class="main-col list-sheet">
 			{#if !data.isOwner}
@@ -351,6 +372,11 @@
 							{#if form?.settingsError}<p class="field-error" role="alert">{form.settingsError}</p>{/if}
 							<button class="btn btn-dark" disabled={busy}>Save changes</button>
 						</form>
+						{#if !isSanta && !data.list.archived && !data.list.isPast}
+							<form method="POST" action="?/archive" class="danger" use:enhance={busyEnhance}>
+								<button class="btn btn-text" disabled={busy}>Archive this list</button>
+							</form>
+						{/if}
 						{#if !isSanta}
 							<form
 								method="POST"
@@ -414,6 +440,23 @@
 		font-size: 68px;
 		line-height: 0.95;
 		overflow-wrap: anywhere;
+	}
+	.archive-note {
+		margin: 20px 0 0;
+		padding: 14px 18px;
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: 10px 14px;
+		background: var(--gold-soft);
+		border-radius: 4px;
+		color: var(--ink);
+	}
+	.archive-note p {
+		flex: 1 1 260px;
+		margin: 0;
+		font-size: 15px;
+		line-height: 1.5;
 	}
 	.sub {
 		margin: 10px 0 0;

@@ -57,6 +57,13 @@
       "when": 1794774105650,
       "tag": "0007_reminders",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "5",
+      "when": 1794833561386,
+      "tag": "0008_list_archive",
+      "breakpoints": true
     }
   ]
 }

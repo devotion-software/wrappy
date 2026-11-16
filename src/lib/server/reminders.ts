@@ -93,7 +93,7 @@ async function listReminders(baseUrl: string, now: Date, links: Links): Promise<
 		.select({ list, ownerName: owner.name })
 		.from(list)
 		.innerJoin(owner, eq(owner.id, list.ownerId))
-		.where(and(isNull(list.santaId), isNotNull(list.eventDate), between(list.eventDate, today, furthest)));
+		.where(and(isNull(list.santaId), isNull(list.archivedAt), isNotNull(list.eventDate), between(list.eventDate, today, furthest)));
 
 	let sent = 0;
 	for (const { list: l, ownerName } of lists) {
