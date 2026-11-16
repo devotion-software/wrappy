@@ -1,12 +1,12 @@
-/// <reference lib="webworker" />
 
 /**
  * Minimal service worker: it only serves an offline page when a page can't be loaded.
  * Nothing else is cached, so lists and claims are always fresh from the server.
  */
 import { version } from '$app/env';
+import { self } from '$app/service-worker';
 
-const sw = self as unknown as ServiceWorkerGlobalScope;
+const sw = self;
 const CACHE = `offline-${version}`;
 const OFFLINE = '/offline.html';
 
