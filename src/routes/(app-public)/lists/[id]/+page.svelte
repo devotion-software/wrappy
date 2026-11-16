@@ -510,7 +510,7 @@
 	.candidate.on {
 		outline-color: var(--gold);
 	}
-	.candidate:focus-within {
+	.candidate:has(:focus-visible) {
 		outline: 2px solid var(--gold);
 		outline-offset: 2px;
 	}
