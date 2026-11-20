@@ -8,7 +8,7 @@
 	import SharePanel from '#lib/components/SharePanel.svelte';
 	import ListSettingsFields from '#lib/components/ListSettingsFields.svelte';
 	import PasteList from '#lib/components/PasteList.svelte';
-	import { CURRENCIES, formatDate, formatPrice, plural } from '#lib/format';
+	import { CURRENCIES, formatDate, formatPrice, plural, tiltFor } from '#lib/format';
 	import { parsePastedList } from '#lib/pasteList';
 	import { flip, slide } from '#lib/motion';
 
@@ -26,6 +26,20 @@
 	const byId = $derived(new Map(data.items.map((i) => [i.id, i])));
 	const rows = $derived(order.map((id) => byId.get(id)).filter((i) => !!i));
 	const mostWanted = $derived(data.items.filter((i) => i.mostWanted).length);
+
+	// Occasions: guests say which one a present is for; only unopened ones can be picked.
+	const openOccasions = $derived(data.occasions.filter((o) => !o.opened));
+	const defaultOccasion = $derived(data.suggestedOccasion);
+	const occasionLabel = (id: string | null) => (id && data.occasionNames[id] ? ` · for ${data.occasionNames[id]}` : '');
+	const confirmOpen =
+		(name: string) =>
+		({ cancel }: { cancel: () => void }) => {
+			if (!confirm(`Opened your ${name} presents? You'll see what was bought for ${name}, and this can't be undone.`)) {
+				cancel();
+				return;
+			}
+			return busyEnhance();
+		};
 
 	let dragId = $state<string | null>(null);
 	let armed = $state<string | null>(null);
@@ -121,7 +135,9 @@
 			<p class="sub">
 				{[
 					data.isOwner ? 'Your list' : `${data.owner.name}'s list`,
-					formatDate(data.list.eventDate),
+					data.occasions.length
+						? data.occasions.map((o) => `${o.name} ${formatDate(o.date)}`).join(', ')
+						: formatDate(data.list.eventDate),
 					plural(data.items.length, 'item'),
 					data.santa ? `Secret Santa${data.santa.limit ? `, up to ${data.santa.limit}` : ''}` : null
 				]
@@ -192,6 +208,9 @@
 							signedIn={!!data.user}
 							ownerName={firstName}
 							claimError={form?.claimError?.itemId === item.id ? form.claimError.message : null}
+							occasions={openOccasions}
+							{defaultOccasion}
+							occasionNames={data.occasionNames}
 						>
 							{#snippet dragHandle()}
 								{#if mode === 'owner' && rows.length > 1}
@@ -226,6 +245,49 @@
 					</p>
 				{/each}
 			</div>
+
+			{#if !data.isOwner && !isSanta && data.user}
+				<section class="extras" aria-labelledby="extras-title">
+					<h2 id="extras-title" class="label">Not on the list</h2>
+					<p class="copy">
+						Got {firstName} something that isn't here? Add it so nobody else buys the same thing. {firstName} won't see it.
+					</p>
+					{#each data.extras as x (x.id)}
+						<div class="extra" in:slide out:slide>
+							<Checkbox checked tilt={tiltFor(x.id)} />
+							<span class="write extra-title">{x.title}</span>
+							<span class="meta">{x.mine ? 'from you' : x.byName ? `from ${x.byName}` : 'from someone'}{occasionLabel(x.occasionId)}</span>
+							{#if x.mine}
+								<form method="POST" action="?/removeExtra" use:enhance={busyEnhance}>
+									<input type="hidden" name="extraId" value={x.id} />
+									<button class="btn btn-icon" aria-label="Remove {x.title}" disabled={busy}><Icon name="trash" size={16} /></button>
+								</form>
+							{/if}
+						</div>
+					{/each}
+					<form method="POST" action="?/addExtra" class="extra-add" use:enhance={busyEnhance}>
+						<Icon name="plus" size={18} />
+						<label for="extra-title" class="sr-only">Something you got {firstName} that isn't on the list</label>
+						<input
+							id="extra-title"
+							name="title"
+							class="line-input dashed"
+							maxlength="200"
+							autocomplete="off"
+							placeholder="Something else you got {firstName}…"
+							required
+						/>
+						{#if openOccasions.length > 1}
+							<label for="extra-occ" class="sr-only">Which occasion is it for?</label>
+							<select id="extra-occ" name="occasionId" class="line-input select occ">
+								{#each openOccasions as o (o.id)}<option value={o.id} selected={o.id === defaultOccasion}>for {o.name}</option>{/each}
+							</select>
+						{/if}
+						<button class="btn btn-dark" disabled={busy}>Add</button>
+					</form>
+					{#if form?.extraError}<p class="field-error" role="alert">{form.extraError}</p>{/if}
+				</section>
+			{/if}
 
 			{#if data.isOwner}
 				{#if form?.found}
@@ -350,8 +412,53 @@
 					</Sheet>
 				{/if}
 
+
+				{#if !isSanta}
+					<Sheet margin={false} padding="20px 24px">
+						<h2 class="hand h2">Occasions</h2>
+						<p class="copy">
+							One list for a birthday and Christmas? Add both. Friends say which one each present is for, and you open them
+							one at a time, so your birthday doesn't spoil Christmas.
+						</p>
+						{#each data.occasions as o (o.id)}
+							<div class="occasion" in:slide out:slide>
+								<span class="occ-name"><strong>{o.name}</strong><span class="meta">{formatDate(o.date)}</span></span>
+								{#if o.opened}
+									<span class="meta">opened</span>
+								{:else}
+									<form method="POST" action="?/openOccasion" use:enhance={confirmOpen(o.name)}>
+										<input type="hidden" name="occasionId" value={o.id} />
+										<button class="btn btn-text" disabled={busy}>Opened them</button>
+									</form>
+									{#if openOccasions.length > 1}
+										<form method="POST" action="?/removeOccasion" use:enhance={busyEnhance}>
+											<input type="hidden" name="occasionId" value={o.id} />
+											<button class="btn btn-icon" aria-label="Remove {o.name}" disabled={busy}><Icon name="trash" size={16} /></button>
+										</form>
+									{/if}
+								{/if}
+							</div>
+						{/each}
+						<form method="POST" action="?/addOccasion" class="occ-add" use:enhance={busyEnhance}>
+							<div class="field grow">
+								<label for="occ-name">Occasion</label>
+								<input id="occ-name" name="name" class="line-input" maxlength="80" placeholder="Birthday" required autocomplete="off" />
+							</div>
+							<div class="field">
+								<label for="occ-date">Date</label>
+								<input id="occ-date" name="date" type="date" class="line-input date" required />
+							</div>
+							<button class="btn btn-dark" disabled={busy}>Add occasion</button>
+						</form>
+						{#if form?.occasionError}<p class="field-error" role="alert">{form.occasionError}</p>{/if}
+					</Sheet>
+				{/if}
 				<Sheet margin={false} padding="8px 24px">
-					<div class="setting"><span>Event date</span><strong>{formatDate(data.list.eventDate) ?? 'None'}</strong></div>
+					<div class="setting">
+						<span>Event date</span><strong
+							>{data.occasions.length ? plural(data.occasions.length, 'occasion') : (formatDate(data.list.eventDate) ?? 'None')}</strong
+						>
+					</div>
 					<div class="setting">
 						<span>Who can see it</span><strong
 							>{isSanta ? 'Your Secret Santa' : data.list.visibility === 'public' ? 'Anyone (public)' : 'People you share with'}</strong
@@ -368,7 +475,7 @@
 					{#if settingsOpen}
 						<div transition:slide>
 						<form method="POST" action="?/settings" class="settings" use:enhance={busyEnhance}>
-							<ListSettingsFields values={data.list} hasUsername={data.owned.hasUsername} />
+							<ListSettingsFields values={data.list} hasUsername={data.owned.hasUsername} datesFromOccasions={data.occasions.length > 0} />
 							{#if form?.settingsError}<p class="field-error" role="alert">{form.settingsError}</p>{/if}
 							<button class="btn btn-dark" disabled={busy}>Save changes</button>
 						</form>
@@ -399,7 +506,7 @@
 					<h2 class="hand h2">How this works</h2>
 					<p class="copy">
 						Tap <strong>I'll get it</strong> to reserve a gift so nobody else buys it, then mark it as bought. {firstName} never sees
-						what's been reserved.
+						what's been reserved.{isSanta ? '' : ` Bought something that isn't on the list? Add it under Not on the list.`}
 					</p>
 					{#if !data.user}
 						<a href="/signin?next=/lists/{data.list.id}" class="btn btn-primary btn-md signin">Log in to reserve gifts</a>
@@ -720,6 +827,81 @@
 	}
 	.signin {
 		margin-top: 16px;
+	}
+	.extras {
+		margin-top: 22px;
+		display: flex;
+		flex-direction: column;
+		gap: 6px;
+	}
+	.extras .label {
+		margin: 0;
+	}
+	.extra {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: 6px 14px;
+		padding: 10px 0;
+		border-bottom: 1px solid var(--rule);
+	}
+	.extra-title {
+		flex: 1 1 160px;
+		min-width: 0;
+		font-size: 22px;
+		overflow-wrap: anywhere;
+	}
+	.extra form,
+	.occasion form {
+		display: contents;
+	}
+	.extra-add {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: 10px;
+		color: var(--ink2);
+		padding-top: 6px;
+	}
+	.extra-add input[name='title'] {
+		flex: 1 1 200px;
+		min-width: 0;
+		height: 40px;
+		font-size: 19px;
+	}
+	.occ {
+		height: 40px;
+		font-size: 15px;
+		max-width: 170px;
+	}
+	.occasion {
+		display: flex;
+		align-items: center;
+		gap: 8px;
+		padding: 8px 0;
+		border-bottom: 1px solid var(--rule);
+		font-size: 15px;
+	}
+	.occ-name {
+		flex: 1;
+		min-width: 0;
+		display: flex;
+		flex-direction: column;
+		overflow-wrap: anywhere;
+	}
+	.occ-add {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: flex-end;
+		gap: 12px;
+		padding-top: 14px;
+	}
+	.occ-add .grow {
+		flex: 1 1 120px;
+		min-width: 0;
+	}
+	.occ-add input {
+		font-size: 16px;
 	}
 
 	@media (max-width: 600px) {

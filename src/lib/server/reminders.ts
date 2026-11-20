@@ -9,11 +9,24 @@
  * Each email is recorded in reminder_sent *before* it goes out, so overlapping runs on several
  * instances can't send it twice (the row is removed again if sending fails, to retry next run).
  */
-import { and, eq, inArray, isNotNull, isNull, lt, between } from 'drizzle-orm';
+import { and, eq, inArray, isNotNull, isNull, lt, between, sql } from 'drizzle-orm';
 import { alias } from 'drizzle-orm/mysql-core';
 import type { Pool } from 'mysql2/promise';
 import { db } from './db';
-import { emailPref, item, itemClaim, itemList, list, listShare, listViewer, reminderSent, santa, santaMember, user } from './db/schema';
+import {
+	emailPref,
+	item,
+	itemClaim,
+	itemList,
+	list,
+	listOccasion,
+	listShare,
+	listViewer,
+	reminderSent,
+	santa,
+	santaMember,
+	user
+} from './db/schema';
 import { usersWhoCanSee } from './access';
 import { isFull } from './claimView';
 import { sendBuyingReminderEmail, sendListReminderEmail, sendSantaReminderEmail } from './email';
@@ -100,10 +113,29 @@ async function listReminders(baseUrl: string, now: Date, links: Links): Promise<
 		.from(list)
 		.innerJoin(owner, eq(owner.id, list.ownerId))
 		.where(and(isNull(list.santaId), isNull(list.archivedAt), isNotNull(list.eventDate), between(list.eventDate, today, furthest)));
+	// Lists with occasions get a reminder per occasion instead (their eventDate is just the last one).
+	const occasions = await db
+		.select({ list, ownerName: owner.name, date: listOccasion.occasionDate, name: listOccasion.name })
+		.from(listOccasion)
+		.innerJoin(list, eq(list.id, listOccasion.listId))
+		.innerJoin(owner, eq(owner.id, list.ownerId))
+		.where(and(isNull(list.archivedAt), isNull(listOccasion.openedAt), between(listOccasion.occasionDate, today, furthest)));
+	const withOccasions = new Set(
+		(
+			await db
+				.selectDistinct({ listId: listOccasion.listId })
+				.from(listOccasion)
+				.where(lists.length ? inArray(listOccasion.listId, lists.map((r) => r.list.id)) : sql`false`)
+		).map((r) => r.listId)
+	);
+	const targets = [
+		...lists.filter((r) => !withOccasions.has(r.list.id)).map((r) => ({ ...r, date: r.list.eventDate!, title: r.list.title })),
+		...occasions.map((r) => ({ list: r.list, ownerName: r.ownerName, date: r.date, title: `${r.list.title} (${r.name})` }))
+	];
 
 	let sent = 0;
-	for (const { list: l, ownerName } of lists) {
-		const daysLeft = daysBetween(today, l.eventDate!);
+	for (const { list: l, ownerName, date, title } of targets) {
+		const daysLeft = daysBetween(today, date);
 		// The tightest window it's in, so a list made 2 days out only gets the final reminder.
 		const window = [...LIST_WINDOWS].reverse().find((w) => daysLeft <= w.days)!;
 
@@ -138,14 +170,14 @@ async function listReminders(baseUrl: string, now: Date, links: Links): Promise<
 
 		const people = await db.select({ id: user.id, email: user.email }).from(user).where(inArray(user.id, to));
 		for (const p of people) {
-			const ok = await sendOnce('list', `${l.id}:${l.eventDate}:${window.name}`, p.id, () =>
+			const ok = await sendOnce('list', `${l.id}:${date}:${window.name}`, p.id, () =>
 				sendListReminderEmail({
 					email: p.email,
 					url: `${baseUrl}/lists/${l.id}`,
 					...links(p.id, 'list'),
 					ownerName,
-					listTitle: l.title,
-					when: formatDate(l.eventDate)!,
+					listTitle: title,
+					when: formatDate(date)!,
 					daysLeft,
 					unclaimed
 				})

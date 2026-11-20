@@ -16,12 +16,38 @@
 		claimError?: string | null;
 		/** Drag-and-drop handle (owner mode only). */
 		dragHandle?: import('svelte').Snippet;
+		/** Guests: the list's occasions still to be opened, to say which one a present is for. */
+		occasions?: { id: string; name: string }[];
+		/** Which occasion to suggest (the next one coming up). */
+		defaultOccasion?: string | null;
+		/** Names for occasion ids mentioned on claims. */
+		occasionNames?: Record<string, string>;
 	}
-	let { item, listId, mode, signedIn, ownerName, claimError = null, dragHandle }: Props = $props();
+	let {
+		item,
+		listId,
+		mode,
+		signedIn,
+		ownerName,
+		claimError = null,
+		dragHandle,
+		occasions = [],
+		defaultOccasion = null,
+		occasionNames = {}
+	}: Props = $props();
+	/** Only ask when there's a choice; with one left the server picks it. */
+	const askOccasion = $derived(occasions.length > 1);
+	const forName = (id: string | null | undefined) => (id && occasionNames[id] ? `for ${occasionNames[id]}` : '');
 
 	const claims = $derived(item.claims);
 	const mine = $derived(claims.mine);
 	const others = $derived(claims.others);
+	/** Your present can move between occasions until the one it's for has been opened. */
+	const canMoveMine = $derived(
+		askOccasion &&
+			!!mine &&
+			(!mine.occasionId || occasions.some((o) => o.id === mine.occasionId) || !occasionNames[mine.occasionId])
+	);
 	const group = $derived(claims.group);
 	const single = $derived(claims.quantity === 1 && !group);
 	const money = (v: string | null | undefined) => formatPrice(v ?? '0', item.currency) ?? '';
@@ -53,7 +79,8 @@
 			// One claimer, or the owner's revealed (bought) ones: say who where we can.
 			const named = others.filter((c) => c.byName).map((c) => c.byName);
 			const verb = others[0].status === 'bought' ? 'bought' : 'reserved';
-			if (single) return named.length ? `${verb} by ${named[0]}` : verb;
+			const occ = mode === 'guest' ? forName(others[0].occasionId) : '';
+			if (single) return [named.length ? `${verb} by ${named[0]}` : verb, occ].filter(Boolean).join(' ');
 			return `bought by ${named.join(', ')}`;
 		}
 		const taken = others.length + (mine ? 1 : 0);
@@ -133,6 +160,12 @@
 						bind:value={amount}
 						autocomplete="off"
 					/>
+					{#if askOccasion}
+						<label for="occ-chip-{item.id}" class="sr-only">Which occasion is it for?</label>
+						<select id="occ-chip-{item.id}" name="occasionId" class="line-input occ">
+							{#each occasions as o (o.id)}<option value={o.id} selected={o.id === defaultOccasion}>for {o.name}</option>{/each}
+						</select>
+					{/if}
 					<button class="btn btn-outline" disabled={pending || !amount.trim()}>Chip in</button>
 				</form>
 			{:else}
@@ -143,6 +176,12 @@
 			{#if signedIn}
 				<form method="POST" action="?/claim" use:enhance={submit}>
 					<input type="hidden" name="itemId" value={item.id} />
+					{#if askOccasion}
+						<label for="occ-{item.id}" class="sr-only">Which occasion is it for?</label>
+						<select id="occ-{item.id}" name="occasionId" class="line-input occ">
+							{#each occasions as o (o.id)}<option value={o.id} selected={o.id === defaultOccasion}>for {o.name}</option>{/each}
+						</select>
+					{/if}
 					<button class="btn btn-outline" disabled={pending}>I'll get it</button>
 				</form>
 			{:else}
@@ -150,6 +189,24 @@
 			{/if}
 		{:else if mine?.status === 'buying'}
 			<span class="note" in:writeIn>{group ? `you're chipping in ${money(mine.amount)}` : "you're getting this"}</span>
+			{#if mine && canMoveMine}
+				<form method="POST" action="?/setOccasion" use:enhance={submit}>
+					<input type="hidden" name="itemId" value={item.id} />
+					<label for="occ-mine-{item.id}" class="sr-only">Which occasion is it for?</label>
+					<select
+						id="occ-mine-{item.id}"
+						name="occasionId"
+						class="line-input occ"
+						disabled={pending}
+						onchange={(e) => (e.currentTarget as HTMLSelectElement).form?.requestSubmit()}
+					>
+						{#if !occasions.some((o) => o.id === mine.occasionId)}<option value="" selected disabled>which occasion?</option>{/if}
+						{#each occasions as o (o.id)}<option value={o.id} selected={o.id === mine.occasionId}>for {o.name}</option>{/each}
+					</select>
+				</form>
+			{:else if mine?.occasionId && forName(mine.occasionId)}
+				<span class="note">{forName(mine.occasionId)}</span>
+			{/if}
 			<form method="POST" action="?/bought" use:enhance={submit}>
 				<input type="hidden" name="itemId" value={item.id} />
 				<button class="btn btn-primary" disabled={pending}>Mark as bought</button>
@@ -160,6 +217,24 @@
 			</form>
 		{:else if mine}
 			<span class="note" in:writeIn>{group ? `you put in ${money(mine.amount)}` : 'bought by you'}</span>
+			{#if mine && canMoveMine}
+				<form method="POST" action="?/setOccasion" use:enhance={submit}>
+					<input type="hidden" name="itemId" value={item.id} />
+					<label for="occ-mine-{item.id}" class="sr-only">Which occasion is it for?</label>
+					<select
+						id="occ-mine-{item.id}"
+						name="occasionId"
+						class="line-input occ"
+						disabled={pending}
+						onchange={(e) => (e.currentTarget as HTMLSelectElement).form?.requestSubmit()}
+					>
+						{#if !occasions.some((o) => o.id === mine.occasionId)}<option value="" selected disabled>which occasion?</option>{/if}
+						{#each occasions as o (o.id)}<option value={o.id} selected={o.id === mine.occasionId}>for {o.name}</option>{/each}
+					</select>
+				</form>
+			{:else if mine?.occasionId && forName(mine.occasionId)}
+				<span class="note">{forName(mine.occasionId)}</span>
+			{/if}
 			<form method="POST" action="?/unclaim" use:enhance={submit}>
 				<input type="hidden" name="itemId" value={item.id} />
 				<button class="btn btn-text" disabled={pending}>Undo</button>
@@ -176,6 +251,12 @@
 		display: flex;
 		align-items: center;
 		gap: 8px;
+	}
+	.occ {
+		height: 40px;
+		font-family: var(--font-ui);
+		font-size: 15px;
+		max-width: 170px;
 	}
 	.amount {
 		width: 72px;

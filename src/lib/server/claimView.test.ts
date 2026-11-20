@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { isFull, summariseClaims, viewClaim, type ClaimContext, type RawClaim } from './claimView';
+import { isFull, revealedToOwner, summariseClaims, viewClaim, type ClaimContext, type RawClaim } from './claimView';
 
 const owner = 'owner';
 const sam = 'sam';
@@ -78,8 +78,8 @@ describe('summariseClaims', () => {
 		expect(sum([buying, ann], 2)).toEqual({
 			mine: null,
 			others: [
-				{ status: 'buying', byName: 'Sam' },
-				{ status: 'bought', byName: 'Ann' }
+				{ status: 'buying', byName: 'Sam', occasionId: null },
+				{ status: 'bought', byName: 'Ann', occasionId: null }
 			],
 			quantity: 2,
 			full: true,
@@ -114,7 +114,7 @@ describe('group gifts', () => {
 	it('shows guests the total and each amount', () => {
 		expect(summariseClaims([sam20], gift, false, () => ctx())).toEqual({
 			mine: null,
-			others: [{ status: 'buying', byName: 'Sam', amount: '20.00' }],
+			others: [{ status: 'buying', byName: 'Sam', amount: '20.00', occasionId: null }],
 			quantity: 1,
 			full: false,
 			group: { target: '80.00', pledged: '20.00' }
@@ -130,5 +130,36 @@ describe('group gifts', () => {
 		const v = summariseClaims([sam20, ann60], gift, true, () => ctx({ viewerId: owner, revealedGiverIds: new Set([sam, 'ann']) }));
 		expect(v).toEqual({ mine: null, others: [{ status: 'bought', byName: 'Ann' }], quantity: 1, full: false, group: { target: '80.00', pledged: null } });
 		expect(JSON.stringify(v)).not.toContain('60');
+	});
+});
+
+describe('occasions', () => {
+	const birthday = 'occ-bday';
+	const xmas = 'occ-xmas';
+	const forBday: RawClaim = { userId: sam, status: 'bought', name: 'Sam', occasionId: birthday };
+	const forXmas: RawClaim = { userId: sam, status: 'bought', name: 'Sam', occasionId: xmas };
+
+	it('reveals an occasion present when its occasion is opened, not by "received from"', () => {
+		expect(revealedToOwner(forBday, new Set([sam]), new Set())).toBe(false);
+		expect(revealedToOwner(forBday, new Set(), new Set([birthday]))).toBe(true);
+		expect(revealedToOwner({ userId: sam }, new Set([sam]), new Set([birthday]))).toBe(true);
+		expect(revealedToOwner({ userId: sam }, new Set(), new Set([birthday]))).toBe(false);
+	});
+
+	it('opening the birthday does not spoil Christmas, even after "received from"', () => {
+		const c = ctx({ viewerId: owner, revealedGiverIds: new Set([sam]), openedOccasionIds: new Set([birthday]) });
+		expect(viewClaim(forBday, c)).toEqual({ status: 'bought', mine: false, byName: 'Sam' });
+		expect(viewClaim(forXmas, c)).toBeNull();
+		expect(viewClaim({ ...forBday, status: 'buying' }, c)).toBeNull();
+	});
+
+	it('tells guests which occasion, but not the owner', () => {
+		const target = { quantity: 1, groupGift: false, price: null };
+		expect(summariseClaims([forXmas], target, false, () => ctx()).others).toEqual([{ status: 'bought', byName: 'Sam', occasionId: xmas }]);
+		expect(summariseClaims([forXmas], target, false, () => ctx({ viewerId: sam })).mine).toEqual({ status: 'bought', occasionId: xmas });
+		const v = summariseClaims([forBday], target, true, () =>
+			ctx({ viewerId: owner, openedOccasionIds: new Set([birthday]) })
+		);
+		expect(v.others).toEqual([{ status: 'bought', byName: 'Sam' }]);
 	});
 });

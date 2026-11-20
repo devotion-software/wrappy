@@ -64,7 +64,7 @@ describe('guest item page', () => {
 	});
 
 	it('offers the claim actions', async () => {
-		expect(Object.keys(actions).sort()).toEqual(['bought', 'chipIn', 'claim', 'unclaim']);
+		expect(Object.keys(actions).sort()).toEqual(['bought', 'chipIn', 'claim', 'setOccasion', 'unclaim']);
 		const owner = await createUser();
 		const l = await createList(owner, { visibility: 'public' });
 		const it = await createItem(owner, {}, { lists: [l] });

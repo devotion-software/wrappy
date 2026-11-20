@@ -54,6 +54,9 @@
 					signedIn={!!data.user}
 					ownerName={firstName}
 					claimError={form?.claimError?.message ?? null}
+					occasions={data.occasions}
+					defaultOccasion={data.suggestedOccasion}
+					occasionNames={data.occasionNames}
 				/>
 			</div>
 		</Sheet>

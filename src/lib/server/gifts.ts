@@ -1,7 +1,21 @@
 import { error, fail, type RequestEvent } from '@sveltejs/kit';
 import { and, asc, eq, inArray, sql } from 'drizzle-orm';
 import { db } from './db';
-import { giftAttribution, giftContact, giftThanks, item, itemClaim, itemImage, receivedFrom, receivedGift, user } from './db/schema';
+import {
+	giftAttribution,
+	giftContact,
+	giftThanks,
+	item,
+	itemClaim,
+	itemImage,
+	list,
+	listExtra,
+	receivedFrom,
+	receivedGift,
+	user
+} from './db/schema';
+import { revealedToOwner } from './claimView';
+import { occasionNames, openedOccasions } from './occasions';
 import { knownPeople } from './lists';
 import { newId } from './ids';
 import { imageUrl } from '#lib/images';
@@ -26,6 +40,15 @@ export interface GiftFromList {
 	/** True when the owner reassigned it away from the person who claimed it. */
 	reassigned: boolean;
 }
+/** Something a guest bought that wasn't on the list (list_extra), once revealed. Read-only for the owner. */
+export interface ExtraGift {
+	kind: 'extra';
+	id: string;
+	title: string;
+	giverId: string;
+	/** The occasion it was for, if any. */
+	occasion: string | null;
+}
 export interface NotedGift {
 	kind: 'noted';
 	id: string;
@@ -43,14 +66,26 @@ export async function revealedGivers(ownerId: string): Promise<string[]> {
  * Every present the owner can see, grouped later by person:
  *  - wishes marked BOUGHT on their lists, by someone they've marked received from
  *    ("buying" is never revealed), or that they've already reassigned;
- *  - presents they noted themselves.
+ *  - presents they noted themselves;
+ *  - things guests said they bought that weren't on the list, revealed like bought wishes.
+ * A present for one of a list's occasions is revealed when that occasion is opened instead of by
+ * "received from" (claimView.revealedToOwner).
  * The owner's reassignments (gift_attribution) decide who a bought wish is shown as from.
  */
-export async function allReceived(ownerId: string): Promise<{ fromLists: GiftFromList[]; noted: NotedGift[] }> {
-	const [revealed, bought, attributions, noted] = await Promise.all([
+export async function allReceived(
+	ownerId: string
+): Promise<{ fromLists: GiftFromList[]; noted: NotedGift[]; extras: ExtraGift[] }> {
+	const [revealed, bought, attributions, noted, extras] = await Promise.all([
 		revealedGivers(ownerId),
 		db
-			.select({ itemId: item.id, title: item.title, price: item.price, currency: item.currency, claimerId: itemClaim.userId })
+			.select({
+				itemId: item.id,
+				title: item.title,
+				price: item.price,
+				currency: item.currency,
+				claimerId: itemClaim.userId,
+				occasionId: itemClaim.occasionId
+			})
 			.from(itemClaim)
 			.innerJoin(item, eq(item.id, itemClaim.itemId))
 			.where(and(eq(item.ownerId, ownerId), eq(itemClaim.status, 'bought')))
@@ -68,13 +103,23 @@ export async function allReceived(ownerId: string): Promise<{ fromLists: GiftFro
 			.select({ id: receivedGift.id, title: receivedGift.title, giverId: receivedGift.giverId, contactId: receivedGift.contactId })
 			.from(receivedGift)
 			.where(eq(receivedGift.ownerId, ownerId))
-			.orderBy(asc(receivedGift.createdAt))
+			.orderBy(asc(receivedGift.createdAt)),
+		db
+			.select({ id: listExtra.id, title: listExtra.title, userId: listExtra.userId, occasionId: listExtra.occasionId })
+			.from(listExtra)
+			.innerJoin(list, eq(list.id, listExtra.listId))
+			.where(eq(list.ownerId, ownerId))
+			.orderBy(asc(listExtra.createdAt))
 	]);
 
 	const revealedSet = new Set(revealed);
+	const occasionIds = [...bought.map((b) => b.occasionId), ...extras.map((e) => e.occasionId)];
+	const [opened, names] = await Promise.all([openedOccasions(occasionIds), occasionNames(occasionIds)]);
 	const key = (g: { itemId: string; claimerId: string }) => `${g.itemId}:${g.claimerId}`;
 	const attrBy = new Map(attributions.map((a) => [key(a), (a.giverId ?? a.contactId)!]));
-	const visible = bought.filter((b) => revealedSet.has(b.claimerId) || attrBy.has(key(b)));
+	const visible = bought.filter(
+		(b) => revealedToOwner({ userId: b.claimerId, occasionId: b.occasionId }, revealedSet, opened) || attrBy.has(key(b))
+	);
 
 	const ids = visible.map((g) => g.itemId);
 	const covers = ids.length
@@ -103,7 +148,16 @@ export async function allReceived(ownerId: string): Promise<{ fromLists: GiftFro
 				reassigned: shownAs !== b.claimerId
 			};
 		}),
-		noted: noted.map((n) => ({ kind: 'noted', id: n.id, title: n.title, giverId: (n.giverId ?? n.contactId)! }))
+		noted: noted.map((n) => ({ kind: 'noted', id: n.id, title: n.title, giverId: (n.giverId ?? n.contactId)! })),
+		extras: extras
+			.filter((e) => revealedToOwner(e, revealedSet, opened))
+			.map((e) => ({
+				kind: 'extra',
+				id: e.id,
+				title: e.title,
+				giverId: e.userId,
+				occasion: e.occasionId ? (names.get(e.occasionId) ?? null) : null
+			}))
 	};
 }
 

@@ -66,6 +66,8 @@ export async function signInViaApi(context: BrowserContext, opts: { email?: stri
 /** Create a list through the UI and return its id (the page ends on the new list). */
 export async function createListViaUi(page: Page, title: string, visibility: 'private' | 'public' = 'private') {
 	await page.goto('/lists/new');
+	// Filling before the page hydrates can lose the text, so wait for the app.
+	await waitForApp(page);
 	await page.getByLabel('List name').fill(title);
 	if (visibility === 'public') await page.locator('input[name="visibility"][value="public"]').check();
 	await page.getByRole('button', { name: 'Create list' }).click();

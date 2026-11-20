@@ -2,8 +2,9 @@
  * The single place that decides what a viewer may learn about an item's claim.
  *
  * Rules (see Duet "Allow other users to mark items as bought or not…"):
- *  - The list owner NEVER sees a claim, unless they have marked "received from" the
- *    person who claimed it AND that claim is "bought". "Buying" is never revealed.
+ *  - The list owner NEVER sees a claim unless it is "bought" AND revealed: a claim for one of
+ *    the list's occasions is revealed when the owner opens that occasion; any other claim when
+ *    the owner marks "received from" its claimer. "Buying" is never revealed.
  *  - The claimer sees their own claim.
  *  - Everyone else sees that the item is taken, with the claimer's name only when
  *    the claimer can also see the list being viewed.
@@ -21,6 +22,20 @@ export interface RawClaim {
 	name: string;
 	/** Group gifts: how much they're chipping in. */
 	amount?: string | null;
+	/** The occasion (list_occasion) it's for, if the list has any. */
+	occasionId?: string | null;
+}
+
+/**
+ * Has the owner revealed this bought present? Occasion presents wait for their occasion to be
+ * opened, so "received from" Mum after a birthday doesn't spoil what she got for Christmas.
+ */
+export function revealedToOwner(
+	g: { userId: string; occasionId?: string | null },
+	revealedGiverIds: ReadonlySet<string>,
+	openedOccasionIds: ReadonlySet<string>
+): boolean {
+	return g.occasionId ? openedOccasionIds.has(g.occasionId) : revealedGiverIds.has(g.userId);
 }
 
 /** What decides whether an item can take more claims. */
@@ -53,6 +68,8 @@ export interface ClaimContext {
 	ownerId: string;
 	/** Givers the owner has marked as "received from". */
 	revealedGiverIds: ReadonlySet<string>;
+	/** Occasions the owner has opened. */
+	openedOccasionIds?: ReadonlySet<string>;
 	/** Whether the claimer can see the list currently being viewed. */
 	claimerCanSeeList: boolean;
 }
@@ -66,7 +83,7 @@ export function viewClaim(claim: RawClaim | null | undefined, ctx: ClaimContext)
 	if (!claim) return null;
 
 	if (ctx.viewerId === ctx.ownerId) {
-		if (claim.status === 'bought' && ctx.revealedGiverIds.has(claim.userId)) {
+		if (claim.status === 'bought' && revealedToOwner(claim, ctx.revealedGiverIds, ctx.openedOccasionIds ?? new Set())) {
 			return { status: 'bought', mine: false, byName: claim.name };
 		}
 		return null;
@@ -82,9 +99,12 @@ export function viewClaim(claim: RawClaim | null | undefined, ctx: ClaimContext)
 /** Everything a viewer may know about who's getting an item (it can be wanted more than once). */
 export interface ItemClaims {
 	/** The viewer's own claim (with what they're chipping in, for a group gift). */
-	mine: { status: ClaimStatus; amount?: string | null } | null;
-	/** Other people's claims the viewer is allowed to know about (each passed through viewClaim). */
-	others: { status: ClaimStatus; byName: string | null; amount?: string | null }[];
+	mine: { status: ClaimStatus; amount?: string | null; occasionId: string | null } | null;
+	/**
+	 * Other people's claims the viewer is allowed to know about (each passed through viewClaim),
+	 * with the occasion they're for (guests only).
+	 */
+	others: { status: ClaimStatus; byName: string | null; amount?: string | null; occasionId?: string | null }[];
 	/** How many the owner wants; null means any number. */
 	quantity: number | null;
 	/**
@@ -117,8 +137,15 @@ export function summariseClaims(
 		if (!v) continue;
 		// Amounts are for fellow givers only, never the owner.
 		const amount = group && !isOwner ? (c.amount ?? null) : undefined;
-		if (v.mine) mine = { status: v.status, ...(amount !== undefined ? { amount } : {}) };
-		else others.push({ status: v.status, byName: v.byName, ...(amount !== undefined ? { amount } : {}) });
+		if (v.mine) mine = { status: v.status, occasionId: c.occasionId ?? null, ...(amount !== undefined ? { amount } : {}) };
+		else
+			others.push({
+				status: v.status,
+				byName: v.byName,
+				...(amount !== undefined ? { amount } : {}),
+				// Fellow guests see which occasion it's for; the owner doesn't need it.
+				...(isOwner ? {} : { occasionId: c.occasionId ?? null })
+			});
 	}
 	return {
 		mine,

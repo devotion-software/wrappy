@@ -11,7 +11,7 @@
 
 	let { data, form } = $props();
 	const first = $derived(data.person.name.split(' ')[0]);
-	const total = $derived(data.fromLists.length + data.noted.length);
+	const total = $derived(data.fromLists.length + data.noted.length + data.extras.length);
 	let editing = $state(false);
 </script>
 
@@ -76,6 +76,19 @@
 						<input type="hidden" name="giftId" value={g.id} />
 						<button class="btn btn-icon" aria-label="Remove {g.title}"><Icon name="trash" size={16} /></button>
 					</form>
+				</div>
+			{/each}
+		{/if}
+
+		{#if data.extras.length}
+			<h2 class="label">Not on your lists</h2>
+			{#each data.extras as g (g.id)}
+				<div class="row">
+					<Checkbox checked tilt={tiltFor(g.id)} />
+					<span class="title-wrap">
+						<span class="write title">{g.title}</span>
+						<span class="meta">{first} let your other guests know{g.occasion ? ` · for ${g.occasion}` : ''}</span>
+					</span>
 				</div>
 			{/each}
 		{/if}

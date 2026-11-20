@@ -2,8 +2,10 @@
 	interface Props {
 		values?: { title?: string; description?: string | null; eventDate?: string | null; visibility?: string };
 		hasUsername?: boolean;
+		/** The list has occasions, which set its date instead. */
+		datesFromOccasions?: boolean;
 	}
-	let { values = {}, hasUsername = true }: Props = $props();
+	let { values = {}, hasUsername = true, datesFromOccasions = false }: Props = $props();
 </script>
 
 <div class="field">
@@ -14,10 +16,12 @@
 	<label for="description">Note for friends <span class="opt">(optional)</span></label>
 	<textarea id="description" name="description" class="line-input area" maxlength="2000" rows="2" placeholder="Sizes, colours, anything that helps">{values.description ?? ''}</textarea>
 </div>
-<div class="field">
-	<label for="eventDate">Event date <span class="opt">(optional)</span></label>
-	<input id="eventDate" name="eventDate" type="date" class="line-input date" value={values.eventDate ?? ''} />
-</div>
+{#if !datesFromOccasions}
+	<div class="field">
+		<label for="eventDate">Event date <span class="opt">(optional)</span></label>
+		<input id="eventDate" name="eventDate" type="date" class="line-input date" value={values.eventDate ?? ''} />
+	</div>
+{/if}
 <fieldset class="field vis">
 	<legend class="label">Who can see it</legend>
 	<label class="radio">

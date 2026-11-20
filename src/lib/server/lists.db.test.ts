@@ -34,7 +34,7 @@ const claimOf = (v: ListItemView) =>
 	v.claims.mine
 		? { status: v.claims.mine.status, mine: true, byName: null }
 		: v.claims.others[0]
-			? { ...v.claims.others[0], mine: false }
+			? { status: v.claims.others[0].status, byName: v.claims.others[0].byName, mine: false }
 			: null;
 
 describe('loadListItems', () => {

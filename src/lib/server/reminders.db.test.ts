@@ -8,7 +8,8 @@ vi.mock('#lib/server/email', () => ({
 }));
 
 import { db } from './db';
-import { itemClaim } from './db/schema';
+import { itemClaim, list, listOccasion } from './db/schema';
+import { newId } from './ids';
 import { daysBetween, runReminders } from './reminders';
 import { readUnsubscribeToken, setEmailPrefs, unsubscribeToken } from './emailPrefs';
 import { sendBuyingReminderEmail, sendListReminderEmail, sendSantaReminderEmail } from '#lib/server/email';
@@ -85,6 +86,23 @@ describe('list reminders', () => {
 		]);
 		expect(sentTo(listMail, s.invited.email)).toHaveLength(1);
 		for (const u of [s.owner, s.claimer, s.quiet]) expect(sentTo(listMail, u.email)).toEqual([]);
+	});
+
+	it('sends one reminder per occasion on a list with several, named after the occasion', async () => {
+		const s = await scene(30);
+		// Birthday in 10 days, Christmas in 30 (the list date follows the last one).
+		await db.insert(listOccasion).values([
+			{ id: newId(), listId: s.l.id, name: 'Birthday', occasionDate: inDays(10) },
+			{ id: newId(), listId: s.l.id, name: 'Christmas', occasionDate: inDays(30) }
+		]);
+		await db.update(list).set({ title: 'Meg', eventDate: inDays(30) }).where(eq(list.id, s.l.id));
+		await runReminders(BASE, NOW);
+		expect(sentTo(listMail, s.viewer.email)).toEqual([expect.objectContaining({ listTitle: 'Meg (Birthday)', daysLeft: 10 })]);
+		// An occasion that's been opened gets no reminder.
+		listMail.mockClear();
+		await db.update(listOccasion).set({ openedAt: new Date() }).where(eq(listOccasion.listId, s.l.id));
+		await runReminders(BASE, new Date(NOW.getTime() + 25 * DAY));
+		expect(sentTo(listMail, s.viewer.email)).toEqual([]);
 	});
 
 	it('counts an item wanted more than once as open until every one is claimed', async () => {

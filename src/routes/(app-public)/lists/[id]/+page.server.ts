@@ -10,6 +10,8 @@ import { createItem, importImages, importPastedList, parseItemForm, santaPricePr
 import { fetchLinkMeta, looksLikeUrl, normaliseUrl } from '#lib/server/linkFetch';
 import { sendListInviteEmail } from '#lib/server/email';
 import { claimActions } from '#lib/server/claims';
+import { guestChoices, listOccasions, occasionActions, occasionNames } from '#lib/server/occasions';
+import { extraActions, loadExtras } from '#lib/server/extras';
 import { FETCH_LIMIT_MESSAGE, takeFetchBudget } from '#lib/server/rateLimit';
 import { formatPrice, toCurrency } from '#lib/format';
 import { listMeta } from '#lib/meta';
@@ -24,13 +26,23 @@ export const load: PageServerLoad = async ({ params, locals, cookies }) => {
 	const l = access.list;
 	const viewerId = locals.user?.id ?? null;
 
-	const [[owner], items, santaRow] = await Promise.all([
+	const [[owner], items, santaRow, occasions, extras] = await Promise.all([
 		db.select({ id: user.id, name: user.name, username: user.username }).from(user).where(eq(user.id, l.ownerId)),
 		loadListItems(l, viewerId),
 		l.santaId
 			? db.select().from(santa).where(eq(santa.id, l.santaId)).then((r) => r[0] ?? null)
-			: Promise.resolve(null)
+			: Promise.resolve(null),
+		l.santaId ? Promise.resolve([]) : listOccasions(l.id),
+		loadExtras(l, viewerId)
 	]);
+
+	// Names for every occasion a guest might see mentioned (an item can carry another list's occasion).
+	const names = access.isOwner
+		? new Map<string, string>()
+		: await occasionNames([
+				...items.flatMap((i) => [i.claims.mine?.occasionId, ...i.claims.others.map((o) => o.occasionId)]),
+				...extras.map((e) => e.occasionId)
+			]);
 
 	const base = {
 		list: {
@@ -47,6 +59,10 @@ export const load: PageServerLoad = async ({ params, locals, cookies }) => {
 		owner: { id: owner.id, name: owner.name, username: owner.username },
 		items,
 		isOwner: access.isOwner,
+		occasions,
+		suggestedOccasion: guestChoices(occasions, isoDay(new Date())).suggested,
+		occasionNames: Object.fromEntries(names),
+		extras,
 		santa: santaRow
 			? { id: santaRow.id, name: santaRow.name, limit: formatPrice(santaRow.priceLimit, santaRow.currency) }
 			: null,
@@ -228,7 +244,9 @@ export const actions: Actions = {
 		const { l } = await ownerList(event);
 		const parsed = parseListForm(await event.request.formData());
 		if ('error' in parsed) return fail(400, { settingsError: parsed.error });
-		const input = l.santaId ? { ...parsed.input, visibility: 'private' as const } : parsed.input;
+		let input = l.santaId ? { ...parsed.input, visibility: 'private' as const } : parsed.input;
+		// With occasions, the list's date follows the last one (see occasions.syncEventDate).
+		if ((await listOccasions(l.id)).length) input = { ...input, eventDate: l.eventDate };
 		await db.update(list).set(input).where(eq(list.id, l.id));
 		return { saved: true };
 	},
@@ -316,6 +334,10 @@ export const actions: Actions = {
 		return { linkChanged: true };
 	},
 
-	// ── Guests: claiming ──────────────────────────────────────────────────────
-	...claimActions
+	// ── Owner: occasions ──────────────────────────────────────────────────────
+	...occasionActions,
+
+	// ── Guests: claiming, and presents that aren't on the list ────────────────
+	...claimActions,
+	...extraActions
 };

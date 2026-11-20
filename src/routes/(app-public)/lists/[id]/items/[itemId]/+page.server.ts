@@ -6,6 +6,8 @@ import { getListAccess } from '#lib/server/access';
 import { loadListItems } from '#lib/server/lists';
 import { itemDetail } from '#lib/server/items';
 import { claimActions } from '#lib/server/claims';
+import { guestChoices, listOccasions, occasionNames } from '#lib/server/occasions';
+import { isoDay } from '#lib/server/reminders';
 import type { Actions, PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async ({ params, locals, cookies }) => {
@@ -16,16 +18,22 @@ export const load: PageServerLoad = async ({ params, locals, cookies }) => {
 
 	const view = (await loadListItems(access.list, viewer?.id ?? null)).find((i) => i.id === params.itemId);
 	if (!view) error(404, 'This item is no longer on the list.');
-	const [{ links, images }, [owner]] = await Promise.all([
+	const [{ links, images }, [owner], occasions, names] = await Promise.all([
 		itemDetail(view.id),
-		db.select({ name: user.name }).from(user).where(eq(user.id, access.list.ownerId))
+		db.select({ name: user.name }).from(user).where(eq(user.id, access.list.ownerId)),
+		access.list.santaId ? Promise.resolve([]) : listOccasions(access.list.id),
+		occasionNames([view.claims.mine?.occasionId, ...view.claims.others.map((o) => o.occasionId)])
 	]);
+	const choices = guestChoices(occasions, isoDay(new Date()));
 	return {
 		list: { id: access.list.id, title: access.list.title },
 		ownerName: owner.name,
 		item: view,
 		links: links.map((l) => ({ id: l.id, url: l.url, label: l.label })),
-		images: images.map((i) => ({ id: i.id, storageKey: i.storageKey, alt: i.alt }))
+		images: images.map((i) => ({ id: i.id, storageKey: i.storageKey, alt: i.alt })),
+		occasions: choices.open.map((o) => ({ id: o.id, name: o.name })),
+		suggestedOccasion: choices.suggested,
+		occasionNames: Object.fromEntries(names)
 	};
 };
 

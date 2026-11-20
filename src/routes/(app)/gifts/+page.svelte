@@ -6,13 +6,14 @@
 	import Avatar from '#lib/components/ui/Avatar.svelte';
 	import AddGiftForm from '#lib/components/AddGiftForm.svelte';
 	import ThankedToggle from '#lib/components/ThankedToggle.svelte';
-	import { plural, tiltFor } from '#lib/format';
+	import { formatDate, plural, tiltFor } from '#lib/format';
 
 	let { data, form } = $props();
 	const isRevealed = (id: string) => data.revealed.includes(id);
 	const giftsFrom = (id: string) => [
 		...data.fromLists.filter((g) => g.giverId === id).map((g) => g.title),
-		...data.noted.filter((g) => g.giverId === id).map((g) => g.title)
+		...data.noted.filter((g) => g.giverId === id).map((g) => g.title),
+		...data.extras.filter((g) => g.giverId === id).map((g) => g.title)
 	];
 	const anyLeft = $derived(data.people.some((p) => !isRevealed(p.id)));
 	const isThanked = (id: string) => data.thanked.includes(id);
@@ -26,9 +27,14 @@
 		(who: string): SubmitFunction =>
 		({ cancel }) => {
 			const ok = confirm(
-				`Only do this once you've opened your presents. You'll see what ${who} marked as bought, and this can't be undone.`
+				`Only do this once you've opened your presents. You'll see what ${who} marked as bought, and this can't be undone. Presents for an occasion you haven't opened yet stay hidden.`
 			);
 			if (!ok) cancel();
+		};
+	const confirmOpen =
+		(name: string): SubmitFunction =>
+		({ cancel }) => {
+			if (!confirm(`Opened your ${name} presents? You'll see what was bought for ${name}, and this can't be undone.`)) cancel();
 		};
 </script>
 
@@ -43,6 +49,35 @@
 			then.
 		</p>
 	</div>
+
+	{#if data.occasions.length}
+		<section class="occasions">
+			<h2 class="hand h2">Occasions</h2>
+			<p class="sub">
+				For lists with more than one date. Open one to see what was bought for it, without spoiling the others.
+			</p>
+			<Sheet margin={50} padding="14px 28px 14px 72px" class="sheet">
+				{#each data.occasions as o (o.id)}
+					<div class="occasion">
+						{#if o.opened}
+							<span class="tick-btn" role="img" aria-label="{o.name} opened"><Checkbox checked tilt={tiltFor(o.id)} /></span>
+						{:else}
+							<form method="POST" action="?/openOccasion" use:enhance={confirmOpen(o.name)}>
+								<input type="hidden" name="occasionId" value={o.id} />
+								<button class="tick-btn" aria-pressed="false" aria-label="Mark {o.name} presents opened">
+									<Checkbox checked={false} tilt={tiltFor(o.id)} />
+								</button>
+							</form>
+						{/if}
+						<div class="who">
+							<p class="write name">{o.name}</p>
+							<p class="meta"><a href="/lists/{o.listId}">{o.listTitle}</a> · {formatDate(o.date)}{o.opened ? ' · opened' : ''}</p>
+						</div>
+					</div>
+				{/each}
+			</Sheet>
+		</section>
+	{/if}
 
 	<Sheet tape margin={50} padding="22px 28px 22px 72px" class="sheet">
 		{#each data.people as p (p.id)}
@@ -236,6 +271,20 @@
 	.all {
 		padding-top: 18px;
 	}
+	.occasion {
+		display: flex;
+		align-items: center;
+		gap: 14px;
+		padding: 8px 0;
+		border-bottom: 1px solid var(--rule);
+	}
+	.occasion:last-child {
+		border-bottom: 0;
+	}
+	.occasion .meta a {
+		color: inherit;
+	}
+	.occasions,
 	.others {
 		display: flex;
 		flex-direction: column;

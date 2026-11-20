@@ -26,6 +26,7 @@ export const load: PageServerLoad = async ({ locals, params }) => {
 		thanked: thanked.includes(person.id),
 		fromLists: all.fromLists.filter((g) => g.giverId === person.id),
 		noted: all.noted.filter((g) => g.giverId === person.id),
+		extras: all.extras.filter((g) => g.giverId === person.id),
 		// Who else a present could be from (for "From someone else?").
 		others: options.filter((o) => o.id !== person.id)
 	};

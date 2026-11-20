@@ -49,6 +49,27 @@ export const list = mysqlTable(
 	(t) => [index('list_owner_idx').on(t.ownerId), index('list_santa_idx').on(t.santaId)]
 );
 
+/**
+ * Occasions on one list, e.g. a birthday on 12 Dec and Christmas on 25 Dec. Guests say which one a
+ * present is for, and the owner opens each occasion separately, so opening birthday presents
+ * doesn't spoil Christmas. While a list has occasions, list.eventDate is kept at the last one.
+ */
+export const listOccasion = mysqlTable(
+	'list_occasion',
+	{
+		id: id().primaryKey(),
+		listId: id('list_id')
+			.notNull()
+			.references(() => list.id, { onDelete: 'cascade' }),
+		name: varchar('name', { length: 80 }).notNull(),
+		occasionDate: date('occasion_date', { mode: 'string' }).notNull(),
+		// Set (one way) when the owner has opened this occasion's presents: its Bought claims show.
+		openedAt: timestamp('opened_at', { fsp: 3 }),
+		createdAt: created()
+	},
+	(t) => [index('list_occasion_list_idx').on(t.listId)]
+);
+
 /** Items belong to a user and can appear on any number of their lists (via item_list). */
 export const item = mysqlTable(
 	'item',
@@ -186,7 +207,6 @@ export const listViewer = mysqlTable(
 
 // ── Gifting ──────────────────────────────────────────────────────────────────
 
-/** One claimer per item. Applies on every list the item is on. Never shown to the owner unless revealed. */
 /** One row per person getting an item. Most items allow one claimer; see item.quantity. */
 export const itemClaim = mysqlTable(
 	'item_claim',
@@ -200,12 +220,39 @@ export const itemClaim = mysqlTable(
 		status: mysqlEnum('status', ['buying', 'bought']).notNull(),
 		// For group gifts: how much this person is putting in, in the item's currency.
 		amount: decimal('amount', { precision: 10, scale: 2 }),
+		// Which list occasion it's for: revealed when that occasion is opened, not by "received from".
+		// No FK on purpose: if the occasion (or its list) is deleted, the id dangles and the present
+		// stays hidden rather than falling back to "received from" and spoiling the surprise.
+		occasionId: id('occasion_id'),
 		updatedAt: timestamp('updated_at', { fsp: 3 })
 			.defaultNow()
 			.$onUpdate(() => new Date())
 			.notNull()
 	},
 	(t) => [primaryKey({ columns: [t.itemId, t.userId] }), index('item_claim_user_idx').on(t.userId)]
+);
+
+/**
+ * Something a guest has bought that isn't on the list ("I got her the matching gloves"), so other
+ * guests don't buy it too. Never shown to the owner on the list; revealed in Presents received
+ * like a Bought claim (when its occasion is opened, or else when the owner marks "received from").
+ */
+export const listExtra = mysqlTable(
+	'list_extra',
+	{
+		id: id().primaryKey(),
+		listId: id('list_id')
+			.notNull()
+			.references(() => list.id, { onDelete: 'cascade' }),
+		userId: userRef('user_id')
+			.notNull()
+			.references(() => user.id, { onDelete: 'cascade' }),
+		title: varchar('title', { length: 200 }).notNull(),
+		// As item_claim.occasion_id: no FK, so a deleted occasion keeps it hidden.
+		occasionId: id('occasion_id'),
+		createdAt: created()
+	},
+	(t) => [index('list_extra_list_idx').on(t.listId), index('list_extra_user_idx').on(t.userId)]
 );
 
 /** "This would be good for X to get for me." */

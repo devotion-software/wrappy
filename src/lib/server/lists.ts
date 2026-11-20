@@ -16,6 +16,7 @@ import {
 import { santaGiftClaims, usersWhoCanSee, type ListRow } from './access';
 import { summariseClaims, type ItemClaims } from './claimView';
 import { imageUrl } from '#lib/images';
+import { openedOccasions } from './occasions';
 
 export interface ListItemView {
 	id: string;
@@ -63,7 +64,14 @@ export async function loadListItems(l: ListRow, viewerId: string | null): Promis
 			.where(inArray(itemLink.itemId, ids))
 			.orderBy(asc(itemLink.sortOrder), asc(itemLink.createdAt)),
 		db
-			.select({ itemId: itemClaim.itemId, userId: itemClaim.userId, status: itemClaim.status, amount: itemClaim.amount, name: user.name })
+			.select({
+				itemId: itemClaim.itemId,
+				userId: itemClaim.userId,
+				status: itemClaim.status,
+				amount: itemClaim.amount,
+				occasionId: itemClaim.occasionId,
+				name: user.name
+			})
 			.from(itemClaim)
 			.innerJoin(user, eq(user.id, itemClaim.userId))
 			.where(inArray(itemClaim.itemId, ids)),
@@ -79,6 +87,7 @@ export async function loadListItems(l: ListRow, viewerId: string | null): Promis
 
 	const revealedSet = new Set(revealed.map((r) => r.giverId));
 	const isOwner = viewerId === l.ownerId;
+	const opened = isOwner ? await openedOccasions(claims.map((c) => c.occasionId)) : new Set<string>();
 	const [canSee, santaGifts] = isOwner
 		? [new Set<string>(), new Set<string>()]
 		: await Promise.all([
@@ -111,6 +120,7 @@ export async function loadListItems(l: ListRow, viewerId: string | null): Promis
 				viewerId,
 				ownerId: l.ownerId,
 				revealedGiverIds: revealedSet,
+				openedOccasionIds: opened,
 				claimerCanSeeList: canSee.has(c.userId) && !santaGifts.has(`${it.id}:${c.userId}`)
 			})),
 			suggestion: s ? { name: s.name, forViewer: s.userId === viewerId } : null
