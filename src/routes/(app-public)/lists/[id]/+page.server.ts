@@ -1,7 +1,8 @@
 import { error, fail, redirect } from '@sveltejs/kit';
 import { and, asc, desc, eq, inArray, notInArray } from 'drizzle-orm';
 import { db } from '#lib/server/db';
-import { item, itemList, list, listShare, listViewer, santa, user } from '#lib/server/db/schema';
+import { friendGroup, item, itemList, list, listShare, listViewer, santa, user } from '#lib/server/db/schema';
+import { myGroups, shareListWithGroup } from '#lib/server/groups';
 import { getListAccess, signInOr404 } from '#lib/server/access';
 import { loadListItems, addItemToList, hostOf } from '#lib/server/lists';
 import { newId, newToken } from '#lib/server/ids';
@@ -72,11 +73,12 @@ export const load: PageServerLoad = async ({ params, locals, cookies, url }) => 
 	if (!access.isOwner) return { ...base, owned: null };
 
 	const onList = items.map((i) => i.id);
-	const [shares, viewers, library] = await Promise.all([
+	const [shareRows, viewers, library, groups] = await Promise.all([
 		db
-			.select({ id: listShare.id, email: listShare.email, name: user.name })
+			.select({ id: listShare.id, email: listShare.email, name: user.name, groupId: listShare.groupId, groupName: friendGroup.name })
 			.from(listShare)
 			.leftJoin(user, eq(user.id, listShare.userId))
+			.leftJoin(friendGroup, eq(friendGroup.id, listShare.groupId))
 			.where(eq(listShare.listId, l.id))
 			.orderBy(asc(listShare.createdAt)),
 		db
@@ -89,8 +91,16 @@ export const load: PageServerLoad = async ({ params, locals, cookies, url }) => 
 			.select({ id: item.id, title: item.title, price: item.price, currency: item.currency })
 			.from(item)
 			.where(onList.length ? and(eq(item.ownerId, l.ownerId), notInArray(item.id, onList)) : eq(item.ownerId, l.ownerId))
-			.orderBy(asc(item.title))
+			.orderBy(asc(item.title)),
+		l.santaId ? [] : myGroups(l.ownerId)
 	]);
+	// People invited through a group: the owner didn't type their address, so it isn't sent.
+	const shares = shareRows.map((r) => ({
+		id: r.id,
+		email: r.groupId && r.name ? null : r.email,
+		name: r.name,
+		groupName: r.groupId ? r.groupName : null
+	}));
 
 	return {
 		...base,
@@ -99,6 +109,7 @@ export const load: PageServerLoad = async ({ params, locals, cookies, url }) => 
 			shares,
 			viewers,
 			library,
+			groups: groups.map((g) => ({ id: g.id, name: g.name, members: g.members })),
 			hasUsername: !!owner.username
 		}
 	};
@@ -305,6 +316,16 @@ export const actions: Actions = {
 			}).catch(() => {});
 		}
 		return { shared: email };
+	},
+
+	/** Invite everyone in one of my groups. */
+	shareGroup: async (event) => {
+		const { me, l } = await ownerList(event);
+		if (l.santaId) return fail(400, { shareError: 'Secret Santa lists are only shown to your Santa.' });
+		const groupId = String((await event.request.formData()).get('groupId') ?? '');
+		if (!groupId) return fail(400, { shareError: 'Pick a group.' });
+		const added = await shareListWithGroup(l, me, groupId, event.url.origin);
+		return { sharedGroup: added };
 	},
 
 	unshare: async (event) => {

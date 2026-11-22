@@ -57,6 +57,13 @@ export function takeFetchBudget(userId: string, cost = 1): Promise<boolean> {
 	return outbound.take(userId, cost);
 }
 
+/** Group invite emails a user may send: 30 an hour. */
+const groupInvites = createLimiter('group-invite', { limit: 30, windowMs: 60 * 60 * 1000 });
+
+export function takeGroupInviteBudget(userId: string): Promise<boolean> {
+	return groupInvites.take(userId);
+}
+
 /** Secret Santa messages a user may send: 40 an hour. */
 const santaMessages = createLimiter('santa-msg', { limit: 40, windowMs: 60 * 60 * 1000 });
 

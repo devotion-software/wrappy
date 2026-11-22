@@ -56,6 +56,27 @@ describe('/friends search', () => {
 		expect((await search(me, tag)).results).toEqual([]);
 	});
 
+	it('finds anyone by their exact username, even with no public lists', async () => {
+		const tag = uniq();
+		const me = await createUser();
+		const friend = await createUser({ name: `Quiet ${tag}`, username: `qt${tag}` });
+		await createList(friend);
+		const res = await search(me, `@QT${tag}`);
+		expect(res.results).toEqual([{ name: friend.name, username: friend.username, lists: 0 }]);
+		expect((await search(me, `qt${tag}`)).results).toHaveLength(1);
+		// Partial matches still only find people with public lists.
+		expect((await search(me, `qt${tag.slice(0, -1)}`)).results).toEqual([]);
+		expect((await search(me, `Quiet ${tag}`)).results).toEqual([]);
+	});
+
+	it('puts an exact username match first', async () => {
+		const tag = uniq();
+		const me = await createUser();
+		const exact = await findable(`Zed`, `ex${tag}`);
+		const prefix = await findable(`Abe`, `ex${tag}2`);
+		expect((await search(me, `ex${tag}`)).results.map((r: any) => r.username)).toEqual([exact.username, prefix.username]);
+	});
+
 	it('never matches by email address', async () => {
 		const tag = uniq();
 		const me = await createUser();

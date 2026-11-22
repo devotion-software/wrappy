@@ -41,6 +41,16 @@
 			return busyEnhance();
 		};
 
+	const confirmRemoveExtra =
+		(title: string) =>
+		({ cancel }: { cancel: () => void }) => {
+			if (!confirm(`Remove ${title}? Other guests won't see that you got it any more.`)) {
+				cancel();
+				return;
+			}
+			return busyEnhance();
+		};
+
 	let dragId = $state<string | null>(null);
 	let armed = $state<string | null>(null);
 
@@ -269,7 +279,7 @@
 							<span class="write extra-title">{x.title}</span>
 							<span class="meta">{x.mine ? 'from you' : x.byName ? `from ${x.byName}` : 'from someone'}{occasionLabel(x.occasionId)}</span>
 							{#if x.mine}
-								<form method="POST" action="?/removeExtra" use:enhance={busyEnhance}>
+								<form method="POST" action="?/removeExtra" use:enhance={confirmRemoveExtra(x.title)}>
 									<input type="hidden" name="extraId" value={x.id} />
 									<button class="btn btn-icon" aria-label="Remove {x.title}" disabled={busy}><Icon name="trash" size={16} /></button>
 								</form>
@@ -415,6 +425,8 @@
 						viewers={data.owned.viewers}
 						ownerUsername={data.owner.username}
 						shareError={form?.shareError}
+						groups={data.owned.groups}
+						sharedGroup={form?.sharedGroup ?? null}
 					/>
 				{:else}
 					<Sheet margin={false} padding="24px">

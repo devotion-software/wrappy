@@ -10,12 +10,14 @@
 	interface Props {
 		visibility: 'public' | 'private';
 		shareToken: string | null;
-		shares: { id: string; email: string; name: string | null }[];
+		shares: { id: string; email: string | null; name: string | null; groupName?: string | null }[];
+		groups?: { id: string; name: string; members: number }[];
+		sharedGroup?: number | null;
 		viewers: { id: string; name: string }[];
 		ownerUsername: string | null;
 		shareError?: string | null;
 	}
-	let { visibility, shareToken, shares, viewers, ownerUsername, shareError = null }: Props = $props();
+	let { visibility, shareToken, shares, viewers, ownerUsername, shareError = null, groups = [], sharedGroup = null }: Props = $props();
 
 	const link = $derived(shareToken ? `${page.url.origin}/s/${shareToken}` : '');
 	let copied = $state(false);
@@ -74,14 +76,37 @@
 		{#if shareError}<p class="field-error" role="alert">{shareError}</p>{/if}
 	</form>
 
+	{#if groups.length}
+		<form method="POST" action="?/shareGroup" class="invite" use:enhance>
+			<label for="share-group" class="label">Share with a group</label>
+			<div class="invite-row">
+				<select id="share-group" name="groupId" class="line-input select" required>
+					{#each groups as g (g.id)}<option value={g.id}>{g.name} ({plural(g.members, 'person', 'people')})</option>{/each}
+				</select>
+				<button class="btn btn-dark btn-md">Share</button>
+			</div>
+			{#if sharedGroup !== null}
+				<p class="meta small" role="status">
+					{sharedGroup ? `Invited ${plural(sharedGroup, 'more person', 'more people')}.` : 'Everyone in that group already has it.'}
+				</p>
+			{/if}
+		</form>
+	{:else}
+		<p class="meta small">Share with lots of people at once by making a <a href="/friends#groups">group</a>.</p>
+	{/if}
+
 	{#if shares.length}
 		<ul class="shares">
 			{#each shares as s (s.id)}
 				<li>
-					<span class="who"><span class="write">{s.name || s.email}</span>{#if s.name}<span class="meta">{s.email}</span>{/if}</span>
+					<span class="who"
+						><span class="write">{s.name || s.email}</span>{#if s.name && (s.email || s.groupName)}<span class="meta"
+								>{[s.email, s.groupName ? `from ${s.groupName}` : null].filter(Boolean).join(' · ')}</span
+							>{/if}</span
+					>
 					<form method="POST" action="?/unshare" use:enhance>
 						<input type="hidden" name="shareId" value={s.id} />
-						<button class="btn btn-text" aria-label="Remove {s.email}">Remove</button>
+						<button class="btn btn-text" aria-label="Remove {s.name || s.email}">Remove</button>
 					</form>
 				</li>
 			{/each}

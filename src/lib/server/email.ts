@@ -55,6 +55,24 @@ export async function sendListInviteEmail(opts: { email: string; ownerName: stri
 	);
 }
 
+/** Someone in a group invited this email address to join it. */
+export async function sendGroupInviteEmail(opts: { email: string; inviterName: string; groupName: string; url: string }) {
+	const inviter = escapeHtml(opts.inviterName);
+	const group = escapeHtml(opts.groupName);
+	await deliver(
+		{
+			to: opts.email,
+			subject: `${opts.inviterName} invited you to ${opts.groupName} on Wrappy`,
+			html: renderLayout(
+				`<strong>${inviter}</strong> invited you to join <strong>${group}</strong> on Wrappy. Everyone in a group can share their wish lists with the whole group in one go.`,
+				button(opts.url, `Join ${opts.groupName}`)
+			),
+			text: `${opts.inviterName} invited you to join ${opts.groupName} on Wrappy.\n\nJoin: ${opts.url}`
+		},
+		`group invite: ${opts.url}`
+	);
+}
+
 /** Secret Santa names have been drawn: tell one member who they're buying for. */
 export async function sendSantaAssignmentEmail(opts: {
 	email: string;

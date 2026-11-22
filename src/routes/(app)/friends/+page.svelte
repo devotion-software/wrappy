@@ -4,7 +4,9 @@
 	import ListCard from '#lib/components/ListCard.svelte';
 	import { plural } from '#lib/format';
 
-	let { data } = $props();
+	import { enhance } from '$app/forms';
+
+	let { data, form } = $props();
 </script>
 
 <svelte:head><title>Friends — Wrappy</title></svelte:head>
@@ -14,7 +16,7 @@
 
 	<Sheet margin={50} padding="24px 28px 20px 72px" class="sheet">
 		<form method="GET" class="search">
-			<label for="q" class="label">Find someone's public lists</label>
+			<label for="q" class="label">Find a friend</label>
 			<div class="search-row">
 				<input id="q" name="q" class="line-input" placeholder="Name or @username" value={data.q} minlength="2" />
 				<button class="btn btn-dark btn-md">Search</button>
@@ -25,15 +27,42 @@
 				{#each data.results as r (r.username)}
 					<a href="/u/{r.username}" class="person">
 						<Avatar name={r.name} />
-						<span class="who"><span class="write">{r.name}</span><span class="meta">@{r.username} · {plural(r.lists, 'public list')}</span></span>
+						<span class="who"><span class="write">{r.name}</span><span class="meta">@{r.username} · {r.lists ? plural(r.lists, 'public list') : 'no public lists yet'}</span></span>
 						<span class="btn btn-outline">View</span>
 					</a>
 				{:else}
-					<p class="empty">No one with public lists matches "{data.q}".</p>
+					<p class="empty">No one matches "{data.q}". To find someone without public lists, search for their exact @username.</p>
 				{/each}
 			</div>
 		{/if}
 	</Sheet>
+
+	<section class="block" id="groups">
+		<div>
+			<h2 class="section-title">Groups</h2>
+			<p class="meta intro">Share a list with everyone in a group in one go. Anyone in a group can invite people to it.</p>
+		</div>
+		{#if data.groups.length}
+			<ul class="groups">
+				{#each data.groups as g (g.id)}
+					<li>
+						<a href="/groups/{g.id}" class="person">
+							<span class="who"><span class="write">{g.name}</span><span class="meta">{plural(g.members, 'person', 'people')}{g.isOwner ? ' · you made it' : ''}</span></span>
+							<span class="btn btn-outline">Open</span>
+						</a>
+					</li>
+				{/each}
+			</ul>
+		{/if}
+		<form method="POST" action="?/createGroup" class="new-group" use:enhance>
+			<div class="grow">
+				<label for="group-name" class="label">New group</label>
+				<input id="group-name" name="name" class="line-input" maxlength="80" placeholder="Family" required autocomplete="off" />
+			</div>
+			<button class="btn btn-dark btn-md">Create group</button>
+		</form>
+		{#if form?.groupError}<p class="field-error" role="alert">{form.groupError}</p>{/if}
+	</section>
 
 	<section class="block">
 		<h2 class="section-title">Shared with you</h2>
@@ -98,6 +127,25 @@
 		display: flex;
 		flex-direction: column;
 		gap: 20px;
+	}
+	.intro {
+		margin: 6px 0 0;
+		font-size: 15px;
+	}
+	.groups {
+		list-style: none;
+		margin: 0;
+		padding: 0;
+	}
+	.new-group {
+		display: flex;
+		gap: 12px;
+		align-items: flex-end;
+		max-width: 520px;
+	}
+	.new-group .grow {
+		flex: 1;
+		min-width: 0;
 	}
 	.grid {
 		display: grid;

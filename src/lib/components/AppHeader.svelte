@@ -12,7 +12,7 @@
 	const nav = [
 		{ href: '/lists', label: 'My lists', match: ['/lists', '/items'] },
 		{ href: '/santa', label: 'Secret Santa', match: ['/santa'] },
-		{ href: '/friends', label: 'Friends', match: ['/friends', '/u/'] }
+		{ href: '/friends', label: 'Friends', match: ['/friends', '/u/', '/groups'] }
 	];
 	const current = (match: string[]) => match.some((m) => page.url.pathname.startsWith(m));
 </script>

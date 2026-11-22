@@ -179,6 +179,9 @@ export const listShare = mysqlTable(
 			.references(() => list.id, { onDelete: 'cascade' }),
 		email: varchar('email', { length: 255 }).notNull(),
 		userId: userRef('user_id').references(() => user.id, { onDelete: 'cascade' }),
+		// Set when the invite came from sharing with a group. The sharer didn't type this email, so
+		// the share panel shows the person's name, never their address.
+		groupId: id('group_id').references(() => friendGroup.id, { onDelete: 'set null' }),
 		createdAt: created()
 	},
 	(t) => [
@@ -361,6 +364,41 @@ export const giftThanks = mysqlTable(
 		thankedAt: timestamp('thanked_at', { fsp: 3 }).defaultNow().notNull()
 	},
 	(t) => [primaryKey({ columns: [t.ownerId, t.personId] })]
+);
+
+// ── Groups ───────────────────────────────────────────────────────────────────
+
+/**
+ * A group of people (family, friends from school) who can share lists with everyone in it at once.
+ * Anyone in it can invite others (by its join link or email); ownerId can rename it, remove people,
+ * reset the link and delete it. Members see each other's names, never their email addresses.
+ */
+export const friendGroup = mysqlTable(
+	'friend_group',
+	{
+		id: id().primaryKey(),
+		ownerId: userRef('owner_id')
+			.notNull()
+			.references(() => user.id, { onDelete: 'cascade' }),
+		name: varchar('name', { length: 80 }).notNull(),
+		joinToken: varchar('join_token', { length: 40 }).notNull().unique(),
+		createdAt: created()
+	},
+	(t) => [index('friend_group_owner_idx').on(t.ownerId)]
+);
+
+export const friendGroupMember = mysqlTable(
+	'friend_group_member',
+	{
+		groupId: id('group_id')
+			.notNull()
+			.references(() => friendGroup.id, { onDelete: 'cascade' }),
+		userId: userRef('user_id')
+			.notNull()
+			.references(() => user.id, { onDelete: 'cascade' }),
+		joinedAt: timestamp('joined_at', { fsp: 3 }).defaultNow().notNull()
+	},
+	(t) => [primaryKey({ columns: [t.groupId, t.userId] }), index('friend_group_member_user_idx').on(t.userId)]
 );
 
 // ── Secret Santa ─────────────────────────────────────────────────────────────

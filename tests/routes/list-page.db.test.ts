@@ -810,3 +810,49 @@ describe('/lists/[id] link preview', () => {
 		expect(data.meta).toEqual({ title: 'Christmas', description: "Meg's wish list · 1 item · 25 Dec 2020" });
 	});
 });
+
+describe('share with a group', () => {
+	async function familyOf(owner: U) {
+		const { createGroup, joinGroup } = await import('#lib/server/groups');
+		const { friendGroup } = await import('#lib/server/db/schema');
+		const id = await createGroup(owner.id, 'Family');
+		const [g] = await db.select().from(friendGroup).where(eq(friendGroup.id, id));
+		const sam = await createUser({ name: 'Sam' });
+		await joinGroup(g, sam.id);
+		return { g, sam };
+	}
+
+	it('invites the group, and the owner sees their names but not their email addresses', async () => {
+		const owner = await createUser();
+		const l = await createList(owner);
+		const { g, sam } = await familyOf(owner);
+		await share(l, { email: 'typed@example.test' });
+		expect(await act('shareGroup', owner, l, { groupId: g.id })).toEqual({ kind: 'ok', data: { sharedGroup: 1 } });
+		expect(mockInvite).toHaveBeenCalledWith(expect.objectContaining({ email: sam.email }));
+		expect(await act('shareGroup', owner, l, { groupId: g.id })).toEqual({ kind: 'ok', data: { sharedGroup: 0 } });
+
+		const data = await ok<any>(() => (load as any)(fakeEvent({ user: owner, params: { id: l.id } })));
+		expect(data.owned.groups).toEqual([{ id: g.id, name: 'Family', members: 2 }]);
+		expect(data.owned.shares).toEqual([
+			expect.objectContaining({ email: 'typed@example.test', name: null, groupName: null }),
+			expect.objectContaining({ email: null, name: 'Sam', groupName: 'Family' })
+		]);
+		expect(JSON.stringify(data)).not.toContain(sam.email);
+		// Sam can now open it.
+		expect(await outcome(() => (load as any)(fakeEvent({ user: sam, params: { id: l.id } })))).toMatchObject({ kind: 'ok' });
+	});
+
+	it("needs a group you're in, on your own non-Santa list", async () => {
+		const owner = await createUser();
+		const l = await createList(owner);
+		const { g, sam } = await familyOf(await createUser());
+		expect(await act('shareGroup', owner, l, { groupId: g.id })).toMatchObject({ kind: 'error', status: 404 });
+		expect(await act('shareGroup', owner, l, {})).toMatchObject({ kind: 'fail', data: { shareError: 'Pick a group.' } });
+		const samList = await createList(sam);
+		expect(await act('shareGroup', owner, samList, { groupId: g.id })).toMatchObject({ kind: 'error', status: 404 });
+		const santaList = await addSantaMember(await createSanta(owner), owner);
+		const mine = await familyOf(owner);
+		expect(await act('shareGroup', owner, santaList, { groupId: mine.g.id })).toMatchObject({ kind: 'fail' });
+		expect(mockInvite).not.toHaveBeenCalled();
+	});
+});
