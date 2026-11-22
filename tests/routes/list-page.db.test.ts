@@ -59,7 +59,7 @@ const act = (name: keyof typeof actions, user: U | null, l: { id: string }, form
 	outcome(() => (actions[name] as any)(fakeEvent({ user, params: { id: l.id }, form, path: path ?? `/lists/${l.id}` })));
 
 const runLoad = (user: U | null, l: { id: string }, cookies: Record<string, string> = {}) =>
-	outcome(() => (load as any)(fakeEvent({ user, params: { id: l.id }, cookies })));
+	outcome(() => (load as any)(fakeEvent({ user, params: { id: l.id }, cookies, path: `/lists/${l.id}` })));
 
 async function itemsOn(l: { id: string }) {
 	return db
@@ -84,18 +84,44 @@ async function santaSetup(priceLimit: string | null = '20.00') {
 }
 
 describe('load', () => {
-	it('404s with a generic message when the viewer has no access', async () => {
+	it('404s with a generic message when a signed-in viewer has no access', async () => {
 		const owner = await createUser();
 		const l = await createList(owner);
 		const stranger = await createUser();
-		for (const who of [null, stranger]) {
-			expect(await runLoad(who, l)).toEqual({
-				kind: 'error',
-				status: 404,
-				message: "This list doesn't exist, or it hasn't been shared with you."
-			});
-		}
-		expect(await runLoad(null, { id: 'missing' })).toMatchObject({ kind: 'error', status: 404 });
+		expect(await runLoad(stranger, l)).toEqual({
+			kind: 'error',
+			status: 404,
+			message: "This list doesn't exist, or it hasn't been shared with you."
+		});
+		expect(await runLoad(null, { id: 'missing' })).toEqual({
+			kind: 'error',
+			status: 404,
+			message: "This list doesn't exist, or it hasn't been shared with you."
+		});
+	});
+
+	it('sends a signed-out visitor to sign in, then back to the list', async () => {
+		const owner = await createUser();
+		const l = await createList(owner);
+		expect(await runLoad(null, l)).toEqual({
+			kind: 'redirect',
+			status: 303,
+			location: `/signin?next=${encodeURIComponent(`/lists/${l.id}`)}`
+		});
+	});
+
+	it('lets an invitee with no account sign up from the email and see the list', async () => {
+		const owner = await createUser();
+		const l = await createList(owner);
+		const email = `new${uniq()}@example.com`;
+		expect(await act('share', owner, l, { email })).toMatchObject({ kind: 'ok' });
+		const link = new URL(mockInvite.mock.calls[0][0].url);
+		expect(link.pathname).toBe(`/lists/${l.id}`);
+		// Signed out: bounced to sign in, coming back to the list.
+		expect(await runLoad(null, l)).toMatchObject({ kind: 'redirect', location: `/signin?next=${encodeURIComponent(link.pathname)}` });
+		// After signing up with that email, the list opens.
+		const invitee = await createUser({ email });
+		expect(await runLoad(invitee, l)).toMatchObject({ kind: 'ok' });
 	});
 
 	it('gives guests the list and items but no owner data', async () => {

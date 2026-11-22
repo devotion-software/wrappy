@@ -1,6 +1,6 @@
 import { and, eq, or, inArray, sql } from 'drizzle-orm';
 import { alias } from 'drizzle-orm/mysql-core';
-import type { Cookies } from '@sveltejs/kit';
+import { error, redirect, type Cookies } from '@sveltejs/kit';
 import { db } from './db';
 import { itemList, list, listShare, listViewer, santa, santaMember } from './db/schema';
 
@@ -106,6 +106,19 @@ export async function getListAccess(
 			});
 	}
 	return { list: l, isOwner: false };
+}
+
+/**
+ * For a signed-out visitor with no access: send them to sign in if the list exists, so an
+ * email invitee (who may not have an account yet) can sign up and come straight back.
+ * Otherwise 404 like everyone else.
+ */
+export async function signInOr404(listId: string, viewer: Viewer | null, url: URL): Promise<never> {
+	if (!viewer) {
+		const [l] = await db.select({ id: list.id }).from(list).where(eq(list.id, listId)).limit(1);
+		if (l) redirect(303, `/signin?next=${encodeURIComponent(url.pathname + url.search)}`);
+	}
+	error(404, "This list doesn't exist, or it hasn't been shared with you.");
 }
 
 /**

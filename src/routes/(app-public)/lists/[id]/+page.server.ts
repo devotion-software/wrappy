@@ -2,7 +2,7 @@ import { error, fail, redirect } from '@sveltejs/kit';
 import { and, asc, desc, eq, inArray, notInArray } from 'drizzle-orm';
 import { db } from '#lib/server/db';
 import { item, itemList, list, listShare, listViewer, santa, user } from '#lib/server/db/schema';
-import { getListAccess } from '#lib/server/access';
+import { getListAccess, signInOr404 } from '#lib/server/access';
 import { loadListItems, addItemToList, hostOf } from '#lib/server/lists';
 import { newId, newToken } from '#lib/server/ids';
 import { parseListForm } from '#lib/server/listForm';
@@ -20,9 +20,9 @@ import type { Actions, PageServerLoad, RequestEvent } from './$types';
 
 const viewerOf = (locals: App.Locals) => (locals.user ? { id: locals.user.id, email: locals.user.email } : null);
 
-export const load: PageServerLoad = async ({ params, locals, cookies }) => {
+export const load: PageServerLoad = async ({ params, locals, cookies, url }) => {
 	const access = await getListAccess(params.id, viewerOf(locals), cookies);
-	if (!access) error(404, "This list doesn't exist, or it hasn't been shared with you.");
+	if (!access) return signInOr404(params.id, viewerOf(locals), url);
 	const l = access.list;
 	const viewerId = locals.user?.id ?? null;
 

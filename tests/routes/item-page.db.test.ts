@@ -6,7 +6,7 @@ import { fakeEvent, ok, outcome } from '../helpers/event';
 import { actions, load } from '../../src/routes/(app-public)/lists/[id]/items/[itemId]/+page.server';
 
 const run = (user: any, listId: string, itemId: string, cookies: Record<string, string> = {}) =>
-	outcome(() => (load as any)(fakeEvent({ user, params: { id: listId, itemId }, cookies })));
+	outcome(() => (load as any)(fakeEvent({ user, params: { id: listId, itemId }, cookies, path: `/lists/${listId}/items/${itemId}` })));
 
 describe('guest item page', () => {
 	it('redirects the owner to their editor, keeping the list', async () => {
@@ -43,7 +43,7 @@ describe('guest item page', () => {
 		const token = newToken();
 		const l = await createList(owner, { shareToken: token });
 		const it = await createItem(owner, {}, { lists: [l] });
-		expect(await run(null, l.id, it.id)).toMatchObject({ kind: 'error', status: 404 });
+		expect(await run(null, l.id, it.id)).toMatchObject({ kind: 'redirect' });
 		expect(await run(null, l.id, it.id, { [linkCookieName(l.id)]: token })).toMatchObject({ kind: 'ok' });
 	});
 
@@ -61,6 +61,17 @@ describe('guest item page', () => {
 		const it = await createItem(owner, {}, { lists: [l] });
 		expect(await run(await createUser(), l.id, it.id)).toMatchObject({ kind: 'error', status: 404 });
 		expect(await run(null, 'missing', it.id)).toMatchObject({ kind: 'error', status: 404 });
+	});
+
+	it('sends a signed-out visitor to sign in, then back to the item', async () => {
+		const owner = await createUser();
+		const l = await createList(owner);
+		const it = await createItem(owner, {}, { lists: [l] });
+		expect(await run(null, l.id, it.id)).toEqual({
+			kind: 'redirect',
+			status: 303,
+			location: `/signin?next=${encodeURIComponent(`/lists/${l.id}/items/${it.id}`)}`
+		});
 	});
 
 	it('offers the claim actions', async () => {
