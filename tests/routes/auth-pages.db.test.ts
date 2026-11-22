@@ -3,7 +3,7 @@ import { eq } from 'drizzle-orm';
 import { db } from '#lib/server/db';
 import { user } from '#lib/server/db/schema';
 import { suggestUsername } from '#lib/server/username';
-import { createUser, uniq } from '../helpers/fixtures';
+import { createList, createUser, share, uniq } from '../helpers/fixtures';
 import { fakeEvent, outcome } from '../helpers/event';
 import { load as rootLayout } from '../../src/routes/+layout.server';
 import { load as home } from '../../src/routes/+page.server';
@@ -83,6 +83,21 @@ describe('signin', () => {
 		expect(await L(signin, { path: '/signin?next=https://evil.example' })).toEqual({ kind: 'ok', data: { next: '/lists' } });
 		expect(await L(signin, { path: '/signin?next=//evil.example' })).toEqual({ kind: 'ok', data: { next: '/lists' } });
 		expect(await L(signin, { path: '/signin' })).toEqual({ kind: 'ok', data: { next: '/lists' } });
+	});
+
+	it('fills in the email from a list invite, and ignores unknown or malformed ids', async () => {
+		const owner = await createUser();
+		const l = await createList(owner);
+		const email = `inv-${uniq()}@example.test`;
+		const shareId = await share(l, { email });
+		expect(await L(signin, { path: `/signin?next=/lists/${l.id}&invite=${shareId}` })).toEqual({
+			kind: 'ok',
+			data: { next: `/lists/${l.id}`, email }
+		});
+		for (const bad of ['0000000000000000000000', 'x', "' or 1=1"]) {
+			const res = (await L(signin, { path: `/signin?invite=${encodeURIComponent(bad)}` })) as any;
+			expect(res.data).toEqual({ next: '/lists' });
+		}
 	});
 
 	it('forwards signed-in users to next, or to onboarding first', async () => {

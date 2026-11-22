@@ -37,6 +37,7 @@ vi.mock('#lib/server/items', async (importActual) => ({
 }));
 
 import { load, actions } from '../../src/routes/(app-public)/lists/[id]/+page.server';
+import { load as signin } from '../../src/routes/signin/+page.server';
 import { fetchLinkMeta } from '#lib/server/linkFetch';
 import { takeFetchBudget } from '#lib/server/rateLimit';
 import { sendListInviteEmail } from '#lib/server/email';
@@ -117,8 +118,18 @@ describe('load', () => {
 		expect(await act('share', owner, l, { email })).toMatchObject({ kind: 'ok' });
 		const link = new URL(mockInvite.mock.calls[0][0].url);
 		expect(link.pathname).toBe(`/lists/${l.id}`);
-		// Signed out: bounced to sign in, coming back to the list.
-		expect(await runLoad(null, l)).toMatchObject({ kind: 'redirect', location: `/signin?next=${encodeURIComponent(link.pathname)}` });
+		const [row] = await db.select().from(listShare).where(eq(listShare.listId, l.id));
+		expect(link.searchParams.get('invite')).toBe(row.id);
+		// Signed out: bounced to sign in (carrying the invite), coming back to the plain list URL.
+		const bounce = await outcome(() => (load as any)(fakeEvent({ user: null, params: { id: l.id }, path: link.pathname + link.search })));
+		expect(bounce).toEqual({
+			kind: 'redirect',
+			status: 303,
+			location: `/signin?next=${encodeURIComponent(link.pathname)}&invite=${row.id}`
+		});
+		// The sign-in page fills in the invited address.
+		const page = await outcome(() => (signin as any)(fakeEvent({ user: null, path: (bounce as any).location })));
+		expect(page).toEqual({ kind: 'ok', data: { next: link.pathname, email } });
 		// After signing up with that email, the list opens.
 		const invitee = await createUser({ email });
 		expect(await runLoad(invitee, l)).toMatchObject({ kind: 'ok' });
@@ -617,7 +628,7 @@ describe('share and unshare', () => {
 			email: email.toLowerCase(),
 			ownerName: owner.name,
 			listTitle: l.title,
-			url: `http://localhost:5182/lists/${l.id}`
+			url: `http://localhost:5182/lists/${l.id}?invite=${rows[0].id}`
 		});
 	});
 

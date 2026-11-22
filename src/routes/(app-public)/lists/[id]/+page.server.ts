@@ -288,9 +288,10 @@ export const actions: Actions = {
 			.limit(1);
 		if (already) return { shared: email };
 		const [existingUser] = await db.select({ id: user.id }).from(user).where(eq(user.email, email)).limit(1);
+		const shareId = newId();
 		const inserted = await db
 			.insert(listShare)
-			.values({ id: newId(), listId: l.id, email, userId: existingUser?.id ?? null })
+			.values({ id: shareId, listId: l.id, email, userId: existingUser?.id ?? null })
 			.onDuplicateKeyUpdate({ set: { email } });
 		// affectedRows can't tell a new row from an existing one (the driver reports found rows),
 		// so this is only a guard against a simultaneous duplicate invite.
@@ -299,7 +300,8 @@ export const actions: Actions = {
 				email,
 				ownerName: me.name,
 				listTitle: l.title,
-				url: `${event.url.origin}/lists/${l.id}`
+				// ?invite lets the sign-in page fill in their email if they're signed out (see signInOr404).
+				url: `${event.url.origin}/lists/${l.id}?invite=${shareId}`
 			}).catch(() => {});
 		}
 		return { shared: email };

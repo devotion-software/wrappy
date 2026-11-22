@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { untrack } from 'svelte';
 	import { goto, invalidateAll } from '$app/navigation';
 	import { authClient } from '#lib/auth-client';
 	import Logo from '#lib/components/ui/Logo.svelte';
@@ -8,7 +9,8 @@
 	let { data } = $props();
 
 	let step = $state<'email' | 'code'>('email');
-	let email = $state('');
+	// Filled in when arriving from a list invite email.
+	let email = $state(untrack(() => data.email) ?? '');
 	let code = $state('');
 	let busy = $state(false);
 	let error = $state('');

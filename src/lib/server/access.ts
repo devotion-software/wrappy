@@ -116,7 +116,14 @@ export async function getListAccess(
 export async function signInOr404(listId: string, viewer: Viewer | null, url: URL): Promise<never> {
 	if (!viewer) {
 		const [l] = await db.select({ id: list.id }).from(list).where(eq(list.id, listId)).limit(1);
-		if (l) redirect(303, `/signin?next=${encodeURIComponent(url.pathname + url.search)}`);
+		if (l) {
+			// Pass an email invite's id on to the sign-in page (to fill in their email), not back to the list.
+			const back = new URL(url);
+			const invite = back.searchParams.get('invite');
+			back.searchParams.delete('invite');
+			const next = encodeURIComponent(back.pathname + back.search);
+			redirect(303, `/signin?next=${next}${invite ? `&invite=${encodeURIComponent(invite)}` : ''}`);
+		}
 	}
 	error(404, "This list doesn't exist, or it hasn't been shared with you.");
 }
