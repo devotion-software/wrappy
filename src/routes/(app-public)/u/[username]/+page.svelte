@@ -33,6 +33,20 @@
 			{/each}
 		</div>
 	</section>
+
+	{#if data.sharedLists.length}
+		<section class="block">
+			<div>
+				<h2 class="section-title">Shared with you</h2>
+				<p class="meta note">Private lists {data.profile.name} has shared with you. Only you see these here.</p>
+			</div>
+			<div class="grid">
+				{#each data.sharedLists as card, i (card.id)}
+					<ListCard {card} index={data.lists.length + i} />
+				{/each}
+			</div>
+		</section>
+	{/if}
 </main>
 
 <style>
@@ -65,6 +79,10 @@
 		display: grid;
 		grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
 		gap: 24px;
+	}
+	.note {
+		margin: 6px 0 0;
+		font-size: 15px;
 	}
 	.empty {
 		margin: 0;

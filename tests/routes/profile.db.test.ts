@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { addSantaMember, createItem, createList, createSanta, createUser, uniq } from '../helpers/fixtures';
+import { addSantaMember, createItem, createList, createSanta, createUser, share, uniq } from '../helpers/fixtures';
 import { fakeEvent, ok, outcome } from '../helpers/event';
 import { load } from '../../src/routes/(app-public)/u/[username]/+page.server';
 import { db } from '#lib/server/db';
@@ -22,6 +22,24 @@ describe('/u/[username]', () => {
 		expect(data.lists).toEqual([
 			expect.objectContaining({ id: pub.id, title: 'Birthday', count: 1, preview: ['Socks'], santaId: null, sharedWith: 0 })
 		]);
+	});
+
+	it('shows a signed-in visitor the private lists shared with them, and no one else', async () => {
+		const username = `prof${uniq()}`;
+		const u = await createUser({ username });
+		const shared = await createList(u, { title: 'For Sam' });
+		await createList(u, { title: 'Secret' });
+		const sam = await createUser();
+		await share(shared, sam);
+		const loadAs = (user: any) => ok<any>(() => (load as any)(fakeEvent({ user, params: { username } })));
+
+		expect((await loadAs(sam)).sharedLists).toEqual([expect.objectContaining({ id: shared.id, title: 'For Sam', visibility: 'private' })]);
+		expect((await loadAs(null)).sharedLists).toEqual([]);
+		expect((await loadAs(await createUser())).sharedLists).toEqual([]);
+		// The owner's own profile stays the public view.
+		expect((await loadAs(u)).sharedLists).toEqual([]);
+		// Link previews only ever count public lists.
+		expect((await loadAs(sam)).meta.description).toBe(`${u.name} is on Wrappy.`);
 	});
 
 	it('404s for an unknown username', async () => {

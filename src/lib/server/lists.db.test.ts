@@ -2,7 +2,17 @@ import { describe, expect, it } from 'vitest';
 import { and, eq } from 'drizzle-orm';
 import { db } from './db';
 import { itemList, list } from './db/schema';
-import { addItemToList, friendsLists, hostOf, knownPeople, loadListItems, myLists, publicListsOf, type ListItemView } from './lists';
+import {
+	addItemToList,
+	friendsLists,
+	hostOf,
+	knownPeople,
+	loadListItems,
+	myLists,
+	privateListsSharedWith,
+	publicListsOf,
+	type ListItemView
+} from './lists';
 import { newToken } from './ids';
 import {
 	addImageRow,
@@ -264,6 +274,61 @@ describe('publicListsOf', () => {
 		expect(await publicListsOf(owner.id)).toEqual([
 			{ id: pub.id, title: 'Pub', eventDate: null, visibility: 'public', santaId: null, count: 1, preview: ['Kite'], sharedWith: 0 }
 		]);
+	});
+});
+
+describe('privateListsSharedWith', () => {
+	it("returns the owner's private lists I was invited to or opened through a working link", async () => {
+		const me = await createUser();
+		const owner = await createUser();
+		const byEmail = await createList(owner, { title: 'By email' });
+		await share(byEmail, { email: me.email.toUpperCase() });
+		const byId = await createList(owner, { title: 'By id' });
+		await share(byId, { email: 'old@example.test', id: me.id });
+		const viaLink = await createList(owner, { shareToken: newToken(), title: 'Link' });
+		await view(viaLink, me, true);
+		await createItem(owner, { title: 'Socks' }, { lists: [byEmail] });
+
+		const cards = await privateListsSharedWith(owner.id, me);
+		expect(cards.map((c) => c.title).sort()).toEqual(['By email', 'By id', 'Link']);
+		expect(cards.find((c) => c.id === byEmail.id)).toMatchObject({ visibility: 'private', count: 1, preview: ['Socks'] });
+	});
+
+	it('leaves out public, unshared, revoked-link, archived, Santa and other owners\' lists', async () => {
+		const me = await createUser();
+		const owner = await createUser();
+		const pub = await createList(owner, { visibility: 'public' });
+		await share(pub, me);
+		await createList(owner, { title: 'Not shared' });
+		const revoked = await createList(owner);
+		await view(revoked, me, true);
+		const viewedOnly = await createList(owner, { shareToken: newToken() });
+		await view(viewedOnly, me, false);
+		const archived = await createList(owner, { archivedAt: new Date() });
+		await share(archived, me);
+		const santaList = await addSantaMember(await createSanta(owner), owner);
+		await share(santaList, me);
+		const someoneElse = await createList(await createUser());
+		await share(someoneElse, me);
+		expect(await privateListsSharedWith(owner.id, me)).toEqual([]);
+	});
+
+	it("is empty on my own profile and doesn't show other people's shares", async () => {
+		const me = await createUser();
+		const other = await createUser();
+		const l = await createList(me);
+		await share(l, other);
+		expect(await privateListsSharedWith(me.id, me)).toEqual([]);
+		expect(await privateListsSharedWith(me.id, await createUser())).toEqual([]);
+	});
+
+	it('lists a list once even with several reasons to see it', async () => {
+		const me = await createUser();
+		const owner = await createUser();
+		const l = await createList(owner, { shareToken: newToken() });
+		await share(l, me);
+		await view(l, me, true);
+		expect(await privateListsSharedWith(owner.id, me)).toHaveLength(1);
 	});
 });
 

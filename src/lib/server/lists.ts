@@ -262,6 +262,41 @@ export async function publicListsOf(ownerId: string): Promise<ListCard[]> {
 	}));
 }
 
+/**
+ * `ownerId`'s private lists that `viewer` can see: invited by email, or opened through a share
+ * link that still works. Same rule as friendsLists, for one owner's profile page. Secret Santa
+ * and archived lists are left out.
+ */
+export async function privateListsSharedWith(ownerId: string, viewer: { id: string; email: string }): Promise<ListCard[]> {
+	if (ownerId === viewer.id) return [];
+	const rows = await db
+		.selectDistinct({ list })
+		.from(list)
+		.leftJoin(listShare, and(eq(listShare.listId, list.id), or(eq(listShare.userId, viewer.id), eq(listShare.email, viewer.email.toLowerCase()))))
+		.leftJoin(listViewer, and(eq(listViewer.listId, list.id), eq(listViewer.userId, viewer.id)))
+		.where(
+			and(
+				eq(list.ownerId, ownerId),
+				eq(list.visibility, 'private'),
+				isNull(list.santaId),
+				isNull(list.archivedAt),
+				or(sql`${listShare.id} is not null`, and(eq(listViewer.viaLink, true), sql`${list.shareToken} is not null`))
+			)
+		)
+		.orderBy(desc(list.updatedAt));
+	const cards = await cardsFor(rows.map((r) => r.list));
+	return rows.map(({ list: l }) => ({
+		id: l.id,
+		title: l.title,
+		eventDate: l.eventDate,
+		visibility: l.visibility,
+		santaId: null,
+		count: cards.get(l.id)?.count ?? 0,
+		preview: cards.get(l.id)?.preview ?? [],
+		sharedWith: 0
+	}));
+}
+
 /** Append an item to the end of a list (no-op if it's already there). */
 export async function addItemToList(listId: string, itemId: string) {
 	const [{ m }] = await db
