@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
+	import { ask } from '#lib/confirm.svelte';
 	import { onMount } from 'svelte';
 	import { authClient } from '#lib/auth-client';
 	import Sheet from '#lib/components/ui/Sheet.svelte';
@@ -23,7 +24,7 @@
 		await loadPasskeys();
 	}
 	async function remove(id: string) {
-		if (!confirm('Remove this passkey? You can still log in with an email code.')) return;
+		if (!(await ask('Remove this passkey? You can still log in with an email code.', { yes: 'Remove' }))) return;
 		await authClient.passkey.deletePasskey({ id });
 		await loadPasskeys();
 	}

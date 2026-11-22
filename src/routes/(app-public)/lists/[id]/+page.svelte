@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { page } from '$app/state';
 	import { enhance, deserialize } from '$app/forms';
+	import { ask, confirmSubmit } from '#lib/confirm.svelte';
 	import { invalidateAll } from '$app/navigation';
 	import Sheet from '#lib/components/ui/Sheet.svelte';
 	import Icon from '#lib/components/ui/Icon.svelte';
@@ -34,8 +35,8 @@
 	const occasionLabel = (id: string | null) => (id && data.occasionNames[id] ? ` · for ${data.occasionNames[id]}` : '');
 	const confirmOpen =
 		(name: string) =>
-		({ cancel }: { cancel: () => void }) => {
-			if (!confirm(`Opened your ${name} presents? You'll see what was bought for ${name}, and this can't be undone.`)) {
+		async ({ cancel }: { cancel: () => void }) => {
+			if (!(await ask(`Opened your ${name} presents? You'll see what was bought for ${name}, and this can't be undone.`, { yes: "Yes, I've opened them" }))) {
 				cancel();
 				return;
 			}
@@ -44,8 +45,8 @@
 
 	const confirmRemoveExtra =
 		(title: string) =>
-		({ cancel }: { cancel: () => void }) => {
-			if (!confirm(`Remove ${title}? Other guests won't see that you got it any more.`)) {
+		async ({ cancel }: { cancel: () => void }) => {
+			if (!(await ask(`Remove ${title}? Other guests won't see that you got it any more.`, { yes: 'Remove' }))) {
 				cancel();
 				return;
 			}
@@ -541,9 +542,7 @@
 								method="POST"
 								action="?/deleteList"
 								class="danger"
-								onsubmit={(e) => {
-									if (!confirm(`Delete "${data.list.title}"? Your items stay in All my items.`)) e.preventDefault();
-								}}
+								onsubmit={confirmSubmit(() => `Delete "${data.list.title}"? Your items stay in All my items.`, { yes: 'Delete' })}
 							>
 								<button class="btn btn-text">Delete this list</button>
 							</form>

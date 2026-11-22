@@ -8,6 +8,7 @@
 	import { imageUrl } from '#lib/images';
 	import { plural } from '#lib/format';
 	import { slide } from '#lib/motion';
+	import { ask, confirmSubmit } from '#lib/confirm.svelte';
 
 	let { data, form } = $props();
 
@@ -233,15 +234,14 @@
 								<form
 									method="POST"
 									action="?/removeLink{listQuery}"
-									use:enhance={busyEnhance}
-									onsubmit={(e) => {
+									use:enhance={async ({ formData }) => {
 										const hasPics = data.images.some((img) => img.linkId === l.id);
-										const fd = e.currentTarget.querySelector('input[name=withImages]') as HTMLInputElement;
-										fd.checked = hasPics && confirm('Also delete the pictures that came from this link?');
+										if (hasPics && (await ask('Also delete the pictures that came from this link?', { yes: 'Delete them too', no: 'Keep them' })))
+											formData.set('withImages', 'on');
+										return busyEnhance();
 									}}
 								>
 									<input type="hidden" name="linkId" value={l.id} />
-									<input type="checkbox" name="withImages" class="sr-only" tabindex="-1" aria-hidden="true" />
 									<button class="btn btn-text" disabled={busy}>Remove</button>
 								</form>
 							</li>
@@ -349,10 +349,13 @@
 			<form
 				method="POST"
 				action="?/delete{listQuery}"
-				onsubmit={(e) => {
-					const n = data.onLists.length;
-					if (!confirm(n ? `Delete this item from ${plural(n, 'list')} and everywhere else?` : 'Delete this item?')) e.preventDefault();
-				}}
+				onsubmit={confirmSubmit(
+					() => {
+						const n = data.onLists.length;
+						return n ? `Delete this item from ${plural(n, 'list')} and everywhere else?` : 'Delete this item?';
+					},
+					{ yes: 'Delete' }
+				)}
 			>
 				<button class="btn btn-text danger"><Icon name="trash" size={16} />Delete this item everywhere</button>
 			</form>

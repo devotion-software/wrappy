@@ -3,6 +3,7 @@
 	import { onNavigate } from '$app/navigation';
 	import { page } from '$app/state';
 	import { reducedMotion } from '#lib/motion';
+	import ConfirmDialog from '#lib/components/ConfirmDialog.svelte';
 	import { SITE_META, type PageMeta } from '#lib/meta';
 	let { children } = $props();
 
@@ -39,3 +40,4 @@
 </svelte:head>
 
 {@render children()}
+<ConfirmDialog />

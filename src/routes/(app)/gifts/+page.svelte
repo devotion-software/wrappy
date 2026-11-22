@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
+	import { ask } from '#lib/confirm.svelte';
 	import type { SubmitFunction } from '$app/forms';
 	import Sheet from '#lib/components/ui/Sheet.svelte';
 	import Checkbox from '#lib/components/ui/Checkbox.svelte';
@@ -25,16 +26,17 @@
 	// Marking is permanent, so check before revealing what someone bought.
 	const confirmReveal =
 		(who: string): SubmitFunction =>
-		({ cancel }) => {
-			const ok = confirm(
-				`Only do this once you've opened your presents. You'll see what ${who} marked as bought, and this can't be undone. Presents for an occasion you haven't opened yet stay hidden.`
+		async ({ cancel }) => {
+			const ok = await ask(
+				`Only do this once you've opened your presents. You'll see what ${who} marked as bought, and this can't be undone. Presents for an occasion you haven't opened yet stay hidden.`,
+				{ yes: "Yes, I've opened them" }
 			);
 			if (!ok) cancel();
 		};
 	const confirmOpen =
 		(name: string): SubmitFunction =>
-		({ cancel }) => {
-			if (!confirm(`Opened your ${name} presents? You'll see what was bought for ${name}, and this can't be undone.`)) cancel();
+		async ({ cancel }) => {
+			if (!(await ask(`Opened your ${name} presents? You'll see what was bought for ${name}, and this can't be undone.`, { yes: "Yes, I've opened them" }))) cancel();
 		};
 </script>
 

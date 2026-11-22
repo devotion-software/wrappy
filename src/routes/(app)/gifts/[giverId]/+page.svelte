@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
+	import { confirmSubmit } from '#lib/confirm.svelte';
 	import Sheet from '#lib/components/ui/Sheet.svelte';
 	import Checkbox from '#lib/components/ui/Checkbox.svelte';
 	import Avatar from '#lib/components/ui/Avatar.svelte';
@@ -127,9 +128,7 @@
 			<form
 				method="POST"
 				action="?/deleteContact"
-				onsubmit={(e) => {
-					if (!confirm(`Remove ${data.person.name} and ${plural(total, 'present')} you noted from them?`)) e.preventDefault();
-				}}
+				onsubmit={confirmSubmit(() => `Remove ${data.person.name} and ${plural(total, 'present')} you noted from them?`, { yes: 'Remove' })}
 			>
 				<button class="btn btn-text"><Icon name="trash" size={16} />Remove {first}</button>
 			</form>

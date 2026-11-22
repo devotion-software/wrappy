@@ -55,8 +55,8 @@ test.describe('occasions and presents off the list', () => {
 		await expect(owner.getByText(/bought by/)).toHaveCount(0);
 
 		// Opening the birthday shows the gloves in Presents received, but not the Christmas scarf.
-		owner.once('dialog', (d) => d.accept());
 		await owner.getByRole('button', { name: 'Opened them' }).first().click();
+		await owner.getByRole('dialog').getByRole('button', { name: "Yes, I've opened them" }).click();
 		await expect(owner.getByText('opened', { exact: true })).toBeVisible();
 		await expect(owner.getByText(/bought by/)).toHaveCount(0);
 		await owner.goto('/gifts');

@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
+	import { ask, confirmSubmit } from '#lib/confirm.svelte';
 	import { page } from '$app/state';
 	import Sheet from '#lib/components/ui/Sheet.svelte';
 	import StickyNote from '#lib/components/ui/StickyNote.svelte';
@@ -111,9 +112,7 @@
 								<form
 									method="POST"
 									action="?/leave"
-									onsubmit={(e) => {
-										if (!confirm('Leave this Secret Santa?')) e.preventDefault();
-									}}
+									onsubmit={confirmSubmit('Leave this Secret Santa?', { yes: 'Leave' })}
 								>
 									<button class="btn btn-text">Leave the exchange</button>
 								</form>
@@ -134,10 +133,10 @@
 						<form
 							method="POST"
 							action="?/draw"
-							use:enhance={busyEnhance}
-							onsubmit={(e) => {
-								if (!confirm(`Draw names for ${plural(data.members.length, 'person', 'people')}? Everyone gets an email, and no one can join after this.`))
-									e.preventDefault();
+							use:enhance={async ({ cancel }) => {
+								const msg = `Draw names for ${plural(data.members.length, 'person', 'people')}? Everyone gets an email, and no one can join after this.`;
+								if (!(await ask(msg, { yes: 'Draw names' }))) return cancel();
+								return busyEnhance();
 							}}
 						>
 							<button class="btn btn-dark btn-lg" disabled={busy || data.members.length < 3}><Icon name="shuffle" strokeWidth={2} />Draw names</button>
@@ -161,9 +160,7 @@
 					<form
 						method="POST"
 						action="?/deleteSanta"
-						onsubmit={(e) => {
-							if (!confirm(`Delete "${s.name}" for everyone? Their items stay in their own lists.`)) e.preventDefault();
-						}}
+						onsubmit={confirmSubmit(() => `Delete "${s.name}" for everyone? Their items stay in their own lists.`, { yes: 'Delete' })}
 					>
 						<button class="btn btn-text">Delete this Secret Santa</button>
 					</form>
@@ -231,9 +228,9 @@
 								<form
 									method="POST"
 									action="?/removeMember"
-									use:enhance={busyEnhance}
-									onsubmit={(e) => {
-										if (!confirm(`Remove ${m.name}?`)) e.preventDefault();
+									use:enhance={async ({ cancel }) => {
+										if (!(await ask(`Remove ${m.name}?`, { yes: 'Remove' }))) return cancel();
+										return busyEnhance();
 									}}
 								>
 									<input type="hidden" name="userId" value={m.id} />

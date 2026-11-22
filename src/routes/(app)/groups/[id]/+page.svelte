@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
+	import { ask } from '#lib/confirm.svelte';
 	import { page } from '$app/state';
 	import Sheet from '#lib/components/ui/Sheet.svelte';
 	import Avatar from '#lib/components/ui/Avatar.svelte';
@@ -35,8 +36,8 @@
 	};
 	const confirmFirst =
 		(message: string) =>
-		({ cancel }: { cancel: () => void }) => {
-			if (!confirm(message)) {
+		async ({ cancel }: { cancel: () => void }) => {
+			if (!(await ask(message))) {
 				cancel();
 				return;
 			}
