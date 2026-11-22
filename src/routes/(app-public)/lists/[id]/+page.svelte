@@ -86,6 +86,17 @@
 		};
 	};
 
+	/** The occasion being renamed or re-dated, if any. Stays open if the save fails. */
+	let editingOcc = $state<string | null>(null);
+	const editOccEnhance = () => {
+		busy = true;
+		return async ({ result, update }: { result: { type: string }; update: (o?: { reset?: boolean }) => Promise<void> }) => {
+			await update({ reset: false });
+			busy = false;
+			if (result.type === 'success') editingOcc = null;
+		};
+	};
+
 	let picked = $state<string[]>([]);
 	$effect(() => {
 		picked = form?.found?.images?.slice(0, 1) ?? [];
@@ -421,8 +432,26 @@
 							one at a time, so your birthday doesn't spoil Christmas.
 						</p>
 						{#each data.occasions as o (o.id)}
+							{#if editingOcc === o.id}
+								<form method="POST" action="?/updateOccasion" class="occ-add occ-edit" use:enhance={editOccEnhance} in:slide>
+									<input type="hidden" name="occasionId" value={o.id} />
+									<div class="field grow">
+										<label for="occ-name-{o.id}">Occasion</label>
+										<input id="occ-name-{o.id}" name="name" class="line-input" maxlength="80" value={o.name} required autocomplete="off" />
+									</div>
+									<div class="field">
+										<label for="occ-date-{o.id}">Date</label>
+										<input id="occ-date-{o.id}" name="date" type="date" class="line-input date" value={o.date} required />
+									</div>
+									<button class="btn btn-dark" disabled={busy}>Save</button>
+									<button type="button" class="btn btn-text" onclick={() => (editingOcc = null)}>Cancel</button>
+								</form>
+							{:else}
 							<div class="occasion" in:slide out:slide>
 								<span class="occ-name"><strong>{o.name}</strong><span class="meta">{formatDate(o.date)}</span></span>
+								<button type="button" class="btn btn-icon" aria-label="Edit {o.name}" disabled={busy} onclick={() => (editingOcc = o.id)}
+									><Icon name="edit" size={16} /></button
+								>
 								{#if o.opened}
 									<span class="meta">opened</span>
 								{:else}
@@ -438,6 +467,7 @@
 									{/if}
 								{/if}
 							</div>
+							{/if}
 						{/each}
 						<form method="POST" action="?/addOccasion" class="occ-add" use:enhance={busyEnhance}>
 							<div class="field grow">
@@ -902,6 +932,10 @@
 	}
 	.occ-add input {
 		font-size: 16px;
+	}
+	.occ-edit {
+		padding: 8px 0 12px;
+		border-bottom: 1px solid var(--rule);
 	}
 
 	@media (max-width: 600px) {

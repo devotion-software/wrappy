@@ -132,6 +132,25 @@ export const occasionActions = {
 	},
 
 	/**
+	 * Rename an occasion or move its date. Presents stay with it, and nothing about claims changes,
+	 * so this is safe even after it's been opened.
+	 */
+	updateOccasion: async (event: RequestEvent) => {
+		const l = await ownerListFor(event);
+		const fd = await event.request.formData();
+		const o = await ownedOccasion(l.id, String(fd.get('occasionId') ?? ''));
+		const parsed = parseOccasionForm(fd);
+		if ('error' in parsed) return fail(400, { occasionError: parsed.error, occasionEditing: o.id });
+		const others = (await listOccasions(l.id)).filter((x) => x.id !== o.id);
+		if (others.some((x) => x.name.toLowerCase() === parsed.name.toLowerCase())) {
+			return fail(400, { occasionError: `This list already has ${parsed.name}.`, occasionEditing: o.id });
+		}
+		await db.update(listOccasion).set({ name: parsed.name, occasionDate: parsed.date }).where(eq(listOccasion.id, o.id));
+		await syncEventDate(l.id);
+		return { occasionUpdated: o.id };
+	},
+
+	/**
 	 * Remove an occasion that hasn't been opened. Its presents move to the nearest other unopened
 	 * occasion (guests can change that), so removing one never reveals anything. The last unopened
 	 * occasion can't be removed for the same reason.

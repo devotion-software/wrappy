@@ -146,6 +146,10 @@ describe('message content', () => {
 		expect(b.html).toContain('&lt;script&gt;alert(1)&lt;/script&gt;');
 		expect(b.html).toContain('Tom &amp; Jerry&#39;s &quot;best&quot;');
 		expect(b.html).toContain('href="https://wrappy.example/lists/abc?x=1&amp;y=&quot;2&quot;"');
+		// The button label is escaped once, not twice.
+		expect(b.html).toContain('>Open Tom &amp; Jerry&#39;s &quot;best&quot;</a>');
+		expect(b.html).not.toContain('&amp;#39;');
+		expect(b.html).not.toContain('&amp;amp;');
 		// Plain text is not HTML-escaped.
 		expect(b.text).toContain(`"Tom & Jerry's "best""`);
 		expect(b.text).toContain('Open it: https://wrappy.example/lists/abc');

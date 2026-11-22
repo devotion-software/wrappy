@@ -47,7 +47,7 @@ export async function sendListInviteEmail(opts: { email: string; ownerName: stri
 			subject: `${opts.ownerName} shared a wish list with you`,
 			html: renderLayout(
 				`<strong>${owner}</strong> shared their wish list <strong>${title}</strong> with you. Have a look, and quietly claim anything you'd like to get them — ${owner} won't see.`,
-				button(opts.url, `Open ${title}`)
+				button(opts.url, `Open ${opts.listTitle}`)
 			),
 			text: `${opts.ownerName} shared their wish list "${opts.listTitle}" with you.\n\nOpen it: ${opts.url}`
 		},

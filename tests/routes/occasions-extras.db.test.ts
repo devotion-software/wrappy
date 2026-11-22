@@ -123,6 +123,30 @@ describe('occasions', () => {
 		expect(c.occasionId).toBe(bday.id);
 	});
 
+	it('lets the owner rename and re-date an occasion, keeping its presents', async () => {
+		const { meg, sam, l, bday, xmas, scarf } = await scene();
+		await act('claim', sam, l, { itemId: scarf.id, occasionId: xmas.id });
+		expect((await act('updateOccasion', meg, l, { occasionId: xmas.id, name: 'New Year', date: '2100-01-01' })).kind).toBe('ok');
+		const [, row] = await occasionsOf(l);
+		expect(row).toMatchObject({ id: xmas.id, name: 'New Year', occasionDate: '2100-01-01' });
+		const [c] = await db.select().from(itemClaim).where(eq(itemClaim.itemId, scarf.id));
+		expect(c.occasionId).toBe(xmas.id);
+		// The list date follows the last occasion.
+		expect((await db.select().from(list).where(eq(list.id, l.id)))[0].eventDate).toBe('2100-01-01');
+		// Same checks as adding: a name, a date, no duplicates (keeping its own name is fine).
+		expect(await act('updateOccasion', meg, l, { occasionId: bday.id, name: '', date: '2099-12-12' })).toMatchObject({ kind: 'fail' });
+		expect(await act('updateOccasion', meg, l, { occasionId: bday.id, name: 'Birthday', date: 'soon' })).toMatchObject({ kind: 'fail' });
+		expect(await act('updateOccasion', meg, l, { occasionId: bday.id, name: 'new year', date: '2099-12-12' })).toMatchObject({ kind: 'fail' });
+		expect((await act('updateOccasion', meg, l, { occasionId: bday.id, name: 'Birthday', date: '2099-12-13' })).kind).toBe('ok');
+	});
+
+	it('only the owner can edit an occasion, and only on their own list', async () => {
+		const { meg, sam, l, bday } = await scene();
+		expect(await act('updateOccasion', sam, l, { occasionId: bday.id, name: 'Mine', date: '2099-01-01' })).toMatchObject({ kind: 'error', status: 404 });
+		const other = await createList(meg);
+		expect(await act('updateOccasion', meg, other, { occasionId: bday.id, name: 'Moved', date: '2099-01-01' })).toMatchObject({ kind: 'error', status: 404 });
+	});
+
 	it('removing an occasion moves its presents to another unopened one, and the last one stays', async () => {
 		const { meg, sam, l, bday, xmas, scarf } = await scene();
 		await act('claim', sam, l, { itemId: scarf.id, occasionId: bday.id });

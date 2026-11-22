@@ -28,6 +28,13 @@ test.describe('occasions and presents off the list', () => {
 		}
 		await shot(owner, '1-owner-occasions');
 
+		// Occasions can be edited after they're made.
+		await owner.getByRole('button', { name: 'Edit Christmas' }).click();
+		await owner.locator('form.occ-edit').getByLabel('Date').fill('2099-12-24');
+		await owner.locator('form.occ-edit').getByRole('button', { name: 'Save' }).click();
+		await expect(owner.locator('form.occ-edit')).toHaveCount(0);
+		await expect(owner.locator('.occasion', { hasText: 'Christmas' })).toContainText('2099');
+
 		// The guest says the scarf is for Christmas, and notes gloves they bought that aren't on the list.
 		await guest.goto(`/lists/${listId}`);
 		await guest.getByLabel('Which occasion is it for?').first().selectOption({ label: 'for Christmas' });

@@ -148,7 +148,7 @@
 		{:else if group && !mine && !claims.full}
 			{#if takenNote}<span class="note" in:writeIn>{takenNote}</span>{/if}
 			{#if signedIn}
-				<form method="POST" action="?/chipIn" class="chip" use:enhance={submit}>
+				<form method="POST" action="?/chipIn" class="pick" use:enhance={submit}>
 					<input type="hidden" name="itemId" value={item.id} />
 					<label for="chip-{item.id}" class="sr-only">How much will you chip in towards {item.title}?</label>
 					<input
@@ -174,7 +174,7 @@
 		{:else if !mine && !claims.full}
 			{#if takenNote}<span class="note" in:writeIn>{takenNote}</span>{/if}
 			{#if signedIn}
-				<form method="POST" action="?/claim" use:enhance={submit}>
+				<form method="POST" action="?/claim" class="pick" use:enhance={submit}>
 					<input type="hidden" name="itemId" value={item.id} />
 					{#if askOccasion}
 						<label for="occ-{item.id}" class="sr-only">Which occasion is it for?</label>
@@ -247,12 +247,10 @@
 </div>
 
 <style>
-	.chip {
-		display: flex;
-		align-items: center;
-		gap: 8px;
-	}
 	.occ {
+		width: auto;
+		min-width: 0;
+		flex: 0 1 auto;
 		height: 40px;
 		font-family: var(--font-ui);
 		font-size: 15px;
@@ -411,6 +409,17 @@
 	}
 	.actions form {
 		display: contents;
+	}
+	/* The occasion picker sits beside its button, never stacked above it. */
+	.actions form.pick {
+		display: flex;
+		flex-wrap: nowrap;
+		align-items: center;
+		gap: 8px;
+		min-width: 0;
+	}
+	.pick .btn {
+		flex: none;
 	}
 	.full {
 		flex-basis: 100%;
