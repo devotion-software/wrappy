@@ -4,12 +4,14 @@ import { db } from '#lib/server/db';
 import { item, itemImage, itemLink, itemSuggestion, list, santa, user } from '#lib/server/db/schema';
 import {
 	addLink,
+	archiveItem,
 	deleteItem,
 	importImages,
 	itemDetail,
 	listsContaining,
 	parseItemForm,
 	requireOwnItem,
+	restoreItem,
 	santaPriceProblem,
 	setItemLists
 } from '#lib/server/items';
@@ -187,6 +189,25 @@ export const actions: Actions = {
 		if (!people.some((p) => p.id === userId)) error(400, 'Pick someone from the list.');
 		await db.insert(itemSuggestion).values({ itemId: it.id, userId }).onDuplicateKeyUpdate({ set: { userId } });
 		return { suggested: true };
+	},
+
+	/** Hide it everywhere; it can be restored from All my items. */
+	archive: async ({ params, locals, url }) => {
+		await archiveItem(locals.user!.id, params.id);
+		const back = url.searchParams.get('list');
+		if (back) {
+			const [l] = await db
+				.select({ id: list.id })
+				.from(list)
+				.where(and(eq(list.id, back), eq(list.ownerId, locals.user!.id)));
+			if (l) redirect(303, `/lists/${l.id}?archived=${params.id}`);
+		}
+		redirect(303, `/items?archived=${params.id}`);
+	},
+
+	restore: async ({ params, locals }) => {
+		await restoreItem(locals.user!.id, params.id);
+		return { restored: true };
 	},
 
 	delete: async ({ params, locals, url }) => {

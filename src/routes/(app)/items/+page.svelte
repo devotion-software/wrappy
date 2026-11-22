@@ -4,11 +4,15 @@
 	import PasteList from '#lib/components/PasteList.svelte';
 	import { formatPrice, plural } from '#lib/format';
 
-	let { data } = $props();
+	import { enhance } from '$app/forms';
+	import { slide } from '#lib/motion';
+
+	let { data, form } = $props();
 	let q = $state('');
-	const shown = $derived(
-		q.trim() ? data.items.filter((i) => i.title.toLowerCase().includes(q.trim().toLowerCase())) : data.items
-	);
+	const active = $derived(data.items.filter((i) => !i.archived));
+	const archived = $derived(data.items.filter((i) => i.archived));
+	const shown = $derived(q.trim() ? active.filter((i) => i.title.toLowerCase().includes(q.trim().toLowerCase())) : active);
+	const undone = $derived(form?.restored && form.restored === data.justArchived?.id);
 </script>
 
 <svelte:head><title>All my items — Wrappy</title></svelte:head>
@@ -27,8 +31,18 @@
 		<a href="/add" class="btn btn-text add-anywhere"><Icon name="link" />Add from any shop</a>
 	</div>
 
+	{#if data.justArchived && !undone}
+		<div class="note" role="status" in:slide>
+			<p><strong>{data.justArchived.title}</strong> is archived. It's hidden everywhere until you restore it.</p>
+			<form method="POST" action="?/restore" use:enhance>
+				<input type="hidden" name="itemId" value={data.justArchived.id} />
+				<button class="btn btn-outline btn-md">Undo</button>
+			</form>
+		</div>
+	{/if}
+
 	<Sheet margin={50} padding="14px 28px 20px 72px" class="sheet">
-		{#if data.items.length > 6}
+		{#if active.length > 6}
 			<div class="search">
 				<label for="q" class="sr-only">Search your items</label>
 				<input id="q" class="line-input dashed" placeholder="Search…" bind:value={q} />
@@ -51,14 +65,66 @@
 			</a>
 		{:else}
 			<p class="empty-copy">
-				{data.items.length ? 'Nothing matches that search.' : 'No items yet. Add one here, paste a list, or add them from any of your lists.'}
+				{active.length ? 'Nothing matches that search.' : 'No items yet. Add one here, paste a list, or add them from any of your lists.'}
 			</p>
 		{/each}
 	</Sheet>
-	<p class="meta">{plural(data.items.length, 'item')}</p>
+	<p class="meta">{plural(active.length, 'item')}</p>
+
+	{#if archived.length}
+		<!-- No bound `open`: hydrating would close it if someone opened it before the app started. -->
+		<details class="archived">
+			<summary class="section-title">Archived ({archived.length})</summary>
+			<p class="sub">Hidden from your lists and from everyone else. Restore one to put it back on the lists it was on.</p>
+			<div class="archived-list">
+				{#each archived as it (it.id)}
+					<div class="row archived-row" in:slide>
+						{#if it.cover}<img src={it.cover} alt="" class="thumb" loading="lazy" />{:else}<span class="thumb empty"></span>{/if}
+						<a href="/items/{it.id}" class="body">
+							<span class="write name">{it.title}</span>
+							<span class="meta">{it.lists.length ? `Was on ${it.lists.map((l) => l.title).join(', ')}` : 'Not on a list'}</span>
+						</a>
+						<form method="POST" action="?/restore" use:enhance>
+							<input type="hidden" name="itemId" value={it.id} />
+							<button class="btn btn-outline btn-md" aria-label="Restore {it.title}">Restore</button>
+						</form>
+					</div>
+				{/each}
+			</div>
+		</details>
+	{/if}
 </main>
 
 <style>
+	.note {
+		display: flex;
+		align-items: center;
+		gap: 16px;
+		flex-wrap: wrap;
+		padding: 14px 18px;
+		background: var(--gold-soft);
+		border-radius: 6px;
+		font-size: 15px;
+	}
+	.note p {
+		margin: 0;
+		flex: 1 1 240px;
+	}
+	.archived summary {
+		cursor: pointer;
+		min-height: 44px;
+		display: flex;
+		align-items: center;
+	}
+	.archived-list {
+		margin-top: 8px;
+	}
+	.archived-row .body {
+		text-decoration: none;
+		color: inherit;
+		display: flex;
+		flex-direction: column;
+	}
 	.tools {
 		display: flex;
 		flex-wrap: wrap;

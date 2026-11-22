@@ -415,3 +415,12 @@ details[open] > :not(summary) {
 		animation: none !important;
 	}
 }
+
+/*
+ * Stored item pictures sit on white, like the shop pages they came from. Many product pictures
+ * are transparent PNGs; on the dark desk colour a dark product would all but disappear.
+ * (New pictures are flattened onto white when stored; this covers ones saved before that.)
+ */
+img[src^='/img/'] {
+	background: #fff;
+}

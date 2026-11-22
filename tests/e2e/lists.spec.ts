@@ -49,9 +49,12 @@ test.describe('wish lists', () => {
 		await signInViaApi(context);
 		const id = await createListViaUi(page, `Private ${Date.now()}`);
 
+		// Signed out: sent to sign in (an invitee may not have an account yet), with nothing from the list.
 		const anon = await browser.newContext();
-		const res = await anon.request.get(`/lists/${id}`);
-		expect(res.status()).toBe(404);
+		const res = await anon.request.get(`/lists/${id}`, { maxRedirects: 0 });
+		expect(res.status()).toBe(303);
+		expect(res.headers()['location']).toBe(`/signin?next=${encodeURIComponent(`/lists/${id}`)}`);
+		expect(await res.text()).not.toContain('Private ');
 
 		const strangerCtx = await browser.newContext();
 		await signInViaApi(strangerCtx);
@@ -89,4 +92,21 @@ test.describe('wish lists', () => {
 		expect(mail.subject).toBe('Alex Owner shared a wish list with you');
 		expect(mail.text).toContain(title);
 	});
+});
+
+test('list rows are in the server-rendered page, not only after scripts load', async ({ browser }) => {
+	const ctx = await browser.newContext();
+	await signInViaApi(ctx, { name: 'Meg Owner' });
+	const page = await ctx.newPage();
+	const listId = await createListViaUi(page, 'Server rendered', 'private');
+	await addWishViaUi(page, 'Teapot');
+
+	// Same session with JavaScript off: what a slow phone shows before the app starts.
+	const noJs = await browser.newContext({ javaScriptEnabled: false, storageState: await ctx.storageState() });
+	const plain = await noJs.newPage();
+	await plain.goto(`/lists/${listId}`);
+	await expect(plain.getByText('Teapot', { exact: true })).toBeVisible();
+	await expect(plain.getByText('Nothing here yet')).toHaveCount(0);
+	await noJs.close();
+	await ctx.close();
 });

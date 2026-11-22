@@ -1,7 +1,7 @@
 import { error, redirect } from '@sveltejs/kit';
 import { and, count, eq, isNull } from 'drizzle-orm';
 import { db } from '#lib/server/db';
-import { itemList, list, user } from '#lib/server/db/schema';
+import { item, itemList, list, user } from '#lib/server/db/schema';
 import { rememberLinkToken } from '#lib/server/access';
 import { isPreviewBot, listMeta } from '#lib/meta';
 import type { PageServerLoad } from './$types';
@@ -23,7 +23,11 @@ export const load: PageServerLoad = async ({ params, cookies, request }) => {
 	if (!l) error(404, 'This link has been turned off. Ask the list owner for a new one.');
 
 	if (isPreviewBot(request.headers.get('user-agent'))) {
-		const [{ n }] = await db.select({ n: count() }).from(itemList).where(eq(itemList.listId, l.id));
+		const [{ n }] = await db
+			.select({ n: count() })
+			.from(itemList)
+			.innerJoin(item, eq(item.id, itemList.itemId))
+			.where(and(eq(itemList.listId, l.id), isNull(item.archivedAt)));
 		return { meta: listMeta(l, l.ownerName, n), title: l.title };
 	}
 

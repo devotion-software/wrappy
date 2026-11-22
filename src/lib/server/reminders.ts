@@ -143,7 +143,7 @@ async function listReminders(baseUrl: string, now: Date, links: Links): Promise<
 			.select({ id: itemList.itemId, quantity: item.quantity, groupGift: item.groupGift, price: item.price })
 			.from(itemList)
 			.innerJoin(item, eq(item.id, itemList.itemId))
-			.where(eq(itemList.listId, l.id));
+			.where(and(eq(itemList.listId, l.id), isNull(item.archivedAt)));
 		if (!onList.length) continue;
 		const claimers = await db
 			.select({ itemId: itemClaim.itemId, userId: itemClaim.userId, amount: itemClaim.amount })
@@ -204,7 +204,9 @@ async function buyingReminders(baseUrl: string, now: Date, links: Links): Promis
 		.innerJoin(item, eq(item.id, itemClaim.itemId))
 		.innerJoin(owner, eq(owner.id, item.ownerId))
 		.innerJoin(claimer, eq(claimer.id, itemClaim.userId))
-		.where(and(eq(itemClaim.status, 'buying'), lt(itemClaim.updatedAt, new Date(now.getTime() - BUYING_AFTER_DAYS * DAY))));
+		.where(
+			and(eq(itemClaim.status, 'buying'), isNull(item.archivedAt), lt(itemClaim.updatedAt, new Date(now.getTime() - BUYING_AFTER_DAYS * DAY)))
+		);
 	if (!stale.length) return 0;
 
 	const off = await optedOut([...new Set(stale.map((s) => s.claimerId))], 'buying');

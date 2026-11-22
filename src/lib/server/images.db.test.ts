@@ -75,6 +75,30 @@ describe('storeItemImage', () => {
 		expect(meta.orientation).toBeUndefined();
 	});
 
+	it('flattens transparent pictures onto white, so dark products stay visible in dark mode', async () => {
+		const it = await newItem();
+		// A dark square in the middle of a transparent canvas, like a shop's product PNG.
+		const product = await sharp({ create: { width: 40, height: 40, channels: 4, background: { r: 17, g: 17, b: 17, alpha: 1 } } })
+			.png()
+			.toBuffer();
+		const transparent = await sharp({ create: { width: 100, height: 100, channels: 4, background: { r: 0, g: 0, b: 0, alpha: 0 } } })
+			.composite([{ input: product, top: 30, left: 30 }])
+			.png()
+			.toBuffer();
+		await storeItemImage(it.id, transparent, 'link', null);
+		const [row] = await imagesOf(it.id);
+		for (const variant of ['large', 'thumb']) {
+			const { data, info } = await sharp(await readLocal(`${row.storageKey}-${variant}.webp`))
+				.raw()
+				.toBuffer({ resolveWithObject: true });
+			expect(info.channels).toBe(3);
+			const pixel = (x: number, y: number) => [...data.subarray((y * info.width + x) * 3, (y * info.width + x) * 3 + 3)];
+			// Corners were transparent: now white. The middle stays dark.
+			for (const v of pixel(2, 2)) expect(v).toBeGreaterThan(245);
+			for (const v of pixel(50, 50)) expect(v).toBeLessThan(40);
+		}
+	});
+
 	it('appends each new picture after the last one', async () => {
 		const it = await newItem();
 		await addImageRow(it, 4);

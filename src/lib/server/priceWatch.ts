@@ -63,7 +63,7 @@ export async function runPriceChecks(baseUrl: string, now = new Date(), limit = 
 		.select({ link: itemLink, item })
 		.from(itemLink)
 		.innerJoin(item, eq(item.id, itemLink.itemId))
-		.where(or(isNull(itemLink.checkedAt), lt(itemLink.checkedAt, new Date(now.getTime() - RECHECK_MS))))
+		.where(and(isNull(item.archivedAt), or(isNull(itemLink.checkedAt), lt(itemLink.checkedAt, new Date(now.getTime() - RECHECK_MS)))))
 		.orderBy(asc(itemLink.checkedAt), asc(itemLink.createdAt))
 		.limit(limit * 5);
 	if (!due.length) return { checked: 0, drops: 0, emails: 0 };

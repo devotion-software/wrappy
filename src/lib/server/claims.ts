@@ -1,5 +1,5 @@
 import { error, fail, redirect, type RequestEvent } from '@sveltejs/kit';
-import { and, eq } from 'drizzle-orm';
+import { and, eq, isNull } from 'drizzle-orm';
 import { db } from './db';
 import { item, itemClaim, itemList } from './db/schema';
 import { getListAccess } from './access';
@@ -25,7 +25,7 @@ async function guestItem(event: RequestEvent, fd: FormData) {
 		.select({ id: item.id, ownerId: item.ownerId })
 		.from(itemList)
 		.innerJoin(item, eq(item.id, itemList.itemId))
-		.where(and(eq(itemList.listId, access.list.id), eq(itemList.itemId, itemId)))
+		.where(and(eq(itemList.listId, access.list.id), eq(itemList.itemId, itemId), isNull(item.archivedAt)))
 		.limit(1);
 	if (!row) error(404, 'Item not found');
 	if (row.ownerId === me.id) error(403, "You can't claim your own gifts.");

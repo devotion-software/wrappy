@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { eq } from 'drizzle-orm';
 import { db } from './db';
-import { itemLink, priceHistory } from './db/schema';
+import { item, itemLink, priceHistory } from './db/schema';
 import { setEmailPrefs } from './emailPrefs';
 import { addLink, claim, createItem, createList, createUser, share, uniq, view } from '../../../tests/helpers/fixtures';
 
@@ -117,6 +117,16 @@ describe('runPriceChecks', () => {
 		expect(mockMeta.mock.calls.map((c) => c[0])).not.toContain(url);
 		expect(await linkRow(s.linkId)).toMatchObject({ lastPrice: null });
 		expect((await linkRow(s.linkId)).checkedAt).toBeInstanceOf(Date);
+	});
+
+	it('never checks an archived item', async () => {
+		const s = await scene();
+		await db.update(item).set({ archivedAt: new Date() }).where(eq(item.id, s.it.id));
+		priceIs('40.00');
+		await run(T0);
+		const url = (await linkRow(s.linkId)).url;
+		expect(mockMeta.mock.calls.map((c) => c[0])).not.toContain(url);
+		expect(await linkRow(s.linkId)).toMatchObject({ lastPrice: null, checkedAt: null });
 	});
 
 	it('reads at most one link per shop in a run', async () => {

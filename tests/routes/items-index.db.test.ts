@@ -27,6 +27,7 @@ describe('/items load', () => {
 			currency: 'EUR',
 			mostWanted: true,
 			cover: null,
+			archived: false,
 			lists: []
 		});
 		expect(data.items[1].cover).toBe(`/img/items/${b.id}/${first}-thumb.webp`);
@@ -36,7 +37,7 @@ describe('/items load', () => {
 
 	it('returns an empty list for someone with no wishes', async () => {
 		const me = await createUser();
-		expect(await ok(() => load(fakeEvent({ user: me })))).toEqual({ items: [] });
+		expect(await ok(() => load(fakeEvent({ user: me })))).toEqual({ items: [], justArchived: null });
 	});
 });
 

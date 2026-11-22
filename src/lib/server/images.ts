@@ -12,8 +12,8 @@ export const MAX_IMAGE_BYTES = Number(process.env.UPLOAD_MAX_MB ?? 10) * 1024 * 
 export class ImageError extends Error {}
 
 /**
- * Normalise an image (honour EXIF orientation, then strip all metadata incl. GPS),
- * store WebP thumb + large variants, and record it against the item.
+ * Normalise an image (honour EXIF orientation, flatten transparency onto white, then strip all
+ * metadata incl. GPS), store WebP thumb + large variants, and record it against the item.
  */
 export async function storeItemImage(
 	itemId: string,
@@ -28,7 +28,9 @@ export async function storeItemImage(
 	let base: Sharp;
 	let meta: Metadata;
 	try {
-		base = sharp(bytes, { limitInputPixels: 50_000_000 }).rotate();
+		// Flatten transparency onto white: shop pictures are made for a white page, and a dark
+		// product on a transparent background vanishes against the dark theme.
+		base = sharp(bytes, { limitInputPixels: 50_000_000 }).rotate().flatten({ background: '#ffffff' });
 		meta = await base.metadata();
 	} catch {
 		throw new ImageError("That file isn't a picture we can read. Try a JPG, PNG, WebP or HEIC.");

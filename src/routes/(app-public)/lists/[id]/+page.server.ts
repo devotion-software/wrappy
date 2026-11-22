@@ -1,5 +1,5 @@
 import { error, fail, redirect } from '@sveltejs/kit';
-import { and, asc, desc, eq, inArray, notInArray } from 'drizzle-orm';
+import { and, asc, desc, eq, inArray, isNull, notInArray } from 'drizzle-orm';
 import { db } from '#lib/server/db';
 import { friendGroup, item, itemList, list, listShare, listViewer, santa, user } from '#lib/server/db/schema';
 import { myGroups, shareListWithGroup } from '#lib/server/groups';
@@ -7,7 +7,7 @@ import { getListAccess, signInOr404 } from '#lib/server/access';
 import { loadListItems, addItemToList, hostOf } from '#lib/server/lists';
 import { newId, newToken } from '#lib/server/ids';
 import { parseListForm } from '#lib/server/listForm';
-import { createItem, importImages, importPastedList, parseItemForm, santaPriceProblem } from '#lib/server/items';
+import { createItem, importImages, importPastedList, parseItemForm, restoreItem, santaPriceProblem } from '#lib/server/items';
 import { fetchLinkMeta, looksLikeUrl, normaliseUrl } from '#lib/server/linkFetch';
 import { sendListInviteEmail } from '#lib/server/email';
 import { claimActions } from '#lib/server/claims';
@@ -90,7 +90,7 @@ export const load: PageServerLoad = async ({ params, locals, cookies, url }) => 
 		db
 			.select({ id: item.id, title: item.title, price: item.price, currency: item.currency })
 			.from(item)
-			.where(onList.length ? and(eq(item.ownerId, l.ownerId), notInArray(item.id, onList)) : eq(item.ownerId, l.ownerId))
+			.where(and(eq(item.ownerId, l.ownerId), isNull(item.archivedAt), onList.length ? notInArray(item.id, onList) : undefined))
 			.orderBy(asc(item.title)),
 		l.santaId ? [] : myGroups(l.ownerId)
 	]);
@@ -211,7 +211,7 @@ export const actions: Actions = {
 		const { me, l } = await ownerList(event);
 		const ids = (await event.request.formData()).getAll('itemId').map(String);
 		const mine = ids.length
-			? await db.select().from(item).where(and(eq(item.ownerId, me.id), inArray(item.id, ids)))
+			? await db.select().from(item).where(and(eq(item.ownerId, me.id), inArray(item.id, ids), isNull(item.archivedAt)))
 			: [];
 		const problems: string[] = [];
 		for (const it of mine) {
@@ -221,6 +221,14 @@ export const actions: Actions = {
 		}
 		if (problems.length) return fail(400, { addError: problems.join(' ') });
 		return { added: true };
+	},
+
+	/** Undo archiving an item (offered after archiving it from its page). */
+	restoreItem: async (event) => {
+		const { me } = await ownerList(event);
+		const itemId = String((await event.request.formData()).get('itemId') ?? '');
+		await restoreItem(me.id, itemId);
+		return { restoredItem: itemId };
 	},
 
 	remove: async (event) => {

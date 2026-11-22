@@ -87,6 +87,9 @@ export const item = mysqlTable(
 		quantity: int('quantity').default(1),
 		// Group gift: people chip in amounts (item_claim.amount) towards the price instead of claiming it.
 		groupGift: boolean('group_gift').default(false).notNull(),
+		// Set when the owner archives it: it's hidden everywhere (lists, counts, guests) but keeps its
+		// lists, pictures and claims, so restoring puts it back exactly as it was.
+		archivedAt: timestamp('archived_at', { fsp: 3 }),
 		createdAt: created(),
 		updatedAt: timestamp('updated_at', { fsp: 3 })
 			.defaultNow()

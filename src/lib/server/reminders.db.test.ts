@@ -8,7 +8,7 @@ vi.mock('#lib/server/email', () => ({
 }));
 
 import { db } from './db';
-import { itemClaim, list, listOccasion } from './db/schema';
+import { item, itemClaim, list, listOccasion } from './db/schema';
 import { newId } from './ids';
 import { daysBetween, runReminders } from './reminders';
 import { readUnsubscribeToken, setEmailPrefs, unsubscribeToken } from './emailPrefs';
@@ -134,6 +134,17 @@ describe('list reminders', () => {
 		expect(sentTo(listMail, past.viewer.email)).toEqual([]);
 	});
 
+	it('leaves archived items out of the count, and stays quiet if only archived ones are open', async () => {
+		const owner = await createUser();
+		const viewer = await createUser();
+		const l = await createList(owner, { visibility: 'public', eventDate: inDays(5) });
+		await view(l, viewer);
+		const gone = await createItem(owner, { title: 'Gone' }, { lists: [l] });
+		await db.update(item).set({ archivedAt: new Date() }).where(eq(item.id, gone.id));
+		await runReminders(BASE, NOW);
+		expect(sentTo(listMail, viewer.email)).toEqual([]);
+	});
+
 	it('skips people who can no longer see the list', async () => {
 		const owner = await createUser();
 		const was = await createUser();
@@ -167,6 +178,18 @@ describe('buying reminders', () => {
 			expect.objectContaining({ itemTitle: 'Scarf', ownerName: 'Meg', weeks: 2, url: `${BASE}/lists/${l.id}/items/${stale.id}` })
 		]);
 		expect(sentTo(buyingMail, owner.email)).toEqual([]);
+	});
+
+	it("doesn't nudge about an archived item", async () => {
+		const owner = await createUser();
+		const buyer = await createUser();
+		const l = await createList(owner, { visibility: 'public' });
+		const it = await createItem(owner, {}, { lists: [l] });
+		await claim(it, buyer, 'buying');
+		await db.update(itemClaim).set({ updatedAt: new Date(NOW.getTime() - 20 * DAY) }).where(eq(itemClaim.itemId, it.id));
+		await db.update(item).set({ archivedAt: new Date() }).where(eq(item.id, it.id));
+		await runReminders(BASE, NOW);
+		expect(sentTo(buyingMail, buyer.email)).toEqual([]);
 	});
 
 	it('respects the opt-out', async () => {

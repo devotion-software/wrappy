@@ -3,11 +3,11 @@ import { db } from '#lib/server/db';
 import { item, itemImage, itemList, list } from '#lib/server/db/schema';
 import { imageUrl } from '#lib/images';
 import { fail } from '@sveltejs/kit';
-import { importPastedList } from '#lib/server/items';
+import { importPastedList, restoreItem } from '#lib/server/items';
 import { toCurrency } from '#lib/format';
 import type { Actions, PageServerLoad } from './$types';
 
-export const load: PageServerLoad = async ({ locals }) => {
+export const load: PageServerLoad = async ({ locals, url }) => {
 	const me = locals.user!;
 	const items = await db.select().from(item).where(eq(item.ownerId, me.id)).orderBy(asc(item.title));
 	const ids = items.map((i) => i.id);
@@ -27,7 +27,9 @@ export const load: PageServerLoad = async ({ locals }) => {
 		: [[], []];
 	const coverBy = new Map<string, string>();
 	for (const c of covers) if (!coverBy.has(c.itemId)) coverBy.set(c.itemId, imageUrl(c.key, 'thumb'));
+	const justArchived = items.find((i) => i.id === url.searchParams.get('archived') && i.archivedAt);
 	return {
+		justArchived: justArchived ? { id: justArchived.id, title: justArchived.title } : null,
 		items: items.map((i) => ({
 			id: i.id,
 			title: i.title,
@@ -35,12 +37,19 @@ export const load: PageServerLoad = async ({ locals }) => {
 			currency: i.currency,
 			mostWanted: i.mostWanted,
 			cover: coverBy.get(i.id) ?? null,
+			archived: !!i.archivedAt,
 			lists: onLists.filter((l) => l.itemId === i.id).map((l) => ({ id: l.listId, title: l.title }))
 		}))
 	};
 };
 
 export const actions: Actions = {
+	restore: async ({ locals, request }) => {
+		const itemId = String((await request.formData()).get('itemId') ?? '');
+		await restoreItem(locals.user!.id, itemId);
+		return { restored: itemId };
+	},
+
 	/** Paste a list from a note: one wish per line. */
 	importList: async ({ locals, request }) => {
 		const text = String((await request.formData()).get('list') ?? '');

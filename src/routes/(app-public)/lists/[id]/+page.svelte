@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { page } from '$app/state';
 	import { enhance, deserialize } from '$app/forms';
 	import { invalidateAll } from '$app/navigation';
 	import Sheet from '#lib/components/ui/Sheet.svelte';
@@ -13,16 +14,16 @@
 	import { flip, slide } from '#lib/motion';
 
 	let { data, form } = $props();
+	// Just archived an item from its page: offer to undo.
+	const archivedItem = $derived(data.isOwner ? page.url.searchParams.get('archived') : null);
 
 	const mode = $derived(data.isOwner ? 'owner' : 'guest');
 	const firstName = $derived(data.owner.name.split(' ')[0]);
 	const isSanta = $derived(!!data.list.santaId);
 
-	// Local order for drag-and-drop; re-synced whenever the server data changes.
-	let order = $state<string[]>([]);
-	$effect(() => {
-		order = data.items.map((i) => i.id);
-	});
+	// Local order for drag-and-drop; re-synced whenever the server data changes. A writable
+	// $derived (not $state + $effect) so the rows are in the server-rendered page too.
+	let order = $derived(data.items.map((i) => i.id));
 	const byId = $derived(new Map(data.items.map((i) => [i.id, i])));
 	const rows = $derived(order.map((id) => byId.get(id)).filter((i) => !!i));
 	const mostWanted = $derived(data.items.filter((i) => i.mostWanted).length);
@@ -186,6 +187,15 @@
 				{/if}
 			</p>
 			<button class="btn btn-outline" disabled={busy}>{data.list.archived ? 'Unarchive' : 'Archive list'}</button>
+		</form>
+	{/if}
+
+	{#if archivedItem && form?.restoredItem !== archivedItem}
+		<form method="POST" action="?/restoreItem" class="archive-note" use:enhance={busyEnhance} in:slide>
+			<input type="hidden" name="itemId" value={archivedItem} />
+			<Icon name="archive" size={18} />
+			<p>Item archived. It's hidden everywhere, and you can restore it from All my items.</p>
+			<button class="btn btn-outline" disabled={busy}>Undo</button>
 		</form>
 	{/if}
 

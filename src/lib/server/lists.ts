@@ -47,7 +47,7 @@ export async function loadListItems(l: ListRow, viewerId: string | null): Promis
 		.select({ item, sortOrder: itemList.sortOrder })
 		.from(itemList)
 		.innerJoin(item, eq(item.id, itemList.itemId))
-		.where(eq(itemList.listId, l.id))
+		.where(and(eq(itemList.listId, l.id), isNull(item.archivedAt)))
 		.orderBy(asc(itemList.sortOrder), asc(itemList.addedAt));
 	const ids = rows.map((r) => r.item.id);
 	if (!ids.length) return [];
@@ -160,7 +160,7 @@ async function cardsFor(lists: { id: string }[]): Promise<Map<string, { count: n
 		.select({ listId: itemList.listId, title: item.title })
 		.from(itemList)
 		.innerJoin(item, eq(item.id, itemList.itemId))
-		.where(inArray(itemList.listId, ids))
+		.where(and(inArray(itemList.listId, ids), isNull(item.archivedAt)))
 		.orderBy(asc(itemList.sortOrder), asc(itemList.addedAt));
 	for (const r of rows) {
 		const e = out.get(r.listId) ?? { count: 0, preview: [] };

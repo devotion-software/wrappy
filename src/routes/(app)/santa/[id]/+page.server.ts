@@ -1,5 +1,5 @@
 import { error, fail, redirect } from '@sveltejs/kit';
-import { and, asc, eq } from 'drizzle-orm';
+import { and, asc, eq, isNull } from 'drizzle-orm';
 import { db } from '#lib/server/db';
 import { item, itemList, list, santa, santaExclusion, user } from '#lib/server/db/schema';
 import { exclusionsOf, getSanta, joinSanta, leaveSanta, membersOf, runDraw, type SantaRow } from '#lib/server/santa';
@@ -32,7 +32,11 @@ export const load: PageServerLoad = async (event) => {
 	if (mine?.listId) {
 		const [onList, all] = await Promise.all([
 			db.select({ itemId: itemList.itemId }).from(itemList).where(eq(itemList.listId, mine.listId)),
-			db.select().from(item).where(eq(item.ownerId, me.id)).orderBy(asc(item.title))
+			db
+				.select()
+				.from(item)
+				.where(and(eq(item.ownerId, me.id), isNull(item.archivedAt)))
+				.orderBy(asc(item.title))
 		]);
 		const on = new Set(onList.map((r) => r.itemId));
 		wishes = all.map((it) => ({
@@ -202,7 +206,7 @@ export const actions: Actions = {
 		const [it] = await db
 			.select()
 			.from(item)
-			.where(and(eq(item.id, itemId), eq(item.ownerId, me.id)))
+			.where(and(eq(item.id, itemId), eq(item.ownerId, me.id), isNull(item.archivedAt)))
 			.limit(1);
 		if (!it) error(404, 'Item not found');
 		if (fd.get('on') === '1') {

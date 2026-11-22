@@ -160,6 +160,20 @@ export async function importImages(itemId: string, urls: string[], linkId: strin
 	return saved;
 }
 
+/**
+ * Archive an item: hidden from every list, count and guest, but nothing is thrown away (lists,
+ * pictures, links, claims), so restoring puts it back exactly as it was.
+ */
+export async function archiveItem(ownerId: string, itemId: string) {
+	const it = await requireOwnItem(ownerId, itemId);
+	if (!it.archivedAt) await db.update(item).set({ archivedAt: new Date() }).where(eq(item.id, it.id));
+}
+
+export async function restoreItem(ownerId: string, itemId: string) {
+	const it = await requireOwnItem(ownerId, itemId);
+	if (it.archivedAt) await db.update(item).set({ archivedAt: null }).where(eq(item.id, it.id));
+}
+
 export async function deleteItem(ownerId: string, itemId: string) {
 	await requireOwnItem(ownerId, itemId);
 	await deleteAllItemImages(itemId);

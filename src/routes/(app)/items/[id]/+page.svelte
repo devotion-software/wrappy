@@ -7,6 +7,7 @@
 	import ItemFields from '#lib/components/ItemFields.svelte';
 	import { imageUrl } from '#lib/images';
 	import { plural } from '#lib/format';
+	import { slide } from '#lib/motion';
 
 	let { data, form } = $props();
 
@@ -63,10 +64,8 @@
 	}
 
 	// ── Picture order (drag, or arrow keys on a focused picture) ──
-	let order = $state<string[]>([]);
-	$effect(() => {
-		order = data.images.map((i) => i.id);
-	});
+	// Writable $derived (not $state + $effect) so the pictures are in the server-rendered page too.
+	let order = $derived(data.images.map((i) => i.id));
 	const imgById = $derived(new Map(data.images.map((i) => [i.id, i])));
 	let dragImg = $state<string | null>(null);
 
@@ -107,6 +106,16 @@
 <main class="container page">
 	<a href={backHref} class="back"><Icon name="arrow-left" size={16} strokeWidth={2} />{backLabel}</a>
 	<h1 class="hand">Edit item</h1>
+	{#if data.item.archivedAt}
+		<div class="archived-note" role="status" in:slide>
+			<p>
+				<strong>Archived.</strong> It's hidden from your lists and from everyone else. Restore it to put it back where it was.
+			</p>
+			<form method="POST" action="?/restore{listQuery}" use:enhance={busyEnhance}>
+				<button class="btn btn-dark btn-md" disabled={busy}>Restore</button>
+			</form>
+		</div>
+	{/if}
 
 	<div class="with-aside">
 		<div class="main-col stack-lg">
@@ -332,6 +341,11 @@
 				{/if}
 			</Sheet>
 
+			{#if !data.item.archivedAt}
+				<form method="POST" action="?/archive{listQuery}">
+					<button class="btn btn-text danger"><Icon name="archive" size={16} />Archive this item</button>
+				</form>
+			{/if}
 			<form
 				method="POST"
 				action="?/delete{listQuery}"
@@ -347,6 +361,22 @@
 </main>
 
 <style>
+	.archived-note {
+		display: flex;
+		align-items: center;
+		gap: 16px;
+		flex-wrap: wrap;
+		padding: 14px 18px;
+		margin-bottom: 8px;
+		background: var(--gold-soft);
+		border-radius: 6px;
+		font-size: 15px;
+		line-height: 1.5;
+	}
+	.archived-note p {
+		margin: 0;
+		flex: 1 1 240px;
+	}
 	.page {
 		padding-top: 32px;
 		padding-bottom: 80px;
